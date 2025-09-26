@@ -1,31 +1,25 @@
 body {
   font-family: sans-serif;
   text-align: center;
-  margin: 0;
-  padding: 20px;
+  padding: 10px;
 }
 
 #card-container {
   position: relative;
   width: 100%;
-  max-width: 600px;
+  max-width: 400px; 
+  aspect-ratio: 3 / 2; /* カード比率固定 */
   margin: 20px auto;
+  border: 1px solid #ccc;
 }
 
-#card-container img.card-bg {
+.card-bg {
   width: 100%;
-  height: auto;
-  display: block;
+  height: 100%;
+  object-fit: cover;
 }
 
 .stamp {
   position: absolute;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
-#message {
-  margin-top: 20px;
-  color: #333;
-  font-weight: bold;
+  pointer-events: none; /* スタンプはクリック不可 */
 }

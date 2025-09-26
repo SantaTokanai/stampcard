@@ -10,8 +10,9 @@ import {
 import {
   getFirestore,
   doc,
+  getDoc,
   setDoc,
-  getDoc
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
 /* ===== Firebase 設定 ===== */
@@ -32,134 +33,115 @@ const emailInput = document.getElementById('email');
 const passInput  = document.getElementById('password');
 const signupBtn  = document.getElementById('signup');
 const loginBtn   = document.getElementById('login');
-const loginMessageDiv = document.createElement('div');
-loginMessageDiv.style.color = 'red';
-loginBtn.insertAdjacentElement('afterend', loginMessageDiv);
-
-const logoutBtn  = document.createElement('button');
-logoutBtn.textContent = "ログアウト";
-logoutBtn.style.display = 'none';
-document.body.insertBefore(logoutBtn, document.getElementById('keyword-section'));
-
-const keywordSec = document.getElementById('keyword-section');
+const loginMessage = document.getElementById('login-message');
+const logoutBtn  = document.getElementById('logout-btn');
+const keywordSection = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
-const stampBtn = document.getElementById('stampBtn');
+const stampBtn = document.getElementById('stamp-btn');
 const cardContainer = document.getElementById('card-container');
 
-/* ===== エラーメッセージ日本語化 ===== */
-function getErrorMessageJP(error){
-  return 'メールアドレスまたはパスワードが正しくありません';
+/* ===== 合言葉とスタンプ位置の対応 ===== */
+const stampMapping = {
+  "Apple": {img:'images/stamp1.png', x:0.2, y:0.25, widthPercent:0.15},
+  "Banana": {img:'images/stamp2.png', x:0.5, y:0.25, widthPercent:0.15},
+  "Cherry": {img:'images/stamp3.png', x:0.8, y:0.25, widthPercent:0.15}
+};
+
+/* ===== 認証 ===== */
+function showLoginError(msg){
+  loginMessage.textContent = msg;
 }
 
-function showLoginMessage(msg){
-  loginMessageDiv.textContent = msg;
-}
-
-function showMessage(msg){
-  alert(msg); // スタンプ押下時などは alert で通知
-}
-
-/* ===== Firebase Auth イベント ===== */
-signupBtn.addEventListener('click', () => {
-  createUserWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(() => showLoginMessage('登録完了！'))
-    .catch(err => showLoginMessage(getErrorMessageJP(err)));
+signupBtn.addEventListener('click', async () => {
+  try {
+    await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
+    showLoginError('');
+  } catch(e){
+    showLoginError('メールアドレスまたはパスワードが正しくありません');
+  }
 });
 
-loginBtn.addEventListener('click', () => {
-  signInWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(() => showLoginMessage('ログインしました'))
-    .catch(err => showLoginMessage(getErrorMessageJP(err)));
+loginBtn.addEventListener('click', async () => {
+  try {
+    await signInWithEmailAndPassword(auth, emailInput.value, passInput.value);
+    showLoginError('');
+  } catch(e){
+    showLoginError('メールアドレスまたはパスワードが正しくありません');
+  }
 });
 
-logoutBtn.addEventListener('click', () => {
-  signOut(auth).then(() => {
-    showLoginMessage('ログアウトしました');
-    logoutBtn.style.display = 'none';
-    stampBtn.style.display = 'none';
-  });
+logoutBtn.addEventListener('click', async () => {
+  await signOut(auth);
 });
 
+/* ===== 認証状態監視 ===== */
 onAuthStateChanged(auth, user => {
   if(user){
-    keywordSec.style.display = 'block';
+    // UI制御
+    document.getElementById('auth-section').style.display = 'none';
     logoutBtn.style.display = 'inline-block';
-    stampBtn.style.display = 'inline-block';
+    keywordSection.style.display = 'block';
+
+    // 既存スタンプ読み込み
     loadStamps(user.uid);
   } else {
-    keywordSec.style.display = 'none';
+    document.getElementById('auth-section').style.display = 'block';
     logoutBtn.style.display = 'none';
-    stampBtn.style.display = 'none';
+    keywordSection.style.display = 'none';
     clearStampsFromUI();
   }
 });
 
-/* ===== スタンプ情報 ===== */
-let stampPositions = [
-  {img:'images/stamp1.png', left:'15%', top:'60%', width:'60px'},
-  {img:'images/stamp2.png', left:'50%', top:'25%', width:'60px'},
-  {img:'images/stamp3.png', left:'80%', top:'25%', width:'60px'}
-];
-
-/* ===== スタンプ押下処理 ===== */
+/* ===== スタンプ押下 ===== */
 stampBtn.addEventListener('click', async () => {
   const user = auth.currentUser;
-  if(!user) { alert('ログインしてください'); return; }
+  if(!user) return;
 
   const keyword = keywordInput.value.trim();
-  const today = new Date().toISOString().slice(0,10);
-
-  if(keyword !== "apple") {
-    alert("合言葉が違います");
+  if(!stampMapping[keyword]){
+    alert('合言葉が正しくありません');
     return;
   }
 
-  const userDocRef = doc(db, "users", user.uid);
+  const pos = stampMapping[keyword];
+  renderStamp(pos);
 
+  // Firebaseに保存
+  const userDocRef = doc(db,'users',user.uid);
   const snap = await getDoc(userDocRef);
   const data = snap.exists() ? snap.data() : {};
-  if(data[today]){
-    alert("本日は既にスタンプ済みです");
-    return;
-  }
-
-  await setDoc(userDocRef, { [today]: true }, { merge:true });
-  placeStamp(today);
+  data[keyword] = true; // 日付なし
+  await setDoc(userDocRef, data);
 });
 
 /* ===== スタンプ描画 ===== */
-function placeStamp(today){
-  const idx = Object.keys(stampPositions).length % stampPositions.length;
-  const pos = stampPositions[idx];
-  renderStamp(pos);
-  showMessage('スタンプを押しました！');
-}
-
-function loadStamps(uid){
-  clearStampsFromUI();
-  const userDocRef = doc(db, "users", uid);
-  getDoc(userDocRef).then(snap => {
-    if(snap.exists()){
-      const data = snap.data();
-      Object.keys(data).forEach((date, idx) => {
-        if(data[date] === true){
-          const pos = stampPositions[idx % stampPositions.length];
-          renderStamp(pos);
-        }
-      });
-    }
-  });
-}
-
 function renderStamp(pos){
   const img = document.createElement('img');
   img.src = pos.img;
   img.className = 'stamp';
-  img.style.position = 'absolute';
-  img.style.left = pos.left;
-  img.style.top = pos.top;
-  img.style.width = pos.width;
+
+  const w = cardContainer.clientWidth;
+  const h = cardContainer.clientHeight;
+
+  img.style.left = (pos.x * w) + 'px';
+  img.style.top  = (pos.y * h) + 'px';
+  img.style.width = (pos.widthPercent * w) + 'px';
+
   cardContainer.appendChild(img);
+}
+
+async function loadStamps(uid){
+  clearStampsFromUI();
+  const userDocRef = doc(db,'users',uid);
+  const snap = await getDoc(userDocRef);
+  if(snap.exists()){
+    const data = snap.data();
+    Object.keys(data).forEach(key => {
+      if(data[key] && stampMapping[key]){
+        renderStamp(stampMapping[key]);
+      }
+    });
+  }
 }
 
 function clearStampsFromUI(){

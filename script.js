@@ -32,9 +32,10 @@ const db = getFirestore(app);
 const emailInput = document.getElementById('email');
 const passInput  = document.getElementById('password');
 const loginBtn   = document.getElementById('login');
-const signupBtn  = document.getElementById('signup');
+const signupBtn  = document.getElementById('signup'); // 新規登録ボタン
 const logoutBtn  = document.getElementById('logout');
 const errorMsg   = document.getElementById('error-msg');
+const passwordMsg= document.getElementById('password-msg');
 const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
@@ -75,61 +76,73 @@ function showMessage(msg){
 }
 
 // 新規登録
-signupBtn.addEventListener('click', ()=>{
+signupBtn.addEventListener('click', () => {
   if(passInput.value.length < 6){
-    showMessage('パスワードは6文字以上にしてください');
+    showMessage('パスワードは6文字以上です');
     return;
   }
+
   createUserWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(()=> showMessage('登録完了！'))
+    .then(async (userCredential) => {
+      const user = userCredential.user;
+      // Firestore に空のユーザードキュメントを作成
+      const userDocRef = doc(db,'users',user.uid);
+      await setDoc(userDocRef, {});
+      showMessage('登録完了！ログインしてください');
+    })
     .catch(err => showMessage(getErrorMessageJP(err)));
 });
 
 // ログイン
-loginBtn.addEventListener('click', ()=>{
+loginBtn.addEventListener('click', () => {
   signInWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(()=> showMessage(''))
+    .then(() => showMessage(''))
     .catch(err => showMessage(getErrorMessageJP(err)));
 });
 
 // ログアウト
-logoutBtn.addEventListener('click', async ()=>{
+logoutBtn.addEventListener('click', async () => {
   await signOut(auth);
 });
 
 // 認証状態監視
-onAuthStateChanged(auth, user=>{
+onAuthStateChanged(auth, user => {
   if(user){
     emailInput.style.display = 'none';
     passInput.style.display = 'none';
-    loginBtn.style.display = 'none';
     signupBtn.style.display = 'none';
+    loginBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
+    passwordMsg.style.display = 'none';
     keywordSec.style.display = 'block';
     loadStamps(user.uid);
   } else {
     emailInput.style.display = 'inline-block';
     passInput.style.display = 'inline-block';
-    loginBtn.style.display = 'inline-block';
     signupBtn.style.display = 'inline-block';
+    loginBtn.style.display = 'inline-block';
     logoutBtn.style.display = 'none';
+    passwordMsg.style.display = 'block';
     keywordSec.style.display = 'none';
     clearStampsFromUI();
   }
 });
 
 // スタンプ押下
-stampBtn.addEventListener('click', async ()=>{
+stampBtn.addEventListener('click', async () => {
   const user = auth.currentUser;
   if(!user){ alert('ログインしてください'); return; }
+
   const keyword = keywordInput.value.trim();
   if(!keyword){ alert('合言葉を入力してください'); return; }
 
+  // Firebase の keywords コレクションから取得
   const kwDocRef = doc(db,'keywords',keyword);
   const kwSnap = await getDoc(kwDocRef);
   if(!kwSnap.exists()){ alert('その合言葉は存在しません'); return; }
   const data = kwSnap.data();
 
+  // ユーザードキュメントに保存
   const userDocRef = doc(db,'users',user.uid);
   await setDoc(userDocRef,{ [keyword]: true }, {merge:true});
 

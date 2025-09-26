@@ -39,15 +39,15 @@ const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stamp-btn');
 const cardContainer = document.getElementById('card-container');
 
-/* ===== スタンプ位置配列（カード上の比率） ===== */
+/* ===== スタンプ位置配列（カード上の比率 x/y） ===== */
 const stampPositions = [
-  {x:0.1,y:0.2,widthPercent:0.1}, {x:0.3,y:0.2,widthPercent:0.1},
-  {x:0.5,y:0.2,widthPercent:0.1}, {x:0.7,y:0.2,widthPercent:0.1},
-  {x:0.9,y:0.2,widthPercent:0.1}, {x:0.1,y:0.5,widthPercent:0.1},
-  {x:0.3,y:0.5,widthPercent:0.1}, {x:0.5,y:0.5,widthPercent:0.1},
-  {x:0.7,y:0.5,widthPercent:0.1}, {x:0.9,y:0.5,widthPercent:0.1},
-  {x:0.2,y:0.8,widthPercent:0.1}, {x:0.4,y:0.8,widthPercent:0.1},
-  {x:0.6,y:0.8,widthPercent:0.1}, {x:0.8,y:0.8,widthPercent:0.1}
+  {x:0.1,y:0.2,widthPercent:0.1},{x:0.3,y:0.2,widthPercent:0.1},
+  {x:0.5,y:0.2,widthPercent:0.1},{x:0.7,y:0.2,widthPercent:0.1},
+  {x:0.9,y:0.2,widthPercent:0.1},{x:0.1,y:0.5,widthPercent:0.1},
+  {x:0.3,y:0.5,widthPercent:0.1},{x:0.5,y:0.5,widthPercent:0.1},
+  {x:0.7,y:0.5,widthPercent:0.1},{x:0.9,y:0.5,widthPercent:0.1},
+  {x:0.2,y:0.8,widthPercent:0.1},{x:0.4,y:0.8,widthPercent:0.1},
+  {x:0.6,y:0.8,widthPercent:0.1},{x:0.8,y:0.8,widthPercent:0.1}
 ];
 
 /* ===== 認証 ===== */
@@ -100,7 +100,7 @@ stampBtn.addEventListener('click', async () => {
   const keyword = keywordInput.value.trim();
   if(!keyword) { alert('合言葉を入力してください'); return; }
 
-  // Firestoreから対応するスタンプ画像取得
+  // Firestoreから対応スタンプ画像取得
   const docRef = doc(db,'keywords',keyword);
   const snap = await getDoc(docRef);
   if(!snap.exists()) { alert('合言葉が正しくありません'); return; }

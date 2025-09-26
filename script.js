@@ -32,6 +32,10 @@ const emailInput = document.getElementById('email');
 const passInput  = document.getElementById('password');
 const signupBtn  = document.getElementById('signup');
 const loginBtn   = document.getElementById('login');
+const loginMessageDiv = document.createElement('div');
+loginMessageDiv.style.color = 'red';
+loginBtn.insertAdjacentElement('afterend', loginMessageDiv);
+
 const logoutBtn  = document.createElement('button');
 logoutBtn.textContent = "ログアウト";
 logoutBtn.style.display = 'none';
@@ -41,40 +45,38 @@ const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
 const cardContainer = document.getElementById('card-container');
-const messageDiv = document.getElementById('message');
 
 /* ===== エラーメッセージ日本語化 ===== */
 function getErrorMessageJP(error){
-  switch (error.code) {
-    case 'auth/invalid-email':      return 'メールアドレスの形式が正しくありません。';
-    case 'auth/user-not-found':     return 'ユーザーが見つかりません。';
-    case 'auth/wrong-password':     return 'パスワードが違います。';
-    case 'auth/email-already-in-use': return 'このメールアドレスは既に登録されています。';
-    default:                        return 'エラーが発生しました：' + error.message;
-  }
+  return 'メールアドレスまたはパスワードが正しくありません';
+}
+
+function showLoginMessage(msg){
+  loginMessageDiv.textContent = msg;
 }
 
 function showMessage(msg){
-  messageDiv.textContent = msg;
+  alert(msg); // スタンプ押下時などは alert で通知
 }
 
 /* ===== Firebase Auth イベント ===== */
 signupBtn.addEventListener('click', () => {
   createUserWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(() => showMessage('登録完了！'))
-    .catch(err => showMessage(getErrorMessageJP(err)));
+    .then(() => showLoginMessage('登録完了！'))
+    .catch(err => showLoginMessage(getErrorMessageJP(err)));
 });
 
 loginBtn.addEventListener('click', () => {
   signInWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(() => showMessage('ログインしました'))
-    .catch(err => showMessage(getErrorMessageJP(err)));
+    .then(() => showLoginMessage('ログインしました'))
+    .catch(err => showLoginMessage(getErrorMessageJP(err)));
 });
 
 logoutBtn.addEventListener('click', () => {
   signOut(auth).then(() => {
-    showMessage('ログアウトしました');
+    showLoginMessage('ログアウトしました');
     logoutBtn.style.display = 'none';
+    stampBtn.style.display = 'none';
   });
 });
 
@@ -82,10 +84,12 @@ onAuthStateChanged(auth, user => {
   if(user){
     keywordSec.style.display = 'block';
     logoutBtn.style.display = 'inline-block';
+    stampBtn.style.display = 'inline-block';
     loadStamps(user.uid);
   } else {
     keywordSec.style.display = 'none';
     logoutBtn.style.display = 'none';
+    stampBtn.style.display = 'none';
     clearStampsFromUI();
   }
 });
@@ -105,7 +109,6 @@ stampBtn.addEventListener('click', async () => {
   const keyword = keywordInput.value.trim();
   const today = new Date().toISOString().slice(0,10);
 
-  // ここで合言葉判定（例：固定値 "apple"）
   if(keyword !== "apple") {
     alert("合言葉が違います");
     return;
@@ -113,7 +116,6 @@ stampBtn.addEventListener('click', async () => {
 
   const userDocRef = doc(db, "users", user.uid);
 
-  // 今日のスタンプが既に押されているか確認
   const snap = await getDoc(userDocRef);
   const data = snap.exists() ? snap.data() : {};
   if(data[today]){
@@ -121,10 +123,7 @@ stampBtn.addEventListener('click', async () => {
     return;
   }
 
-  // Firestore に保存
   await setDoc(userDocRef, { [today]: true }, { merge:true });
-
-  // UIに反映
   placeStamp(today);
 });
 

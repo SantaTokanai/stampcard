@@ -63,3 +63,19 @@ body {
 #auth-section button:hover, #keyword-section button:hover {
   background-color: #ff85c1;
 }
+
+/* PCでカードが大きすぎないように */
+#card-container {
+  max-width: 800px;   /* PCでは幅を制限 */
+  margin: 30px auto;  /* 中央寄せ */
+  position: relative;
+}
+.card-bg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.stamp {
+  position: absolute;
+  pointer-events: none;
+}

@@ -10,8 +10,8 @@ import {
 import {
   getFirestore,
   doc,
-  setDoc,
-  getDoc
+  getDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
 // Firebase 設定
@@ -32,12 +32,7 @@ const db = getFirestore(app);
 const emailInput = document.getElementById('email');
 const passInput  = document.getElementById('password');
 const loginBtn   = document.getElementById('login');
-const signupBtn  = document.createElement('button');
-signupBtn.textContent = '新規登録';
-signupBtn.id = 'signup';
-signupBtn.style.marginLeft = '5px';
-loginBtn.after(signupBtn);
-
+const signupBtn  = document.getElementById('signup');
 const logoutBtn  = document.getElementById('logout');
 const errorMsg   = document.getElementById('error-msg');
 const passwordMsg = document.getElementById('password-msg');
@@ -71,7 +66,7 @@ function getErrorMessageJP(error){
     case 'auth/invalid-email':      return 'メールアドレスの形式が正しくありません。';
     case 'auth/user-not-found':     return 'メールアドレスまたはパスワードが正しくありません';
     case 'auth/wrong-password':     return 'メールアドレスまたはパスワードが正しくありません';
-    case 'auth/email-already-in-use': return 'このメールアドレスは既に登録されています。';
+    case 'auth/email-already-in-use': return 'このメールアドレスは既に登録されています';
     default:                        return 'エラーが発生しました：' + error.message;
   }
 }
@@ -82,19 +77,20 @@ function showMessage(msg){
 
 // 新規登録
 signupBtn.addEventListener('click', async () => {
-  if(passInput.value.length < 6){
-    showMessage('パスワードは6文字以上で入力してください');
+  const email = emailInput.value.trim();
+  const password = passInput.value.trim();
+  if(password.length < 6){
+    showMessage('パスワードは6文字以上です');
     return;
   }
   try{
-    await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
-    showMessage('ログインしました'); // 登録後すぐログイン扱い
-    const user = auth.currentUser;
-    if(user){
-      const userDocRef = doc(db,'users',user.uid);
-      await setDoc(userDocRef,{}, {merge:true});
-    }
-  } catch(err){
+    const userCredential = await createUserWithEmailAndPassword(auth,email,password);
+    showMessage('登録完了！ログインしました');
+    // 新規ユーザの Firestore ドキュメントを作成
+    const userDocRef = doc(db,'users',userCredential.user.uid);
+    await setDoc(userDocRef,{});
+    // ログイン状態に
+  }catch(err){
     showMessage(getErrorMessageJP(err));
   }
 });
@@ -102,9 +98,9 @@ signupBtn.addEventListener('click', async () => {
 // ログイン
 loginBtn.addEventListener('click', async () => {
   try{
-    await signInWithEmailAndPassword(auth,emailInput.value,passInput.value);
+    await signInWithEmailAndPassword(auth,emailInput.value.trim(),passInput.value.trim());
     showMessage('ログインしました');
-  } catch(err){
+  }catch(err){
     showMessage(getErrorMessageJP(err));
   }
 });
@@ -121,8 +117,8 @@ onAuthStateChanged(auth, user => {
     passInput.style.display = 'none';
     loginBtn.style.display = 'none';
     signupBtn.style.display = 'none';
-    logoutBtn.style.display = 'inline-block';
     passwordMsg.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
     keywordSec.style.display = 'block';
     loadStamps(user.uid);
   } else {
@@ -130,8 +126,8 @@ onAuthStateChanged(auth, user => {
     passInput.style.display = 'inline-block';
     loginBtn.style.display = 'inline-block';
     signupBtn.style.display = 'inline-block';
-    logoutBtn.style.display = 'none';
     passwordMsg.style.display = 'block';
+    logoutBtn.style.display = 'none';
     keywordSec.style.display = 'none';
     clearStampsFromUI();
   }
@@ -166,8 +162,7 @@ async function loadStamps(uid){
   const data = snap.data();
 
   function renderAllStamps(){
-    let idx = 0;
-    Object.keys(data).forEach(keyword=>{
+    Object.keys(data).forEach((keyword, idx)=>{
       const pos = stampPositions[idx % stampPositions.length];
       const img = document.createElement('img');
       img.src = pos.img;
@@ -178,7 +173,6 @@ async function loadStamps(uid){
       img.style.top  = pos.y * h + 'px';
       img.style.width = pos.widthPercent * w + 'px';
       cardContainer.appendChild(img);
-      idx++;
     });
   }
 

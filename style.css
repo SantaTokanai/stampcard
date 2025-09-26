@@ -1,5 +1,5 @@
 body {
-  font-family: sans-serif;
+  font-family: Arial, sans-serif;
   text-align: center;
   margin: 0;
   padding: 0;
@@ -7,19 +7,17 @@ body {
 
 #card-container {
   position: relative;
-  display: inline-block;
-  margin-top: 20px;
+  width: 100%;
+  max-width: 600px;
+  margin: 20px auto;
 }
 
 .card-bg {
   width: 100%;
-  max-width: 600px; /* 好きな最大幅を設定 */
-  height: auto;
   display: block;
 }
 
 .stamp {
   position: absolute;
-  pointer-events: none;
-  transition: transform 0.2s;
+  transform: translate(-50%, -50%);
 }

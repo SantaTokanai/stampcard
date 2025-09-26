@@ -35,63 +35,53 @@ const loginBtn   = document.getElementById('login');
 const signupBtn  = document.getElementById('signup');
 const logoutBtn  = document.getElementById('logout');
 const errorMsg   = document.getElementById('error-msg');
-const passwordMsg = document.getElementById('password-msg');
-
+const passwordMsg= document.getElementById('password-msg');
 const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
 const cardContainer = document.getElementById('card-container');
 const cardImg = document.querySelector('.card-bg');
 
-// メッセージ表示関数
+// メッセージ表示
 function showMessage(msg, type='error'){
   errorMsg.textContent = msg;
-  if(type==='success'){
-    errorMsg.classList.remove('error');
-    errorMsg.classList.add('success');
-  } else {
-    errorMsg.classList.remove('success');
-    errorMsg.classList.add('error');
-  }
+  errorMsg.className = type;
 }
 
 // エラー日本語化
 function getErrorMessageJP(error){
   switch(error.code){
     case 'auth/invalid-email': return 'メールアドレスの形式が正しくありません。';
-    case 'auth/user-not-found':
-    case 'auth/wrong-password': return 'メールアドレスまたはパスワードが正しくありません。';
-    case 'auth/email-already-in-use': return 'このメールアドレスはすでに登録されています。';
-    case 'auth/weak-password': return 'パスワードは6文字以上にしてください。';
-    default: return 'エラーが発生しました。もう一度お試しください。';
+    case 'auth/user-not-found': return 'メールアドレスまたはパスワードが正しくありません';
+    case 'auth/wrong-password': return 'メールアドレスまたはパスワードが正しくありません';
+    case 'auth/email-already-in-use': return 'このメールアドレスは既に登録されています';
+    case 'auth/weak-password': return 'パスワードは6文字以上必要です';
+    default: return 'エラーが発生しました。もう一度試してください';
   }
 }
 
 // ログイン
-loginBtn.addEventListener('click', async ()=>{
-  try{
-    await signInWithEmailAndPassword(auth, emailInput.value, passInput.value);
-    showMessage('ログインしました', 'success');
-  } catch(err){
-    showMessage(getErrorMessageJP(err));
-  }
+loginBtn.addEventListener('click', () => {
+  signInWithEmailAndPassword(auth, emailInput.value, passInput.value)
+    .then(()=>showMessage('ログインしました', 'success'))
+    .catch(err=>showMessage(getErrorMessageJP(err)));
 });
 
 // 新規登録
-signupBtn.addEventListener('click', async ()=>{
-  try{
-    const userCredential = await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
-    // 新規ユーザーの Firestore ドキュメント初期化
-    const userDocRef = doc(db,'users',userCredential.user.uid);
-    await setDoc(userDocRef, {});
-    showMessage('新規登録が完了しました。ログインしました', 'success');
-  } catch(err){
-    showMessage(getErrorMessageJP(err));
-  }
+signupBtn.addEventListener('click', () => {
+  createUserWithEmailAndPassword(auth, emailInput.value, passInput.value)
+    .then(async (userCredential)=>{
+      const user = userCredential.user;
+      // ユーザードキュメントを作成
+      const userDocRef = doc(db,'users',user.uid);
+      await setDoc(userDocRef, {}); // 空のドキュメント
+      showMessage('登録完了。ログインしました', 'success');
+    })
+    .catch(err=>showMessage(getErrorMessageJP(err)));
 });
 
 // ログアウト
-logoutBtn.addEventListener('click', async ()=>{
+logoutBtn.addEventListener('click', async () => {
   await signOut(auth);
 });
 
@@ -106,7 +96,7 @@ onAuthStateChanged(auth, user=>{
     passwordMsg.style.display = 'none';
     keywordSec.style.display = 'block';
     loadStamps(user.uid);
-  } else {
+  }else{
     emailInput.style.display = 'inline-block';
     passInput.style.display = 'inline-block';
     loginBtn.style.display = 'inline-block';
@@ -115,29 +105,25 @@ onAuthStateChanged(auth, user=>{
     passwordMsg.style.display = 'block';
     keywordSec.style.display = 'none';
     clearStampsFromUI();
-    showMessage('');
+    showMessage('', ''); // メッセージリセット
   }
 });
 
 // スタンプ押下
 stampBtn.addEventListener('click', async ()=>{
   const user = auth.currentUser;
-  if(!user){ showMessage('ログインしてください'); return; }
-
+  if(!user){ showMessage('ログインしてください','error'); return; }
   const keyword = keywordInput.value.trim();
-  if(!keyword){ showMessage('合言葉を入力してください'); return; }
+  if(!keyword){ showMessage('合言葉を入力してください','error'); return; }
 
-  // Firestore からキーワード取得
   const kwDocRef = doc(db,'keywords',keyword);
   const kwSnap = await getDoc(kwDocRef);
-  if(!kwSnap.exists()){ showMessage('その合言葉は存在しません'); return; }
-  const kwData = kwSnap.data();
+  if(!kwSnap.exists()){ showMessage('その合言葉は存在しません','error'); return; }
 
-  // ユーザーのドキュメントに保存
+  const stampData = kwSnap.data();
   const userDocRef = doc(db,'users',user.uid);
-  await setDoc(userDocRef,{ [keyword]: kwData }, {merge:true});
-
-  showMessage('スタンプを押しました', 'success');
+  await setDoc(userDocRef,{ [keyword]: true }, {merge:true});
+  showMessage('スタンプを押しました','success');
   loadStamps(user.uid);
 });
 
@@ -145,34 +131,38 @@ stampBtn.addEventListener('click', async ()=>{
 async function loadStamps(uid){
   clearStampsFromUI();
   const userDocRef = doc(db,'users',uid);
-  const snap = await getDoc(userDocRef);
-  if(!snap.exists()) return;
-  const data = snap.data();
+  const userSnap = await getDoc(userDocRef);
+  if(!userSnap.exists()) return;
+  const userData = userSnap.data();
 
-  function renderAllStamps(){
-    Object.keys(data).forEach(keyword=>{
-      const pos = data[keyword];
-      if(!pos || !pos.img) return;
-      const imgEl = document.createElement('img');
-      imgEl.src = 'images/' + pos.img;
-      imgEl.className = 'stamp';
+  async function renderAllStamps(){
+    const keywords = Object.keys(userData);
+    for(const keyword of keywords){
+      const kwDocRef = doc(db,'keywords',keyword);
+      const kwSnap = await getDoc(kwDocRef);
+      if(!kwSnap.exists()) continue;
+      const stampData = kwSnap.data();
+
+      const img = document.createElement('img');
+      img.src = stampData["img"];
+      img.className = 'stamp';
       const w = cardContainer.clientWidth;
       const h = cardContainer.clientHeight;
-      imgEl.style.left = pos.x * w + 'px';
-      imgEl.style.top = pos.y * h + 'px';
-      imgEl.style.width = pos.widthPercent * w + 'px';
-      cardContainer.appendChild(imgEl);
-    });
+      img.style.left = stampData["x"]*w + 'px';
+      img.style.top  = stampData["y"]*h + 'px';
+      img.style.width = stampData["widthPercent"]*w + 'px';
+      cardContainer.appendChild(img);
+    }
   }
 
   if(cardImg.complete){
     renderAllStamps();
-  } else {
+  }else{
     cardImg.addEventListener('load', renderAllStamps, {once:true});
   }
 }
 
-// スタンプ削除（UI）
+// スタンプクリア
 function clearStampsFromUI(){
   Array.from(cardContainer.querySelectorAll('.stamp')).forEach(n=>n.remove());
 }

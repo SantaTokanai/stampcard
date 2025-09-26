@@ -24,32 +24,27 @@ const firebaseConfig = {
   appId: "1:808808121881:web:57f6d536d40fc2d30fcc88"
 };
 
-const app = initializeApp(firebaseConfig);
+const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db   = getFirestore(app);
 
 // DOM
-const emailInput = document.getElementById('email');
-const passInput  = document.getElementById('password');
-const loginBtn   = document.getElementById('login');
-const signupBtn  = document.getElementById('signup');
-const logoutBtn  = document.getElementById('logout');
-const errorMsg   = document.getElementById('error-msg');
-const passwordMsg= document.getElementById('password-msg');
-const keywordSec = document.getElementById('keyword-section');
+const emailInput   = document.getElementById('email');
+const passInput    = document.getElementById('password');
+const loginBtn     = document.getElementById('login');
+const signupBtn    = document.getElementById('signup');
+const logoutBtn    = document.getElementById('logout');
+const errorMsg     = document.getElementById('error-msg');
+const passwordMsg  = document.getElementById('password-msg');
+const keywordSec   = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
-const stampBtn = document.getElementById('stampBtn');
-const cardContainer = document.getElementById('card-container');
-const cardImg = document.querySelector('.card-bg');
+const stampBtn     = document.getElementById('stampBtn');
+const cardContainer= document.getElementById('card-container');
 
 // メッセージ表示
 function showMessage(msg, type='error'){
   errorMsg.textContent = msg;
-  if(type==='error'){
-    errorMsg.className = 'error';
-  } else {
-    errorMsg.className = 'success';
-  }
+  errorMsg.className   = type === 'error' ? 'error' : 'success';
 }
 
 // ログイン
@@ -57,23 +52,22 @@ loginBtn.addEventListener('click', async () => {
   try {
     await signInWithEmailAndPassword(auth, emailInput.value, passInput.value);
     showMessage('ログインしました', 'success');
-  } catch(err){
+  } catch {
     showMessage('メールアドレスまたはパスワードが正しくありません');
   }
 });
 
 // 新規登録
 signupBtn.addEventListener('click', async () => {
-  if(passInput.value.length < 6){
+  if (passInput.value.length < 6) {
     showMessage('パスワードは6文字以上です');
     return;
   }
-  try{
+  try {
     const userCredential = await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
-    // 新規ユーザー用の users ドキュメントを作成
     await setDoc(doc(db,'users',userCredential.user.uid), {});
     showMessage('新規登録しました。自動でログインしました', 'success');
-  } catch(err){
+  } catch (err) {
     showMessage('登録に失敗しました：' + err.message);
   }
 });
@@ -86,22 +80,22 @@ logoutBtn.addEventListener('click', async () => {
 
 // 認証状態監視
 onAuthStateChanged(auth, user => {
-  if(user){
+  if (user) {
     emailInput.style.display = 'none';
-    passInput.style.display = 'none';
-    loginBtn.style.display = 'none';
-    signupBtn.style.display = 'none';
-    logoutBtn.style.display = 'inline-block';
-    passwordMsg.style.display = 'none';
+    passInput.style.display  = 'none';
+    loginBtn.style.display   = 'none';
+    signupBtn.style.display  = 'none';
+    logoutBtn.style.display  = 'inline-block';
+    passwordMsg.style.display= 'none';
     keywordSec.style.display = 'block';
     loadStamps(user.uid);
   } else {
     emailInput.style.display = 'inline-block';
-    passInput.style.display = 'inline-block';
-    loginBtn.style.display = 'inline-block';
-    signupBtn.style.display = 'inline-block';
-    logoutBtn.style.display = 'none';
-    passwordMsg.style.display = 'block';
+    passInput.style.display  = 'inline-block';
+    loginBtn.style.display   = 'inline-block';
+    signupBtn.style.display  = 'inline-block';
+    logoutBtn.style.display  = 'none';
+    passwordMsg.style.display= 'block';
     keywordSec.style.display = 'none';
     clearStampsFromUI();
   }
@@ -110,27 +104,18 @@ onAuthStateChanged(auth, user => {
 // スタンプ押下
 stampBtn.addEventListener('click', async () => {
   const user = auth.currentUser;
-  if(!user){ showMessage('ログインしてください'); return; }
+  if (!user) { showMessage('ログインしてください'); return; }
 
   const keyword = keywordInput.value.trim();
-  if(!keyword){ showMessage('合言葉を入力してください'); return; }
+  if (!keyword) { showMessage('合言葉を入力してください'); return; }
 
-  try{
-    // Firestore の keywords/<keyword> を取得
+  try {
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
-    if(!kwSnap.exists()){ 
-      showMessage('その合言葉は存在しません'); 
-      return; 
-    }
-    const kwData = kwSnap.data();
-
-    // ユーザーのドキュメントに追加
-    const userDocRef = doc(db,'users',user.uid);
-    await setDoc(userDocRef, {[keyword]: true}, {merge:true});
-
+    if (!kwSnap.exists()) { showMessage('その合言葉は存在しません'); return; }
+    await setDoc(doc(db,'users',user.uid), {[keyword]: true}, {merge:true});
     showMessage('スタンプを押しました', 'success');
     loadStamps(user.uid);
-  } catch(err){
+  } catch (err) {
     showMessage('スタンプ押下に失敗しました：' + err.message);
   }
 });
@@ -138,32 +123,38 @@ stampBtn.addEventListener('click', async () => {
 // スタンプ描画
 async function loadStamps(uid){
   clearStampsFromUI();
-  const userDocRef = doc(db,'users',uid);
-  const snap = await getDoc(userDocRef);
-  if(!snap.exists()) return;
-  const data = snap.data();
+  const snap = await getDoc(doc(db,'users',uid));
+  if (!snap.exists()) return;
 
-  async function renderStamp(keyword){
+  const w = cardContainer.clientWidth;
+  const h = cardContainer.clientHeight;
+
+  const tasks = Object.keys(snap.data()).map(async keyword => {
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
-    if(!kwSnap.exists()) return;
-    const kwData = kwSnap.data();
+    if (!kwSnap.exists()) return;
+    const d = kwSnap.data();
 
-    const img = document.createElement('img');
-    img.src = 'images/' + kwData.img;
+    // img フィールド補正（images/ 付き/無し両対応）
+    const rawPath = d.img || '';
+    const src = rawPath.startsWith('images/') ? rawPath : `images/${rawPath}`;
+
+    const img = new Image();
     img.className = 'stamp';
-    const w = cardContainer.clientWidth;
-    const h = cardContainer.clientHeight;
-    img.style.left = kwData.x * w + 'px';
-    img.style.top  = kwData.y * h + 'px';
-    img.style.width = kwData.widthPercent * w + 'px';
+    img.style.position = 'absolute';
     img.style.transform = 'translate(-50%, -50%)';
-    cardContainer.appendChild(img);
-  }
+    img.style.left  = (d.x * w) + 'px';
+    img.style.top   = (d.y * h) + 'px';
+    img.style.width = (d.widthPercent * w) + 'px';
 
-  const promises = Object.keys(data).map(renderStamp);
-  await Promise.all(promises);
+    // 存在確認してから追加
+    img.onload = () => cardContainer.appendChild(img);
+    img.onerror = () => console.warn(`画像が見つかりません: ${src}`);
+    img.src = src;
+  });
+
+  await Promise.all(tasks);
 }
 
 function clearStampsFromUI(){
-  Array.from(cardContainer.querySelectorAll('.stamp')).forEach(n=>n.remove());
+  document.querySelectorAll('#card-container .stamp').forEach(e => e.remove());
 }

@@ -134,9 +134,12 @@ async function loadStamps(uid){
     if (!kwSnap.exists()) return;
     const d = kwSnap.data();
 
-    // img フィールド補正（images/ 付き/無し両対応）
-    const rawPath = d.img || '';
-    const src = rawPath.startsWith('images/') ? rawPath : `images/${rawPath}`;
+    // ★ 画像パス補正：余分なクオーテーションと images/ の有無を統一
+    const rawPath = (d.img || '').trim();
+    let cleanPath = rawPath.replace(/^"+|"+$/g, ''); // 先頭末尾の " を除去
+    if (cleanPath && !cleanPath.startsWith('images/')) {
+      cleanPath = 'images/' + cleanPath;
+    }
 
     const img = new Image();
     img.className = 'stamp';
@@ -146,10 +149,9 @@ async function loadStamps(uid){
     img.style.top   = (d.y * h) + 'px';
     img.style.width = (d.widthPercent * w) + 'px';
 
-    // 存在確認してから追加
-    img.onload = () => cardContainer.appendChild(img);
-    img.onerror = () => console.warn(`画像が見つかりません: ${src}`);
-    img.src = src;
+    img.onload  = () => cardContainer.appendChild(img);
+    img.onerror = () => console.warn(`画像が見つかりません: ${cleanPath}`);
+    img.src = cleanPath;
   });
 
   await Promise.all(tasks);

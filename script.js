@@ -11,8 +11,7 @@ import {
   getFirestore,
   doc,
   getDoc,
-  setDoc,
-  updateDoc
+  setDoc
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
 /* ===== Firebase 設定 ===== */
@@ -40,12 +39,16 @@ const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stamp-btn');
 const cardContainer = document.getElementById('card-container');
 
-/* ===== 合言葉とスタンプ位置の対応 ===== */
-const stampMapping = {
-  "Apple": {img:'images/stamp1.png', x:0.2, y:0.25, widthPercent:0.15},
-  "Banana": {img:'images/stamp2.png', x:0.5, y:0.25, widthPercent:0.15},
-  "Cherry": {img:'images/stamp3.png', x:0.8, y:0.25, widthPercent:0.15}
-};
+/* ===== スタンプ位置配列（カード上の比率） ===== */
+const stampPositions = [
+  {x:0.1,y:0.2,widthPercent:0.1}, {x:0.3,y:0.2,widthPercent:0.1},
+  {x:0.5,y:0.2,widthPercent:0.1}, {x:0.7,y:0.2,widthPercent:0.1},
+  {x:0.9,y:0.2,widthPercent:0.1}, {x:0.1,y:0.5,widthPercent:0.1},
+  {x:0.3,y:0.5,widthPercent:0.1}, {x:0.5,y:0.5,widthPercent:0.1},
+  {x:0.7,y:0.5,widthPercent:0.1}, {x:0.9,y:0.5,widthPercent:0.1},
+  {x:0.2,y:0.8,widthPercent:0.1}, {x:0.4,y:0.8,widthPercent:0.1},
+  {x:0.6,y:0.8,widthPercent:0.1}, {x:0.8,y:0.8,widthPercent:0.1}
+];
 
 /* ===== 認証 ===== */
 function showLoginError(msg){
@@ -77,12 +80,9 @@ logoutBtn.addEventListener('click', async () => {
 /* ===== 認証状態監視 ===== */
 onAuthStateChanged(auth, user => {
   if(user){
-    // UI制御
     document.getElementById('auth-section').style.display = 'none';
     logoutBtn.style.display = 'inline-block';
     keywordSection.style.display = 'block';
-
-    // 既存スタンプ読み込み
     loadStamps(user.uid);
   } else {
     document.getElementById('auth-section').style.display = 'block';
@@ -98,20 +98,25 @@ stampBtn.addEventListener('click', async () => {
   if(!user) return;
 
   const keyword = keywordInput.value.trim();
-  if(!stampMapping[keyword]){
-    alert('合言葉が正しくありません');
-    return;
-  }
+  if(!keyword) { alert('合言葉を入力してください'); return; }
 
-  const pos = stampMapping[keyword];
-  renderStamp(pos);
+  // Firestoreから対応するスタンプ画像取得
+  const docRef = doc(db,'keywords',keyword);
+  const snap = await getDoc(docRef);
+  if(!snap.exists()) { alert('合言葉が正しくありません'); return; }
 
-  // Firebaseに保存
+  const imageName = snap.data().image;
+  const idx = parseInt(imageName.match(/stamp(\d+)\.png/)[1],10) - 1;
+  const pos = stampPositions[idx];
+
+  renderStamp({...pos, img:'images/' + imageName});
+
+  // Firebaseに保存（ユーザーごとに押したスタンプを管理）
   const userDocRef = doc(db,'users',user.uid);
-  const snap = await getDoc(userDocRef);
-  const data = snap.exists() ? snap.data() : {};
-  data[keyword] = true; // 日付なし
-  await setDoc(userDocRef, data);
+  const userSnap = await getDoc(userDocRef);
+  const data = userSnap.exists() ? userSnap.data() : {};
+  data[keyword] = true;
+  await setDoc(userDocRef,data);
 });
 
 /* ===== スタンプ描画 ===== */
@@ -130,6 +135,7 @@ function renderStamp(pos){
   cardContainer.appendChild(img);
 }
 
+/* ===== ユーザーの既存スタンプ読み込み ===== */
 async function loadStamps(uid){
   clearStampsFromUI();
   const userDocRef = doc(db,'users',uid);
@@ -137,8 +143,16 @@ async function loadStamps(uid){
   if(snap.exists()){
     const data = snap.data();
     Object.keys(data).forEach(key => {
-      if(data[key] && stampMapping[key]){
-        renderStamp(stampMapping[key]);
+      if(data[key]){
+        const docRef = doc(db,'keywords',key);
+        getDoc(docRef).then(s => {
+          if(s.exists()){
+            const imageName = s.data().image;
+            const idx = parseInt(imageName.match(/stamp(\d+)\.png/)[1],10)-1;
+            const pos = stampPositions[idx];
+            renderStamp({...pos,img:'images/'+imageName});
+          }
+        });
       }
     });
   }

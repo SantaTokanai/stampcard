@@ -57,7 +57,7 @@ const stampPositions = [
   {x:0.75, y:0.655, img:'images/stamp11.png', widthPercent:0.14},
   {x:0.915, y:0.655, img:'images/stamp12.png', widthPercent:0.14},
   {x:0.3315, y:0.405, img:'images/stamp13.png', widthPercent:0.16},
-  {x:0.692, y:0.405, img:'images/stamp14.png', widthPercent:0.16},
+  {x:0.693, y:0.405, img:'images/stamp14.png', widthPercent:0.16},
 ];
 
 // エラー日本語化

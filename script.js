@@ -2,8 +2,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import {
   getAuth,
-  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
@@ -35,13 +35,14 @@ const loginBtn   = document.getElementById('login');
 const signupBtn  = document.getElementById('signup');
 const logoutBtn  = document.getElementById('logout');
 const errorMsg   = document.getElementById('error-msg');
+const passwordMsg = document.getElementById('password-msg');
 const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
 const cardContainer = document.getElementById('card-container');
 const cardImg = document.querySelector('.card-bg');
 
-// スタンプ位置（比率）
+// スタンプ位置
 const stampPositions = [
   {x:0.09, y:0.541, img:'images/stamp1.png', widthPercent:0.14},
   {x:0.25, y:0.541, img:'images/stamp2.png', widthPercent:0.14},
@@ -59,43 +60,34 @@ const stampPositions = [
   {x:0.692, y:0.405, img:'images/stamp14.png', widthPercent:0.16},
 ];
 
-// メッセージ表示
-function showMessage(msg, isSuccess=false){
-  errorMsg.textContent = msg;
-  if(isSuccess){
-    errorMsg.classList.add('success');
-    errorMsg.classList.remove('error');
-  } else {
-    errorMsg.classList.add('error');
-    errorMsg.classList.remove('success');
-  }
-}
-
 // エラー日本語化
 function getErrorMessageJP(error){
   switch (error.code) {
-    case 'auth/invalid-email':      
+    case 'auth/invalid-email': return 'メールアドレスの形式が正しくありません';
     case 'auth/user-not-found':
-    case 'auth/wrong-password':     
-    case 'auth/invalid-credential':
-      return 'ログイン情報が正しくありません。入力内容を確認してください。';
-    default:                        
-      return 'エラーが発生しました。再度お試しください。';
+    case 'auth/wrong-password': return 'メールアドレスまたはパスワードが正しくありません';
+    case 'auth/invalid-credential': return '認証情報に問題があります。もう一度試してください';
+    default: return 'エラーが発生しました：' + error.message;
   }
 }
 
-// 新規登録
-signupBtn.addEventListener('click', () => {
-  createUserWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(() => showMessage('登録完了！ログインしました', true))
-    .catch(err => showMessage(getErrorMessageJP(err), false));
-});
+function showMessage(msg, type='error'){
+  errorMsg.textContent = msg;
+  errorMsg.className = type;
+}
 
 // ログイン
 loginBtn.addEventListener('click', () => {
   signInWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(() => showMessage('ログインしました', true))
-    .catch(err => showMessage(getErrorMessageJP(err), false));
+    .then(() => showMessage('ログインしました', 'success'))
+    .catch(err => showMessage(getErrorMessageJP(err), 'error'));
+});
+
+// 新規登録
+signupBtn.addEventListener('click', () => {
+  createUserWithEmailAndPassword(auth, emailInput.value, passInput.value)
+    .then(() => showMessage('アカウントを作成しました。ログインしました', 'success'))
+    .catch(err => showMessage(getErrorMessageJP(err), 'error'));
 });
 
 // ログアウト
@@ -112,6 +104,7 @@ onAuthStateChanged(auth, user => {
     signupBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
     keywordSec.style.display = 'block';
+    passwordMsg.style.display = 'none';
     loadStamps(user.uid);
   } else {
     emailInput.style.display = 'inline-block';
@@ -120,8 +113,8 @@ onAuthStateChanged(auth, user => {
     signupBtn.style.display = 'inline-block';
     logoutBtn.style.display = 'none';
     keywordSec.style.display = 'none';
+    passwordMsg.style.display = 'block';
     clearStampsFromUI();
-    showMessage('', true); // メッセージ消す
   }
 });
 
@@ -133,11 +126,13 @@ stampBtn.addEventListener('click', async () => {
   const keyword = keywordInput.value.trim();
   if(!keyword){ alert('合言葉を入力してください'); return; }
 
+  // Firebase の keywords コレクションから取得
   const kwDocRef = doc(db,'keywords',keyword);
   const kwSnap = await getDoc(kwDocRef);
   if(!kwSnap.exists()){ alert('その合言葉は存在しません'); return; }
-  
   const data = kwSnap.data();
+
+  // ユーザードキュメントに保存
   const userDocRef = doc(db,'users',user.uid);
   await setDoc(userDocRef,{ [keyword]: true }, {merge:true});
 

@@ -114,7 +114,7 @@ stampBtn.addEventListener('click', async () => {
   const kwDocRef = doc(db,'keywords',keyword);
   const kwSnap = await getDoc(kwDocRef);
   if(!kwSnap.exists()){ alert('その合言葉は存在しません'); return; }
-  const data = kwSnap.data();
+  const kwData = kwSnap.data();
 
   // ユーザードキュメントに保存
   const userDocRef = doc(db,'users',user.uid);
@@ -132,16 +132,24 @@ async function loadStamps(uid){
   const data = snap.data();
 
   function renderAllStamps(){
-    Object.keys(data).forEach((keyword, idx)=>{
-      const pos = stampPositions[idx % stampPositions.length];
+    Object.keys(data).forEach(async (keyword)=>{
+      const kwDocRef = doc(db,'keywords',keyword);
+      const kwSnap = await getDoc(kwDocRef);
+      if(!kwSnap.exists()) return;
+      const kwData = kwSnap.data();
+      const pos = stampPositions[kwData.stampIndex];
+      if(!pos) return;
+
       const img = document.createElement('img');
       img.src = pos.img;
       img.className = 'stamp';
-      const w = cardContainer.clientWidth;
-      const h = cardContainer.clientHeight;
+
+      const w = cardImg.clientWidth;
+      const h = cardImg.clientHeight;
       img.style.left = pos.x * w + 'px';
       img.style.top  = pos.y * h + 'px';
       img.style.width = pos.widthPercent * w + 'px';
+
       cardContainer.appendChild(img);
     });
   }

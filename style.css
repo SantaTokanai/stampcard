@@ -1,24 +1,25 @@
 body {
   font-family: sans-serif;
   text-align: center;
+  margin: 0;
+  padding: 0;
 }
 
 #card-container {
   position: relative;
-  width: 90%;
-  max-width: 400px;
-  aspect-ratio: 1/1; /* カード比率固定 */
-  margin: 20px auto;
+  display: inline-block;
+  margin-top: 20px;
 }
 
 .card-bg {
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  max-width: 600px; /* 好きな最大幅を設定 */
+  height: auto;
+  display: block;
 }
 
 .stamp {
   position: absolute;
   pointer-events: none;
-  transform: translate(-50%, -50%); /* 中央基準で配置 */
+  transition: transform 0.2s;
 }

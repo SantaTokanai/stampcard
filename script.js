@@ -10,8 +10,8 @@ import {
 import {
   getFirestore,
   doc,
-  getDoc,
-  setDoc
+  setDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
 // Firebase 設定
@@ -32,10 +32,15 @@ const db = getFirestore(app);
 const emailInput = document.getElementById('email');
 const passInput  = document.getElementById('password');
 const loginBtn   = document.getElementById('login');
-const signupBtn  = document.getElementById('signup'); // 新規登録ボタン
+const signupBtn  = document.createElement('button');
+signupBtn.textContent = '新規登録';
+signupBtn.id = 'signup';
+signupBtn.style.marginLeft = '5px';
+loginBtn.after(signupBtn);
+
 const logoutBtn  = document.getElementById('logout');
 const errorMsg   = document.getElementById('error-msg');
-const passwordMsg= document.getElementById('password-msg');
+const passwordMsg = document.getElementById('password-msg');
 const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
@@ -56,8 +61,8 @@ const stampPositions = [
   {x:0.585, y:0.655, img:'images/stamp10.png', widthPercent:0.14},
   {x:0.75, y:0.655, img:'images/stamp11.png', widthPercent:0.14},
   {x:0.915, y:0.655, img:'images/stamp12.png', widthPercent:0.14},
-  {x:0.331, y:0.406, img:'images/stamp13.png', widthPercent:0.16},
-  {x:0.70, y:0.406, img:'images/stamp14.png', widthPercent:0.16},
+  {x:0.332, y:0.405, img:'images/stamp13.png', widthPercent:0.16},
+  {x:0.69, y:0.405, img:'images/stamp14.png', widthPercent:0.16},
 ];
 
 // エラー日本語化
@@ -66,7 +71,7 @@ function getErrorMessageJP(error){
     case 'auth/invalid-email':      return 'メールアドレスの形式が正しくありません。';
     case 'auth/user-not-found':     return 'メールアドレスまたはパスワードが正しくありません';
     case 'auth/wrong-password':     return 'メールアドレスまたはパスワードが正しくありません';
-    case 'auth/email-already-in-use': return 'このメールアドレスは既に登録されています';
+    case 'auth/email-already-in-use': return 'このメールアドレスは既に登録されています。';
     default:                        return 'エラーが発生しました：' + error.message;
   }
 }
@@ -76,28 +81,32 @@ function showMessage(msg){
 }
 
 // 新規登録
-signupBtn.addEventListener('click', () => {
+signupBtn.addEventListener('click', async () => {
   if(passInput.value.length < 6){
-    showMessage('パスワードは6文字以上です');
+    showMessage('パスワードは6文字以上で入力してください');
     return;
   }
-
-  createUserWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(async (userCredential) => {
-      const user = userCredential.user;
-      // Firestore に空のユーザードキュメントを作成
+  try{
+    await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
+    showMessage('ログインしました'); // 登録後すぐログイン扱い
+    const user = auth.currentUser;
+    if(user){
       const userDocRef = doc(db,'users',user.uid);
-      await setDoc(userDocRef, {});
-      showMessage('登録完了！ログインしてください');
-    })
-    .catch(err => showMessage(getErrorMessageJP(err)));
+      await setDoc(userDocRef,{}, {merge:true});
+    }
+  } catch(err){
+    showMessage(getErrorMessageJP(err));
+  }
 });
 
 // ログイン
-loginBtn.addEventListener('click', () => {
-  signInWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(() => showMessage(''))
-    .catch(err => showMessage(getErrorMessageJP(err)));
+loginBtn.addEventListener('click', async () => {
+  try{
+    await signInWithEmailAndPassword(auth,emailInput.value,passInput.value);
+    showMessage('ログインしました');
+  } catch(err){
+    showMessage(getErrorMessageJP(err));
+  }
 });
 
 // ログアウト
@@ -110,8 +119,8 @@ onAuthStateChanged(auth, user => {
   if(user){
     emailInput.style.display = 'none';
     passInput.style.display = 'none';
-    signupBtn.style.display = 'none';
     loginBtn.style.display = 'none';
+    signupBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
     passwordMsg.style.display = 'none';
     keywordSec.style.display = 'block';
@@ -119,8 +128,8 @@ onAuthStateChanged(auth, user => {
   } else {
     emailInput.style.display = 'inline-block';
     passInput.style.display = 'inline-block';
-    signupBtn.style.display = 'inline-block';
     loginBtn.style.display = 'inline-block';
+    signupBtn.style.display = 'inline-block';
     logoutBtn.style.display = 'none';
     passwordMsg.style.display = 'block';
     keywordSec.style.display = 'none';
@@ -140,7 +149,6 @@ stampBtn.addEventListener('click', async () => {
   const kwDocRef = doc(db,'keywords',keyword);
   const kwSnap = await getDoc(kwDocRef);
   if(!kwSnap.exists()){ alert('その合言葉は存在しません'); return; }
-  const data = kwSnap.data();
 
   // ユーザードキュメントに保存
   const userDocRef = doc(db,'users',user.uid);
@@ -158,7 +166,8 @@ async function loadStamps(uid){
   const data = snap.data();
 
   function renderAllStamps(){
-    Object.keys(data).forEach((keyword, idx)=>{
+    let idx = 0;
+    Object.keys(data).forEach(keyword=>{
       const pos = stampPositions[idx % stampPositions.length];
       const img = document.createElement('img');
       img.src = pos.img;
@@ -169,6 +178,7 @@ async function loadStamps(uid){
       img.style.top  = pos.y * h + 'px';
       img.style.width = pos.widthPercent * w + 'px';
       cardContainer.appendChild(img);
+      idx++;
     });
   }
 

@@ -78,36 +78,31 @@ function showMessage(msg){
 // 新規登録
 signupBtn.addEventListener('click', async () => {
   const email = emailInput.value.trim();
-  const password = passInput.value.trim();
-  if(password.length < 6){
-    showMessage('パスワードは6文字以上です');
-    return;
-  }
-  try{
-    const userCredential = await createUserWithEmailAndPassword(auth,email,password);
+  const password = passInput.value;
+  if(password.length < 6){ showMessage('パスワードは6文字以上です'); return; }
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    // users データベースに空のドキュメントを作成
+    const userDocRef = doc(db,'users',user.uid);
+    await setDoc(userDocRef, {});
     showMessage('登録完了！ログインしました');
-    // 新規ユーザの Firestore ドキュメントを作成
-    const userDocRef = doc(db,'users',userCredential.user.uid);
-    await setDoc(userDocRef,{});
-    // ログイン状態に
-  }catch(err){
+  } catch(err) {
     showMessage(getErrorMessageJP(err));
   }
 });
 
 // ログイン
-loginBtn.addEventListener('click', async () => {
-  try{
-    await signInWithEmailAndPassword(auth,emailInput.value.trim(),passInput.value.trim());
-    showMessage('ログインしました');
-  }catch(err){
-    showMessage(getErrorMessageJP(err));
-  }
+loginBtn.addEventListener('click', () => {
+  signInWithEmailAndPassword(auth, emailInput.value, passInput.value)
+    .then(() => showMessage('ログインしました'))
+    .catch(err => showMessage(getErrorMessageJP(err)));
 });
 
 // ログアウト
 logoutBtn.addEventListener('click', async () => {
   await signOut(auth);
+  showMessage('');
 });
 
 // 認証状態監視
@@ -121,6 +116,7 @@ onAuthStateChanged(auth, user => {
     logoutBtn.style.display = 'inline-block';
     keywordSec.style.display = 'block';
     loadStamps(user.uid);
+    showMessage('');
   } else {
     emailInput.style.display = 'inline-block';
     passInput.style.display = 'inline-block';
@@ -130,6 +126,7 @@ onAuthStateChanged(auth, user => {
     logoutBtn.style.display = 'none';
     keywordSec.style.display = 'none';
     clearStampsFromUI();
+    showMessage('');
   }
 });
 
@@ -145,6 +142,7 @@ stampBtn.addEventListener('click', async () => {
   const kwDocRef = doc(db,'keywords',keyword);
   const kwSnap = await getDoc(kwDocRef);
   if(!kwSnap.exists()){ alert('その合言葉は存在しません'); return; }
+  const data = kwSnap.data();
 
   // ユーザードキュメントに保存
   const userDocRef = doc(db,'users',user.uid);

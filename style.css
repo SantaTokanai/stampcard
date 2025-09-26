@@ -1,19 +1,19 @@
 body {
   font-family: Arial, sans-serif;
+  padding: 10px;
   text-align: center;
-  margin: 0;
-  padding: 0;
 }
 
 #card-container {
   position: relative;
   width: 100%;
-  max-width: 600px;
+  max-width: 600px; /* 好きな最大幅 */
   margin: 20px auto;
 }
 
 .card-bg {
   width: 100%;
+  height: auto;
   display: block;
 }
 

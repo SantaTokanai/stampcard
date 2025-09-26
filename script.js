@@ -48,14 +48,14 @@ const stampPositions = [
   {x:0.585, y:0.541, img:'images/stamp4.png', widthPercent:0.14},
   {x:0.75, y:0.541, img:'images/stamp5.png', widthPercent:0.14},
   {x:0.915, y:0.541, img:'images/stamp6.png', widthPercent:0.14},
-  {x:0.09, y:0.6, img:'images/stamp7.png', widthPercent:0.14},
-  {x:0.25, y:0.62, img:'images/stamp8.png', widthPercent:0.14},
-  {x:0.42, y:0.63, img:'images/stamp9.png', widthPercent:0.14},
-  {x:0.585, y:0.64, img:'images/stamp10.png', widthPercent:0.14},
-  {x:0.75, y:0.65, img:'images/stamp11.png', widthPercent:0.14},
-  {x:0.915, y:0.66, img:'images/stamp12.png', widthPercent:0.14},
-  {x:0.335, y:0.3, img:'images/stamp13.png', widthPercent:0.15},
-  {x:0.65, y:0.3, img:'images/stamp14.png', widthPercent:0.15},
+  {x:0.09, y:0.655, img:'images/stamp7.png', widthPercent:0.14},
+  {x:0.25, y:0.655, img:'images/stamp8.png', widthPercent:0.14},
+  {x:0.42, y:0.655, img:'images/stamp9.png', widthPercent:0.14},
+  {x:0.585, y:0.655, img:'images/stamp10.png', widthPercent:0.14},
+  {x:0.75, y:0.655, img:'images/stamp11.png', widthPercent:0.14},
+  {x:0.915, y:0.655, img:'images/stamp12.png', widthPercent:0.14},
+  {x:0.335, y:0.4, img:'images/stamp13.png', widthPercent:0.15},
+  {x:0.65, y:0.4, img:'images/stamp14.png', widthPercent:0.15},
 ];
 
 // エラー日本語化

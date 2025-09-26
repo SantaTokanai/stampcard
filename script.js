@@ -39,11 +39,11 @@ const stampBtn = document.getElementById('stampBtn');
 const cardContainer = document.getElementById('card-container');
 const cardImg = document.querySelector('.card-bg');
 
-// スタンプの位置を比率で定義
+// スタンプ位置を比率で定義（x,yは0~1）
 const stampPositions = [
-  {x:0.2, y:0.399, img:'images/stamp1.png', widthPercent:0.135},
-  {x:0.18, y:0.399, img:'images/stamp2.png', widthPercent:0.135},
-  {x:0.34, y:0.399, img:'images/stamp3.png', widthPercent:0.135},
+  {x:0.2, y:0.2, img:'images/stamp1.png', widthPercent:0.15},
+  {x:0.5, y:0.2, img:'images/stamp2.png', widthPercent:0.15},
+  {x:0.8, y:0.2, img:'images/stamp3.png', widthPercent:0.15},
   {x:0.2, y:0.5, img:'images/stamp4.png', widthPercent:0.15},
   {x:0.5, y:0.5, img:'images/stamp5.png', widthPercent:0.15},
   {x:0.8, y:0.5, img:'images/stamp6.png', widthPercent:0.15},
@@ -131,8 +131,7 @@ async function loadStamps(uid){
   if(!snap.exists()) return;
   const data = snap.data();
 
-  // 画像読み込み完了後に描画
-  cardImg.addEventListener('load', ()=>{
+  function renderAllStamps(){
     Object.keys(data).forEach((keyword, idx)=>{
       const pos = stampPositions[idx % stampPositions.length];
       const img = document.createElement('img');
@@ -145,7 +144,13 @@ async function loadStamps(uid){
       img.style.width = pos.widthPercent * w + 'px';
       cardContainer.appendChild(img);
     });
-  }, {once:true}); // 一度だけイベント
+  }
+
+  if(cardImg.complete){
+    renderAllStamps();
+  } else {
+    cardImg.addEventListener('load', renderAllStamps, {once:true});
+  }
 }
 
 function clearStampsFromUI(){

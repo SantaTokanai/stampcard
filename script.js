@@ -30,9 +30,9 @@ const db = getFirestore(app);
 
 // DOM
 const emailInput = document.getElementById('email');
-const passInput = document.getElementById('password');
-const signupBtn = document.getElementById('signup');
+const passInput  = document.getElementById('password');
 const loginBtn   = document.getElementById('login');
+const signupBtn  = document.getElementById('signup');
 const logoutBtn  = document.getElementById('logout');
 const errorMsg   = document.getElementById('error-msg');
 const passwordMsg= document.getElementById('password-msg');
@@ -42,48 +42,46 @@ const stampBtn = document.getElementById('stampBtn');
 const cardContainer = document.getElementById('card-container');
 const cardImg = document.querySelector('.card-bg');
 
-// エラー日本語化
-function getErrorMessageJP(error){
-  switch (error.code) {
-    case 'auth/invalid-email':      return 'メールアドレスの形式が正しくありません。';
-    case 'auth/user-not-found':     return 'メールアドレスまたはパスワードが正しくありません';
-    case 'auth/wrong-password':     return 'メールアドレスまたはパスワードが正しくありません';
-    case 'auth/email-already-in-use': return 'このメールアドレスは既に登録されています';
-    default:                        return '認証エラーが発生しました。';
+// メッセージ表示
+function showMessage(msg, type='error'){
+  errorMsg.textContent = msg;
+  if(type==='error'){
+    errorMsg.className = 'error';
+  } else {
+    errorMsg.className = 'success';
   }
 }
 
-function showMessage(msg, isSuccess=false){
-  errorMsg.textContent = msg;
-  errorMsg.className = isSuccess ? 'success' : 'error';
-}
-
 // ログイン
-loginBtn.addEventListener('click', () => {
-  signInWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(()=> showMessage('ログインしました', true))
-    .catch(err => showMessage(getErrorMessageJP(err)));
+loginBtn.addEventListener('click', async () => {
+  try {
+    await signInWithEmailAndPassword(auth, emailInput.value, passInput.value);
+    showMessage('ログインしました', 'success');
+  } catch(err){
+    showMessage('メールアドレスまたはパスワードが正しくありません');
+  }
 });
 
 // 新規登録
-signupBtn.addEventListener('click', () => {
+signupBtn.addEventListener('click', async () => {
   if(passInput.value.length < 6){
     showMessage('パスワードは6文字以上です');
     return;
   }
-  createUserWithEmailAndPassword(auth, emailInput.value, passInput.value)
-    .then(async userCredential => {
-      showMessage('登録しました', true);
-      const user = userCredential.user;
-      const userDocRef = doc(db,'users',user.uid);
-      await setDoc(userDocRef, {}); // 空のユーザードキュメント作成
-    })
-    .catch(err => showMessage(getErrorMessageJP(err)));
+  try{
+    const userCredential = await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
+    // 新規ユーザー用の users ドキュメントを作成
+    await setDoc(doc(db,'users',userCredential.user.uid), {});
+    showMessage('新規登録しました。自動でログインしました', 'success');
+  } catch(err){
+    showMessage('登録に失敗しました：' + err.message);
+  }
 });
 
 // ログアウト
 logoutBtn.addEventListener('click', async () => {
   await signOut(auth);
+  showMessage('');
 });
 
 // 認証状態監視
@@ -91,8 +89,8 @@ onAuthStateChanged(auth, user => {
   if(user){
     emailInput.style.display = 'none';
     passInput.style.display = 'none';
-    signupBtn.style.display = 'none';
     loginBtn.style.display = 'none';
+    signupBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
     passwordMsg.style.display = 'none';
     keywordSec.style.display = 'block';
@@ -100,13 +98,12 @@ onAuthStateChanged(auth, user => {
   } else {
     emailInput.style.display = 'inline-block';
     passInput.style.display = 'inline-block';
-    signupBtn.style.display = 'inline-block';
     loginBtn.style.display = 'inline-block';
+    signupBtn.style.display = 'inline-block';
     logoutBtn.style.display = 'none';
     passwordMsg.style.display = 'block';
     keywordSec.style.display = 'none';
     clearStampsFromUI();
-    showMessage('');
   }
 });
 
@@ -118,18 +115,24 @@ stampBtn.addEventListener('click', async () => {
   const keyword = keywordInput.value.trim();
   if(!keyword){ showMessage('合言葉を入力してください'); return; }
 
-  // Firestore keywords コレクションから取得
-  const kwDocRef = doc(db,'keywords',keyword);
-  const kwSnap = await getDoc(kwDocRef);
-  if(!kwSnap.exists()){ showMessage('その合言葉は存在しません'); return; }
-  const kwData = kwSnap.data();
+  try{
+    // Firestore の keywords/<keyword> を取得
+    const kwSnap = await getDoc(doc(db,'keywords',keyword));
+    if(!kwSnap.exists()){ 
+      showMessage('その合言葉は存在しません'); 
+      return; 
+    }
+    const kwData = kwSnap.data();
 
-  // ユーザードキュメントに保存
-  const userDocRef = doc(db,'users',user.uid);
-  await setDoc(userDocRef,{ [keyword]: true }, {merge:true});
+    // ユーザーのドキュメントに追加
+    const userDocRef = doc(db,'users',user.uid);
+    await setDoc(userDocRef, {[keyword]: true}, {merge:true});
 
-  showMessage('スタンプを押しました', true);
-  loadStamps(user.uid);
+    showMessage('スタンプを押しました', 'success');
+    loadStamps(user.uid);
+  } catch(err){
+    showMessage('スタンプ押下に失敗しました：' + err.message);
+  }
 });
 
 // スタンプ描画
@@ -138,23 +141,27 @@ async function loadStamps(uid){
   const userDocRef = doc(db,'users',uid);
   const snap = await getDoc(userDocRef);
   if(!snap.exists()) return;
-  const userData = snap.data();
+  const data = snap.data();
 
-  for(const keyword of Object.keys(userData)){
-    const kwDocRef = doc(db,'keywords',keyword);
-    const kwSnap = await getDoc(kwDocRef);
-    if(!kwSnap.exists()) continue;
+  async function renderStamp(keyword){
+    const kwSnap = await getDoc(doc(db,'keywords',keyword));
+    if(!kwSnap.exists()) return;
     const kwData = kwSnap.data();
+
     const img = document.createElement('img');
-    img.src = 'images/' + kwData.img; // images/ フォルダを付与
+    img.src = 'images/' + kwData.img;
     img.className = 'stamp';
     const w = cardContainer.clientWidth;
     const h = cardContainer.clientHeight;
     img.style.left = kwData.x * w + 'px';
     img.style.top  = kwData.y * h + 'px';
     img.style.width = kwData.widthPercent * w + 'px';
+    img.style.transform = 'translate(-50%, -50%)';
     cardContainer.appendChild(img);
   }
+
+  const promises = Object.keys(data).map(renderStamp);
+  await Promise.all(promises);
 }
 
 function clearStampsFromUI(){

@@ -11,20 +11,22 @@
   <h1 class="cute-title">スタンプカード</h1>
 
   <!-- 認証フォーム -->
-  <div id="auth-section">
-    <input type="email" id="email" placeholder="メールアドレス">
-    <input type="password" id="password" placeholder="パスワード">
-    <div id="password-msg">パスワードは6文字以上です</div>
-    <button id="signup">新規登録</button>
-    <button id="login">ログイン</button>
-    <button id="logout" style="display:none;">ログアウト</button>
-    <div id="error-msg"></div>
+  <div id="auth-section" class="form-container">
+    <input type="email" id="email" placeholder="メールアドレス" class="cute-input">
+    <input type="password" id="password" placeholder="パスワード" class="cute-input">
+    <div id="password-msg" class="password-msg">パスワードは6文字以上です</div>
+    <div class="button-group">
+      <button id="signup" class="cute-button">新規登録</button>
+      <button id="login" class="cute-button">ログイン</button>
+      <button id="logout" class="cute-button" style="display:none;">ログアウト</button>
+    </div>
+    <div id="error-msg" class="message"></div>
   </div>
 
   <!-- 合言葉フォーム -->
-  <div id="keyword-section" style="display:none; margin-top:10px;">
-    <input type="text" id="keyword" placeholder="合言葉を入力">
-    <button id="stampBtn">スタンプを押す</button>
+  <div id="keyword-section" class="form-container" style="display:none;">
+    <input type="text" id="keyword" placeholder="合言葉を入力" class="cute-input">
+    <button id="stampBtn" class="cute-button">スタンプを押す</button>
   </div>
 
   <!-- スタンプカード -->

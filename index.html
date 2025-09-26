@@ -16,12 +16,16 @@
     <input type="password" id="password" placeholder="パスワード">
     <button id="signup">新規登録</button>
     <button id="login">ログイン</button>
+    <div id="login-message" style="color:red;"></div>
   </div>
+
+  <!-- ログアウト -->
+  <button id="logout-btn" style="display:none;">ログアウト</button>
 
   <!-- 合言葉フォーム -->
   <div id="keyword-section" style="display:none;">
-    <input type="text" id="keyword" placeholder="本日の合言葉">
-    <button id="stampBtn">スタンプを押す</button>
+    <input type="text" id="keyword" placeholder="合言葉を入力">
+    <button id="stamp-btn">スタンプを押す</button>
   </div>
 
   <!-- スタンプカード -->
@@ -29,6 +33,5 @@
     <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
   </div>
 
-  <div id="message"></div>
 </body>
 </html>

@@ -1,51 +1,34 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Stamp Card</title>
-<style>
-  body{font-family:system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif; padding:20px; max-width:1000px; margin:auto;}
-  .auth { margin-bottom:12px; }
-  input { padding:8px; margin-right:6px; }
-  #card-container { position:relative; width:800px; height:600px; margin:16px auto; border:1px solid #ddd; overflow:hidden; background:#fff; }
-  #card-container img.bg { width:100%; height:100%; object-fit:cover; display:block; }
-  .stamp { position:absolute; width:80px; height:80px; pointer-events:none; }
-  #message { margin-top:8px; color:#b00; }
-  #controls { text-align:center; margin-top:8px; }
-  button { padding:8px 12px; }
-  #logout { display:none; margin-left:8px; }
-  @media(max-width:900px){
-    #card-container{ width:90vw; height:67.5vw; } /* 保持比 800x600 */
-  }
-</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スタンプカード</title>
+<link rel="stylesheet" href="style.css">
+<script type="module" src="script.js"></script>
 </head>
 <body>
-  <h2>スタンプカード</h2>
+  <h1>スタンプカード</h1>
 
-  <div id="login-panel" class="auth">
-    <input id="email" placeholder="メールアドレス">
-    <input id="password" type="password" placeholder="パスワード">
+  <!-- 認証フォーム -->
+  <div id="auth-section">
+    <input type="email" id="email" placeholder="メールアドレス">
+    <input type="password" id="password" placeholder="パスワード">
     <button id="signup">新規登録</button>
     <button id="login">ログイン</button>
-    <button id="anon">匿名で使う</button>
-    <button id="logout">ログアウト</button>
   </div>
 
-  <div id="card-area" style="display:none;">
-    <div id="card-container">
-      <img src="images/card_background.png" class="bg" alt="カード台紙">
-    </div>
-
-    <div id="controls">
-      <input id="keyword" placeholder="合言葉を入力">
-      <button id="stampBtn">スタンプを押す</button>
-    </div>
+  <!-- 合言葉フォーム -->
+  <div id="keyword-section" style="display:none;">
+    <input type="text" id="keyword" placeholder="本日の合言葉">
+    <button id="stampBtn">スタンプを押す</button>
   </div>
 
-  <div id="message"></div>
+  <!-- スタンプカード -->
+  <div id="card-container">
+    <img src="card.png" class="card-bg" alt="スタンプカード">
+    <!-- スタンプはJSで追加されます -->
+  </div>
 
-  <!-- main.js を読み込みます（module）-->
-  <script type="module" src="main.js"></script>
 </body>
 </html>

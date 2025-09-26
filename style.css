@@ -8,11 +8,67 @@ body {
   font-family: "Comic Sans MS", "ヒラギノ角ゴ Pro W3", "Arial", sans-serif;
   color: #ff69b4;
   text-shadow: 2px 2px #ffe4e1;
-  font-size: 2em;
+  font-size: 2.2em;
   text-align: center;
   margin-bottom: 20px;
 }
 
+/* フォームコンテナ */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: #fff0f5;
+  padding: 15px;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(255, 182, 193, 0.4);
+}
+
+/* 入力欄 */
+.cute-input {
+  width: 80%;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 2px solid #ffb6c1;
+  font-size: 1em;
+  text-align: center;
+}
+
+/* パスワードメッセージ */
+.password-msg {
+  font-size: 0.8em;
+  color: gray;
+}
+
+/* ボタン */
+.cute-button {
+  background-color: #ffb6c1;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  margin: 2px;
+  border-radius: 12px;
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cute-button:hover {
+  background-color: #ff69b4;
+  transform: scale(1.05);
+}
+
+/* ボタングループ */
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* スタンプカード */
 #card-container {
   position: relative;
   max-width: 100%;
@@ -23,14 +79,18 @@ body {
 .card-bg {
   width: 100%;
   display: block;
+  border-radius: 15px;
+  box-shadow: 0 6px 12px rgba(255, 182, 193, 0.4);
 }
 
+/* スタンプ */
 .stamp {
   position: absolute;
   transform: translate(-50%, -50%);
 }
 
-#message, #error-msg {
+/* メッセージ */
+.message {
   font-size: 0.85em;
   margin-top: 5px;
 }

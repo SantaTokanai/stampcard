@@ -96,7 +96,7 @@ onAuthStateChanged(auth, user => {
 
 /* ===== スタンプ情報 ===== */
 let stampPositions = [
-  {img:'images/stamp1.png', left:'20%', top:'25%', width:'60px'},
+  {img:'images/stamp1.png', left:'15%', top:'60%', width:'60px'},
   {img:'images/stamp2.png', left:'50%', top:'25%', width:'60px'},
   {img:'images/stamp3.png', left:'80%', top:'25%', width:'60px'}
 ];

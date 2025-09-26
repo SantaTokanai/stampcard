@@ -4,7 +4,8 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  onAuthStateChanged
+  onAuthStateChanged,
+  signOut
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 import {
   getFirestore,
@@ -31,6 +32,11 @@ const emailInput = document.getElementById('email');
 const passInput  = document.getElementById('password');
 const signupBtn  = document.getElementById('signup');
 const loginBtn   = document.getElementById('login');
+const logoutBtn  = document.createElement('button');
+logoutBtn.textContent = "ログアウト";
+logoutBtn.style.display = 'none';
+document.body.insertBefore(logoutBtn, document.getElementById('keyword-section'));
+
 const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
@@ -65,25 +71,33 @@ loginBtn.addEventListener('click', () => {
     .catch(err => showMessage(getErrorMessageJP(err)));
 });
 
+logoutBtn.addEventListener('click', () => {
+  signOut(auth).then(() => {
+    showMessage('ログアウトしました');
+    logoutBtn.style.display = 'none';
+  });
+});
+
 onAuthStateChanged(auth, user => {
   if(user){
     keywordSec.style.display = 'block';
+    logoutBtn.style.display = 'inline-block';
     loadStamps(user.uid);
   } else {
     keywordSec.style.display = 'none';
+    logoutBtn.style.display = 'none';
     clearStampsFromUI();
   }
 });
 
 /* ===== スタンプ情報 ===== */
-// 位置と大きさを管理する配列
 let stampPositions = [
   {img:'images/stamp1.png', left:'20%', top:'25%', width:'60px'},
   {img:'images/stamp2.png', left:'50%', top:'25%', width:'60px'},
   {img:'images/stamp3.png', left:'80%', top:'25%', width:'60px'}
 ];
 
-/* スタンプ押下処理 */
+/* ===== スタンプ押下処理 ===== */
 stampBtn.addEventListener('click', async () => {
   const user = auth.currentUser;
   if(!user) { alert('ログインしてください'); return; }
@@ -98,32 +112,51 @@ stampBtn.addEventListener('click', async () => {
   }
 
   const userDocRef = doc(db, "users", user.uid);
+
+  // 今日のスタンプが既に押されているか確認
+  const snap = await getDoc(userDocRef);
+  const data = snap.exists() ? snap.data() : {};
+  if(data[today]){
+    alert("本日は既にスタンプ済みです");
+    return;
+  }
+
+  // Firestore に保存
   await setDoc(userDocRef, { [today]: true }, { merge:true });
 
+  // UIに反映
   placeStamp(today);
 });
 
-/* スタンプ読み込み */
-async function loadStamps(uid){
-  clearStampsFromUI();
-  const userDocRef = doc(db, "users", uid);
-  const snap = await getDoc(userDocRef);
-  if(snap.exists()){
-    const data = snap.data();
-    Object.keys(data).forEach((date, idx) => {
-      if(data[date] === true){
-        const pos = stampPositions[idx % stampPositions.length];
-        renderStamp(pos);
-      }
-    });
-  }
+/* ===== スタンプ描画 ===== */
+function placeStamp(today){
+  const idx = Object.keys(stampPositions).length % stampPositions.length;
+  const pos = stampPositions[idx];
+  renderStamp(pos);
+  showMessage('スタンプを押しました！');
 }
 
-/* スタンプ描画 */
+function loadStamps(uid){
+  clearStampsFromUI();
+  const userDocRef = doc(db, "users", uid);
+  getDoc(userDocRef).then(snap => {
+    if(snap.exists()){
+      const data = snap.data();
+      Object.keys(data).forEach((date, idx) => {
+        if(data[date] === true){
+          const pos = stampPositions[idx % stampPositions.length];
+          renderStamp(pos);
+        }
+      });
+    }
+  });
+}
+
 function renderStamp(pos){
   const img = document.createElement('img');
   img.src = pos.img;
   img.className = 'stamp';
+  img.style.position = 'absolute';
   img.style.left = pos.left;
   img.style.top = pos.top;
   img.style.width = pos.width;

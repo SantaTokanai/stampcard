@@ -42,3 +42,24 @@ body {
 .error {
   color: red;
 }
+
+#auth-section input, #keyword-section input {
+  padding: 5px 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+#auth-section button, #keyword-section button {
+  padding: 5px 10px;
+  margin-right: 5px;
+  border-radius: 5px;
+  border: none;
+  background-color: #ff69b4;
+  color: white;
+  cursor: pointer;
+}
+
+#auth-section button:hover, #keyword-section button:hover {
+  background-color: #ff85c1;
+}

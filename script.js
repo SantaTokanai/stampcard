@@ -47,7 +47,7 @@ const stampPositions = [
   {x:0.42, y:0.541, img:'images/stamp3.png', widthPercent:0.14},
   {x:0.585, y:0.541, img:'images/stamp4.png', widthPercent:0.14},
   {x:0.75, y:0.541, img:'images/stamp5.png', widthPercent:0.14},
-  {x:0.0.915, y:0.5, img:'images/stamp6.png', widthPercent:0.14},
+  {x:0.915, y:0.5, img:'images/stamp6.png', widthPercent:0.14},
   {x:0.09, y:0.8, img:'images/stamp7.png', widthPercent:0.14},
   {x:0.5, y:0.8, img:'images/stamp8.png', widthPercent:0.14},
   {x:0.8, y:0.8, img:'images/stamp9.png', widthPercent:0.14},

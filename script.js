@@ -41,12 +41,12 @@ const cardContainer = document.getElementById('card-container');
 
 /* ===== スタンプ位置配列（カード上の比率 x/y） ===== */
 const stampPositions = [
-  {x:0.1,y:0.2,widthPercent:0.1},{x:0.3,y:0.2,widthPercent:0.1},
-  {x:0.5,y:0.2,widthPercent:0.1},{x:0.7,y:0.2,widthPercent:0.1},
-  {x:0.9,y:0.2,widthPercent:0.1},{x:0.1,y:0.5,widthPercent:0.1},
-  {x:0.3,y:0.5,widthPercent:0.1},{x:0.5,y:0.5,widthPercent:0.1},
-  {x:0.7,y:0.5,widthPercent:0.1},{x:0.9,y:0.5,widthPercent:0.1},
-  {x:0.2,y:0.8,widthPercent:0.1},{x:0.4,y:0.8,widthPercent:0.1},
+  {x:0.05,y:0.5,widthPercent:0.2},{x:0.15,y:0.5,widthPercent:0.2},
+  {x:0.25,y:0.5,widthPercent:0.2},{x:0.35,y:0.5,widthPercent:0.1},
+  {x:0.45,y:0.5,widthPercent:0.1},{x:0.55,y:0.5,widthPercent:0.1},
+  {x:0.05,y:0.8,widthPercent:0.1},{x:0.15,y:0.8,widthPercent:0.1},
+  {x:0.25,y:0.8,widthPercent:0.1},{x:0.35,y:0.8,widthPercent:0.1},
+  {x:0.45,y:0.8,widthPercent:0.1},{x:0.55,y:0.8,widthPercent:0.1},
   {x:0.6,y:0.8,widthPercent:0.1},{x:0.8,y:0.8,widthPercent:0.1}
 ];
 

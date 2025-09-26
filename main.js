@@ -18,17 +18,7 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-/* ====== ここに Firebase コンソールで取得した config オブジェクトを貼ってください ======
-例:
-const firebaseConfig = {
-  apiKey: "XXXXXXXXXXXX",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "...",
-  appId: "..."
-};
-==================================================================================== */
+/* ====== ここにあなたの Firebase コンフィグを貼りました ====== */
 const firebaseConfig = {
   apiKey: "AIzaSyBI_XbbC78cXCBmm6ue-h0HJ15dNsDAnzo",
   authDomain: "stampcard-project.firebaseapp.com",
@@ -37,6 +27,7 @@ const firebaseConfig = {
   messagingSenderId: "808808121881",
   appId: "1:808808121881:web:57f6d536d40fc2d30fcc88"
 };
+/* ============================================================ */
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);

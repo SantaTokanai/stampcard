@@ -181,7 +181,7 @@ async function loadStamps(uid) {
   const spacingX = (w - cols * stampSize) / (cols + 1);
   const spacingY = (h - rows * stampSize) / (rows + 1);
 
-  docs.forEach((docObj, idx) => {
+  docs.forEach((docObj, idx) => {a
     const col = idx % cols;
     const row = Math.floor(idx / cols);
     const left = Math.round(spacingX + col * (stampSize + spacingX));

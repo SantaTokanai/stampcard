@@ -29,7 +29,14 @@ const firebaseConfig = {
   appId: "..."
 };
 ==================================================================================== */
-const firebaseConfig = /* PASTE YOUR FIREBASE CONFIG OBJECT HERE */;
+const firebaseConfig = {
+  apiKey: "AIzaSyBI_XbbC78cXCBmm6ue-h0HJ15dNsDAnzo",
+  authDomain: "stampcard-project.firebaseapp.com",
+  projectId: "stampcard-project",
+  storageBucket: "stampcard-project.firebasestorage.app",
+  messagingSenderId: "808808121881",
+  appId: "1:808808121881:web:57f6d536d40fc2d30fcc88"
+};
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);

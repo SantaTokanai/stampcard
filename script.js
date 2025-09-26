@@ -78,9 +78,9 @@ onAuthStateChanged(auth, user => {
 /* ===== スタンプ情報 ===== */
 // 位置と大きさを管理する配列
 let stampPositions = [
-  {img:'stamp1.png', left:'20%', top:'25%', width:'60px'},
-  {img:'stamp2.png', left:'50%', top:'25%', width:'60px'},
-  {img:'stamp3.png', left:'80%', top:'25%', width:'60px'}
+  {img:'images/stamp1.png', left:'20%', top:'25%', width:'60px'},
+  {img:'images/stamp2.png', left:'50%', top:'25%', width:'60px'},
+  {img:'images/stamp3.png', left:'80%', top:'25%', width:'60px'}
 ];
 
 /* スタンプ押下処理 */

@@ -42,9 +42,9 @@ const cardImg = document.querySelector('.card-bg');
 
 // スタンプ位置を比率で定義（x,yは0~1）
 const stampPositions = [
-  {x:0.08, y:0.54, img:'images/stamp1.png', widthPercent:0.14},
-  {x:0.24, y:0.54, img:'images/stamp2.png', widthPercent:0.14},
-  {x:0.42, y:0.54, img:'images/stamp3.png', widthPercent:0.14},
+  {x:0.09, y:0.55, img:'images/stamp1.png', widthPercent:0.14},
+  {x:0.25, y:0.55, img:'images/stamp2.png', widthPercent:0.14},
+  {x:0.42, y:0.55, img:'images/stamp3.png', widthPercent:0.14},
   {x:0.2, y:0.5, img:'images/stamp4.png', widthPercent:0.15},
   {x:0.5, y:0.5, img:'images/stamp5.png', widthPercent:0.15},
   {x:0.8, y:0.5, img:'images/stamp6.png', widthPercent:0.15},

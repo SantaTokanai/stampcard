@@ -8,19 +8,17 @@
 <script type="module" src="script.js"></script>
 </head>
 <body>
-  <h1>スタンプカード</h1>
+  <h1 class="cute-title">スタンプカード</h1>
 
   <!-- 認証フォーム -->
   <div id="auth-section">
     <input type="email" id="email" placeholder="メールアドレス">
     <input type="password" id="password" placeholder="パスワード">
-    <div id="password-msg" style="color:gray; font-size:0.9em; margin-top:2px;">
-      パスワードは6文字以上です
-    </div>
-    <button id="login">ログイン</button>
+    <div id="password-msg">パスワードは6文字以上です</div>
     <button id="signup">新規登録</button>
+    <button id="login">ログイン</button>
     <button id="logout" style="display:none;">ログアウト</button>
-    <div id="error-msg" style="color:red; margin-top:5px;"></div>
+    <div id="error-msg"></div>
   </div>
 
   <!-- 合言葉フォーム -->

@@ -30,6 +30,7 @@ const db = getFirestore(app);
 // DOM
 const emailInput = document.getElementById('email');
 const passInput  = document.getElementById('password');
+const passwordMsg = document.getElementById('password-msg');
 const loginBtn   = document.getElementById('login');
 const logoutBtn  = document.getElementById('logout');
 const errorMsg   = document.getElementById('error-msg');
@@ -61,7 +62,7 @@ const stampPositions = [
 function getErrorMessageJP(error){
   switch (error.code) {
     case 'auth/invalid-email':      return 'メールアドレスの形式が正しくありません。';
-    case 'auth/user-not-found':     return 'メールアドレスまたはパスワードが正しくありません';
+    case 'auth/user-not-found':     
     case 'auth/wrong-password':     return 'メールアドレスまたはパスワードが正しくありません';
     default:                        return 'エラーが発生しました：' + error.message;
   }
@@ -73,6 +74,15 @@ function showMessage(msg){
 
 // ログイン
 loginBtn.addEventListener('click', () => {
+  if(passInput.value.length < 6){
+    passwordMsg.style.color = 'red';
+    passwordMsg.textContent = 'パスワードは6文字以上入力してください';
+    return;
+  } else {
+    passwordMsg.style.color = 'gray';
+    passwordMsg.textContent = 'パスワードは6文字以上です';
+  }
+
   signInWithEmailAndPassword(auth, emailInput.value, passInput.value)
     .then(() => showMessage(''))
     .catch(err => showMessage(getErrorMessageJP(err)));
@@ -88,6 +98,7 @@ onAuthStateChanged(auth, user => {
   if(user){
     emailInput.style.display = 'none';
     passInput.style.display = 'none';
+    passwordMsg.style.display = 'none';
     loginBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
     keywordSec.style.display = 'block';
@@ -95,6 +106,7 @@ onAuthStateChanged(auth, user => {
   } else {
     emailInput.style.display = 'inline-block';
     passInput.style.display = 'inline-block';
+    passwordMsg.style.display = 'block';
     loginBtn.style.display = 'inline-block';
     logoutBtn.style.display = 'none';
     keywordSec.style.display = 'none';
@@ -114,7 +126,7 @@ stampBtn.addEventListener('click', async () => {
   const kwDocRef = doc(db,'keywords',keyword);
   const kwSnap = await getDoc(kwDocRef);
   if(!kwSnap.exists()){ alert('その合言葉は存在しません'); return; }
-  const kwData = kwSnap.data();
+  const data = kwSnap.data();
 
   // ユーザードキュメントに保存
   const userDocRef = doc(db,'users',user.uid);
@@ -132,24 +144,16 @@ async function loadStamps(uid){
   const data = snap.data();
 
   function renderAllStamps(){
-    Object.keys(data).forEach(async (keyword)=>{
-      const kwDocRef = doc(db,'keywords',keyword);
-      const kwSnap = await getDoc(kwDocRef);
-      if(!kwSnap.exists()) return;
-      const kwData = kwSnap.data();
-      const pos = stampPositions[kwData.stampIndex];
-      if(!pos) return;
-
+    Object.keys(data).forEach((keyword, idx)=>{
+      const pos = stampPositions[idx % stampPositions.length];
       const img = document.createElement('img');
       img.src = pos.img;
       img.className = 'stamp';
-
-      const w = cardImg.clientWidth;
-      const h = cardImg.clientHeight;
+      const w = cardContainer.clientWidth;
+      const h = cardContainer.clientHeight;
       img.style.left = pos.x * w + 'px';
       img.style.top  = pos.y * h + 'px';
       img.style.width = pos.widthPercent * w + 'px';
-
       cardContainer.appendChild(img);
     });
   }

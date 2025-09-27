@@ -127,6 +127,9 @@ stampBtn.addEventListener('click', async () => {
 
     // 取得データをコンソールに出力して確認
     console.log('Firestoreから取得したキーワードデータ:', kwSnap.data());
+    console.log('imgフィールドの型:', typeof kwSnap.data().img);
+    console.log('imgフィールドの内容:', kwSnap.data().img);
+
 
     // ユーザードキュメントにスタンプ情報を追加
     const userDocRef = doc(db, 'users', user.uid);

@@ -191,30 +191,39 @@ async function loadStamps(uid){
   const promises = Object.keys(userData).map(async keyword => {
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;
-    const d = kwSnap.data();
-    console.log('Firestoreの生データ:', d);
-    console.log('取得できるキー:', Object.keys(d));
 
-    // img フィールド補正（安全取得）
-    let src = extractImgField(d);
+    // ★キー正規化★
+    const raw = kwSnap.data();
+    const norm = {};
+    for(const k of Object.keys(raw)){
+      const cleanKey = k.replace(/^['"]+|['"]+$/g,''); // "x" -> x
+      norm[cleanKey] = raw[k];
+    }
+    console.log('正規化後データ:', norm);
+
+    // imgパス
+    let src = extractImgField(norm);
     if(!src){
-      console.warn(`画像パスが取得できません: ドキュメント ${keyword}`);
+      console.warn(`画像パスが取得できません: ${keyword}`);
       return;
     }
-
-    // 相対パス整形：images/ がなければ追加
     src = src.replace(/^\/+/, '');
     if(!/^https?:\/\//.test(src) && !src.startsWith('images/')){
       src = 'images/' + src;
     }
 
+    // 数値は必ず Number() で変換
+    const xPos = Number(norm.x);
+    const yPos = Number(norm.y);
+    const wPercent = Number(norm.widthPercent);
+
     const img = new Image();
     img.className = 'stamp';
     img.style.position = 'absolute';
     img.style.transform = 'translate(-50%, -50%)';
-    img.style.left  = (d.x * w) + 'px';
-    img.style.top   = (d.y * h) + 'px';
-    img.style.width = (d.widthPercent * w) + 'px';
+    img.style.left  = (xPos * w) + 'px';
+    img.style.top   = (yPos * h) + 'px';
+    img.style.width = (wPercent * w) + 'px';
 
     img.onload  = () => cardContainer.appendChild(img);
     img.onerror = () => console.warn(`画像が見つかりません: ${img.src}`);

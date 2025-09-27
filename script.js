@@ -104,20 +104,42 @@ onAuthStateChanged(auth, user => {
 // スタンプ押下
 stampBtn.addEventListener('click', async () => {
   const user = auth.currentUser;
-  if(!user){ showMessage('ログインしてください'); return; }
+  if(!user){ 
+    showMessage('ログインしてください'); 
+    return; 
+  }
 
   const keyword = keywordInput.value.trim();
-  if(!keyword){ showMessage('合言葉を入力してください'); return; }
+  if(!keyword){ 
+    showMessage('合言葉を入力してください'); 
+    return; 
+  }
 
   try{
-    const kwSnap = await getDoc(doc(db,'keywords',keyword));
-    if(!kwSnap.exists()){ showMessage('その合言葉は存在しません'); return; }
+    // Firestore からキーワードデータ取得
+    const kwDocRef = doc(db, 'keywords', keyword);
+    const kwSnap = await getDoc(kwDocRef);
 
-    await setDoc(doc(db,'users',user.uid), {[keyword]: true}, {merge:true});
+    if(!kwSnap.exists()){ 
+      showMessage('その合言葉は存在しません'); 
+      return; 
+    }
+
+    // 取得データをコンソールに出力して確認
+    console.log('Firestoreから取得したキーワードデータ:', kwSnap.data());
+
+    // ユーザードキュメントにスタンプ情報を追加
+    const userDocRef = doc(db, 'users', user.uid);
+    await setDoc(userDocRef, { [keyword]: true }, { merge: true });
+
     showMessage('スタンプを押しました', 'success');
+
+    // スタンプ描画
     loadStamps(user.uid);
+
   } catch(err){
     showMessage('スタンプ押下に失敗しました：' + err.message);
+    console.error(err);
   }
 });
 

@@ -1,4 +1,3 @@
-// Firebase 初期化
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import {
   getFirestore,
@@ -55,8 +54,29 @@ function showMessage(msg, type='error'){
   errorMsg.className = type === 'error' ? 'error' : 'success';
 }
 
+// UI更新
+function updateUI(){
+  if(currentUser){
+    nicknameInput.style.display = 'none';
+    passInput.style.display  = 'none';
+    loginBtn.style.display   = 'none';
+    signupBtn.style.display  = 'none';
+    logoutBtn.style.display  = 'inline-block';
+    passwordMsg.style.display= 'none';
+    keywordSec.style.display = 'block';
+  } else {
+    nicknameInput.style.display = 'inline-block';
+    passInput.style.display  = 'inline-block';
+    loginBtn.style.display   = 'inline-block';
+    signupBtn.style.display  = 'inline-block';
+    logoutBtn.style.display  = 'none';
+    passwordMsg.style.display= 'block';
+    keywordSec.style.display = 'none';
+  }
+}
+
 // ------------------
-// 認証処理
+// 新規登録
 // ------------------
 signupBtn.addEventListener('click', async () => {
   const nickname = nicknameInput.value.trim();
@@ -88,6 +108,9 @@ signupBtn.addEventListener('click', async () => {
   loadStamps(nickname);
 });
 
+// ------------------
+// ログイン
+// ------------------
 loginBtn.addEventListener('click', async () => {
   const nickname = nicknameInput.value.trim();
   const password = passInput.value;
@@ -115,33 +138,15 @@ loginBtn.addEventListener('click', async () => {
   loadStamps(nickname);
 });
 
+// ------------------
+// ログアウト
+// ------------------
 logoutBtn.addEventListener('click', () => {
   currentUser = null;
   showMessage('');
   updateUI();
   clearStampsFromUI();
 });
-
-// UI更新
-function updateUI(){
-  if(currentUser){
-    nicknameInput.style.display = 'none';
-    passInput.style.display  = 'none';
-    loginBtn.style.display   = 'none';
-    signupBtn.style.display  = 'none';
-    logoutBtn.style.display  = 'inline-block';
-    passwordMsg.style.display= 'none';
-    keywordSec.style.display = 'block';
-  } else {
-    nicknameInput.style.display = 'inline-block';
-    passInput.style.display  = 'inline-block';
-    loginBtn.style.display   = 'inline-block';
-    signupBtn.style.display  = 'inline-block';
-    logoutBtn.style.display  = 'none';
-    passwordMsg.style.display= 'block';
-    keywordSec.style.display = 'none';
-  }
-}
 
 // ------------------
 // スタンプ押下

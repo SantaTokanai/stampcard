@@ -5,24 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>スタンプカード</title>
 <link rel="stylesheet" href="style.css">
-<script type="module" src="script.js"></script>
-<style>
-  #card-container {
-    position: relative;
-    width: 100%;
-    max-width: 600px;
-    aspect-ratio: 2 / 1; /* 縦横比維持 */
-    margin-top: 30px;
-  }
-  .card-bg {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* 縦横比維持 */
-  }
-  .stamp {
-    pointer-events: none;
-  }
-</style>
 </head>
 <body>
   <h1 class="cute-title">スタンプカード</h1>
@@ -45,8 +27,10 @@
   </div>
 
   <!-- スタンプカード -->
-  <div id="card-container">
+  <div id="card-container" style="margin-top:30px; position:relative; width:100%; max-width:500px;">
     <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
   </div>
+
+  <script type="module" src="script.js"></script>
 </body>
 </html>

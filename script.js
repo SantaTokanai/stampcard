@@ -96,6 +96,7 @@ function pseudoEmailFromNickname(nickname) {
 // -------------------- DOM 要素 --------------------
 const nicknameInput = document.getElementById('nickname');
 const passInput = document.getElementById('password');
+const passwordMsg = document.getElementById('password-msg');
 const signupBtn = document.getElementById('signup');
 const loginBtn = document.getElementById('login');
 const logoutBtn = document.getElementById('logout');

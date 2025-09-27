@@ -24,9 +24,9 @@ const firebaseConfig = {
   appId: "1:808808121881:web:57f6d536d40fc2d30fcc88"
 };
 
-const app  = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db   = getFirestore(app);
+const db = getFirestore(app);
 
 // DOM
 const emailInput   = document.getElementById('email');
@@ -40,6 +40,7 @@ const keywordSec   = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn     = document.getElementById('stampBtn');
 const cardContainer= document.getElementById('card-container');
+const cardImg      = document.querySelector('.card-bg');
 
 // メッセージ表示
 function showMessage(msg, type='error'){
@@ -59,15 +60,15 @@ loginBtn.addEventListener('click', async () => {
 
 // 新規登録
 signupBtn.addEventListener('click', async () => {
-  if (passInput.value.length < 6) {
+  if(passInput.value.length < 6){
     showMessage('パスワードは6文字以上です');
     return;
   }
-  try {
+  try{
     const userCredential = await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
     await setDoc(doc(db,'users',userCredential.user.uid), {});
     showMessage('新規登録しました。自動でログインしました', 'success');
-  } catch (err) {
+  } catch(err){
     showMessage('登録に失敗しました：' + err.message);
   }
 });
@@ -80,7 +81,7 @@ logoutBtn.addEventListener('click', async () => {
 
 // 認証状態監視
 onAuthStateChanged(auth, user => {
-  if (user) {
+  if(user){
     emailInput.style.display = 'none';
     passInput.style.display  = 'none';
     loginBtn.style.display   = 'none';
@@ -104,18 +105,19 @@ onAuthStateChanged(auth, user => {
 // スタンプ押下
 stampBtn.addEventListener('click', async () => {
   const user = auth.currentUser;
-  if (!user) { showMessage('ログインしてください'); return; }
+  if(!user){ showMessage('ログインしてください'); return; }
 
   const keyword = keywordInput.value.trim();
-  if (!keyword) { showMessage('合言葉を入力してください'); return; }
+  if(!keyword){ showMessage('合言葉を入力してください'); return; }
 
-  try {
+  try{
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
-    if (!kwSnap.exists()) { showMessage('その合言葉は存在しません'); return; }
+    if(!kwSnap.exists()){ showMessage('その合言葉は存在しません'); return; }
+
     await setDoc(doc(db,'users',user.uid), {[keyword]: true}, {merge:true});
     showMessage('スタンプを押しました', 'success');
     loadStamps(user.uid);
-  } catch (err) {
+  } catch(err){
     showMessage('スタンプ押下に失敗しました：' + err.message);
   }
 });
@@ -123,22 +125,26 @@ stampBtn.addEventListener('click', async () => {
 // スタンプ描画
 async function loadStamps(uid){
   clearStampsFromUI();
-  const snap = await getDoc(doc(db,'users',uid));
-  if (!snap.exists()) return;
+  const userSnap = await getDoc(doc(db,'users',uid));
+  if(!userSnap.exists()) return;
 
-  const w = Math.min(cardContainer.clientWidth, 500); // 最大幅500pxでPCでも見やすく
+  const userData = userSnap.data();
+  const w = cardContainer.clientWidth;
   const h = cardContainer.clientHeight;
 
-  const tasks = Object.keys(snap.data()).map(async keyword => {
+  const tasks = Object.keys(userData).map(async keyword => {
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
-    if (!kwSnap.exists()) return;
+    if(!kwSnap.exists()) return;
     const d = kwSnap.data();
 
-    // ★ 画像パス補正
-    let rawPath = d.img || '';
-    rawPath = rawPath.trim();
-    rawPath = rawPath.replace(/^"+|"+$/g, ''); // 先頭末尾の余分な " を除去
-    let imgSrc = rawPath.startsWith('images/') ? rawPath : `images/${rawPath}`;
+    // ★ 画像パス補正とログ確認
+    const rawPath = (d.img || '').trim();
+    let cleanPath = rawPath.replace(/^"+|"+$/g,''); // 余分な " を除去
+    if(cleanPath && !cleanPath.startsWith('images/')){
+      cleanPath = 'images/' + cleanPath;
+    }
+
+    console.log('読み込む画像URL:', cleanPath); // 画像が正しいか確認
 
     const img = new Image();
     img.className = 'stamp';
@@ -149,14 +155,13 @@ async function loadStamps(uid){
     img.style.width = (d.widthPercent * w) + 'px';
 
     img.onload  = () => cardContainer.appendChild(img);
-    img.onerror = () => console.error(`画像が見つかりません: ${imgSrc}`);
-    console.log('読み込む画像のURL:', cleanPath);
-    img.src = imgSrc;
+    img.onerror = () => console.warn(`画像が見つかりません: ${cleanPath}`);
+    img.src     = cleanPath;
   });
 
   await Promise.all(tasks);
 }
 
 function clearStampsFromUI(){
-  document.querySelectorAll('#card-container .stamp').forEach(e => e.remove());
+  document.querySelectorAll('#card-container .stamp').forEach(e=>e.remove());
 }

@@ -7,27 +7,21 @@
 <link rel="stylesheet" href="style.css">
 <script type="module" src="script.js"></script>
 <style>
-  /* カード背景とスタンプの基本スタイル */
   #card-container {
     position: relative;
-    width: 90%;
+    width: 100%;
     max-width: 600px;
+    aspect-ratio: 2 / 1;
     margin-top: 30px;
   }
-  #card-container img.card-bg {
+  .card-bg {
     width: 100%;
-    height: auto;       /* 高さを自動調整 */
-    display: block;
+    height: 100%;
+    object-fit: contain;
   }
   .stamp {
-    position: absolute;
-    transform: translate(-50%, -50%);
+    pointer-events: none;
   }
-  #keyword-section, #auth-section, #error-msg, #password-msg {
-    margin-top: 10px;
-  }
-  .error { color: red; }
-  .success { color: green; }
 </style>
 </head>
 <body>

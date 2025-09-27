@@ -150,6 +150,7 @@ async function loadStamps(uid){
 
     img.onload  = () => cardContainer.appendChild(img);
     img.onerror = () => console.error(`画像が見つかりません: ${imgSrc}`);
+    console.log('読み込む画像のURL:', cleanPath);
     img.src = imgSrc;
   });
 

@@ -28,6 +28,37 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// ---------------------------------------------------------
+// 追加: 文字列とフィールド取得を安全に行うヘルパー
+// ---------------------------------------------------------
+function cleanString(s){
+  return (typeof s === "string")
+    ? s.trim().replace(/^['"]+|['"]+$/g, "")
+    : s;
+}
+
+function extractImgField(docData){
+  if(!docData) return "";
+  // 1) 通常の img フィールド
+  if(typeof docData.img === "string") return cleanString(docData.img);
+  // 2) キー名に余分な引用符や空白がある場合
+  const keys = Object.keys(docData);
+  for(const k of keys){
+    const nk = k.trim().replace(/^['"]+|['"]+$/g, "").toLowerCase();
+    if(nk === "img" && typeof docData[k] === "string"){
+      return cleanString(docData[k]);
+    }
+  }
+  // 3) 画像パスらしき値を探すフォールバック
+  for(const k of keys){
+    const v = docData[k];
+    if(typeof v === "string" && v.includes("images/")){
+      return cleanString(v);
+    }
+  }
+  return "";
+}
+
 // DOM
 const emailInput = document.getElementById('email');
 const passInput = document.getElementById('password');
@@ -126,10 +157,11 @@ stampBtn.addEventListener('click', async () => {
     }
 
     // 取得データをコンソールに出力して確認
-    console.log('Firestoreから取得したキーワードデータ:', kwSnap.data());
-    console.log('imgフィールドの型:', typeof kwSnap.data().img);
-    console.log('imgフィールドの内容:', kwSnap.data().img);
-
+    const data = kwSnap.data();
+    console.log('Firestoreから取得したキーワードデータ:', data);
+    const imgVal = extractImgField(data);
+    console.log('imgフィールドの型:', typeof imgVal);
+    console.log('imgフィールドの内容:', imgVal);
 
     // ユーザードキュメントにスタンプ情報を追加
     const userDocRef = doc(db, 'users', user.uid);
@@ -163,11 +195,16 @@ async function loadStamps(uid){
     console.log('Firestoreの生データ:', d);
     console.log('取得できるキー:', Object.keys(d));
 
-    // img フィールド補正
-    let src = (d.img || '').trim();
-    src = src.replace(/^['"]+|['"]+$/g, ''); // 先頭・末尾の ' または " を削除
+    // img フィールド補正（安全取得）
+    let src = extractImgField(d);
+    if(!src){
+      console.warn(`画像パスが取得できません: ドキュメント ${keyword}`);
+      return;
+    }
 
-    if(src && !src.startsWith('images/')){
+    // 相対パス整形：images/ がなければ追加
+    src = src.replace(/^\/+/, '');
+    if(!/^https?:\/\//.test(src) && !src.startsWith('images/')){
       src = 'images/' + src;
     }
 

@@ -158,9 +158,10 @@ async function loadStamps(uid){
     if(!kwSnap.exists()) return;
     const d = kwSnap.data();
 
-    // ★ 画像パス補正
+    // img フィールド補正
     let src = (d.img || '').trim();
-    src = src.replace(/^"+|"+$/g,''); // 余分な " を除去
+    src = src.replace(/^['"]+|['"]+$/g, ''); // 先頭・末尾の ' または " を削除
+
     if(src && !src.startsWith('images/')){
       src = 'images/' + src;
     }

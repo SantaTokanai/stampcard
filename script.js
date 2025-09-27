@@ -44,7 +44,7 @@ const cardContainer= document.getElementById('card-container');
 // メッセージ表示
 function showMessage(msg, type='error'){
   errorMsg.textContent = msg;
-  errorMsg.className   = type === 'error' ? 'error' : 'success';
+  errorMsg.className = type === 'error' ? 'error' : 'success';
 }
 
 // ログイン
@@ -126,7 +126,7 @@ async function loadStamps(uid){
   const snap = await getDoc(doc(db,'users',uid));
   if (!snap.exists()) return;
 
-  const w = cardContainer.clientWidth;
+  const w = Math.min(cardContainer.clientWidth, 500); // 最大幅500pxでPCでも見やすく
   const h = cardContainer.clientHeight;
 
   const tasks = Object.keys(snap.data()).map(async keyword => {
@@ -134,12 +134,11 @@ async function loadStamps(uid){
     if (!kwSnap.exists()) return;
     const d = kwSnap.data();
 
-    // ★ 画像パス補正：余分なクオーテーションと images/ の有無を統一
-    const rawPath = (d.img || '').trim();
-    let cleanPath = rawPath.replace(/^"+|"+$/g, ''); // 先頭末尾の " を除去
-    if (cleanPath && !cleanPath.startsWith('images/')) {
-      cleanPath = 'images/' + cleanPath;
-    }
+    // ★ 画像パス補正
+    let rawPath = d.img || '';
+    rawPath = rawPath.trim();
+    rawPath = rawPath.replace(/^"+|"+$/g, ''); // 先頭末尾の余分な " を除去
+    let imgSrc = rawPath.startsWith('images/') ? rawPath : `images/${rawPath}`;
 
     const img = new Image();
     img.className = 'stamp';
@@ -150,8 +149,8 @@ async function loadStamps(uid){
     img.style.width = (d.widthPercent * w) + 'px';
 
     img.onload  = () => cardContainer.appendChild(img);
-    img.onerror = () => console.warn(`画像が見つかりません: ${cleanPath}`);
-    img.src = cleanPath;
+    img.onerror = () => console.error(`画像が見つかりません: ${imgSrc}`);
+    img.src = imgSrc;
   });
 
   await Promise.all(tasks);

@@ -29,18 +29,17 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // DOM
-const emailInput   = document.getElementById('email');
-const passInput    = document.getElementById('password');
-const loginBtn     = document.getElementById('login');
-const signupBtn    = document.getElementById('signup');
-const logoutBtn    = document.getElementById('logout');
-const errorMsg     = document.getElementById('error-msg');
-const passwordMsg  = document.getElementById('password-msg');
-const keywordSec   = document.getElementById('keyword-section');
+const emailInput = document.getElementById('email');
+const passInput = document.getElementById('password');
+const loginBtn = document.getElementById('login');
+const signupBtn = document.getElementById('signup');
+const logoutBtn = document.getElementById('logout');
+const errorMsg = document.getElementById('error-msg');
+const passwordMsg = document.getElementById('password-msg');
+const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
-const stampBtn     = document.getElementById('stampBtn');
-const cardContainer= document.getElementById('card-container');
-const cardImg      = document.querySelector('.card-bg');
+const stampBtn = document.getElementById('stampBtn');
+const cardContainer = document.getElementById('card-container');
 
 // メッセージ表示
 function showMessage(msg, type='error'){
@@ -127,24 +126,22 @@ async function loadStamps(uid){
   clearStampsFromUI();
   const userSnap = await getDoc(doc(db,'users',uid));
   if(!userSnap.exists()) return;
-
   const userData = userSnap.data();
+
   const w = cardContainer.clientWidth;
   const h = cardContainer.clientHeight;
 
-  const tasks = Object.keys(userData).map(async keyword => {
+  const promises = Object.keys(userData).map(async keyword => {
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;
     const d = kwSnap.data();
 
-    // ★ 画像パス補正とログ確認
-    const rawPath = (d.img || '').trim();
-    let cleanPath = rawPath.replace(/^"+|"+$/g,''); // 余分な " を除去
-    if(cleanPath && !cleanPath.startsWith('images/')){
-      cleanPath = 'images/' + cleanPath;
+    // ★ 画像パス補正
+    let src = (d.img || '').trim();
+    src = src.replace(/^"+|"+$/g,''); // 余分な " を除去
+    if(src && !src.startsWith('images/')){
+      src = 'images/' + src;
     }
-
-    console.log('読み込む画像URL:', cleanPath); // 画像が正しいか確認
 
     const img = new Image();
     img.className = 'stamp';
@@ -155,11 +152,11 @@ async function loadStamps(uid){
     img.style.width = (d.widthPercent * w) + 'px';
 
     img.onload  = () => cardContainer.appendChild(img);
-    img.onerror = () => console.warn(`画像が見つかりません: ${cleanPath}`);
-    img.src     = cleanPath;
+    img.onerror = () => console.warn(`画像が見つかりません: ${img.src}`);
+    img.src = src;
   });
 
-  await Promise.all(tasks);
+  await Promise.all(promises);
 }
 
 function clearStampsFromUI(){

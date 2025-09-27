@@ -5,16 +5,18 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
-  signOut
+  signOut,
+  deleteUser
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 import {
   getFirestore,
   doc,
   getDoc,
-  setDoc
+  setDoc,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-// Firebase 設定
+// Firebase 設定（既存のまま）
 const firebaseConfig = {
   apiKey: "AIzaSyBI_XbbC78cXCBmm6ue-h0HJ15dNsDAnzo",
   authDomain: "stampcard-project.firebaseapp.com",
@@ -29,7 +31,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // ---------------------------------------------------------
-// 追加: 文字列とフィールド取得を安全に行うヘルパー
+// ヘルパー：文字列クリーン / img フィールド抽出 / ニックネーム正規化
 // ---------------------------------------------------------
 function cleanString(s){
   return (typeof s === "string")
@@ -39,9 +41,8 @@ function cleanString(s){
 
 function extractImgField(docData){
   if(!docData) return "";
-  // 1) 通常の img フィールド
   if(typeof docData.img === "string") return cleanString(docData.img);
-  // 2) キー名に余分な引用符や空白がある場合
+
   const keys = Object.keys(docData);
   for(const k of keys){
     const nk = k.trim().replace(/^['"]+|['"]+$/g, "").toLowerCase();
@@ -49,18 +50,30 @@ function extractImgField(docData){
       return cleanString(docData[k]);
     }
   }
-  // 3) 画像パスらしき値を探すフォールバック
+  // 画像パスっぽい値を探す最後の手段
   for(const k of keys){
     const v = docData[k];
-    if(typeof v === "string" && v.includes("images/")){
+    if(typeof v === "string" && v.indexOf("images/") !== -1){
       return cleanString(v);
     }
   }
   return "";
 }
 
-// DOM
-const emailInput = document.getElementById('email');
+// ニックネームの「表示用」はそのまま、
+// ドキュメントIDやメール代替に使うキーは encodeURIComponent(normalized) を使って安全化します。
+function normalizeNicknameForKey(nick){
+  if(!nick || typeof nick !== 'string') return '';
+  // NFC 正規化、前後空白除去、連続空白を単一にする（日本語対応）
+  const normalized = nick.trim().normalize('NFC').replace(/\s+/g,' ');
+  // ドキュメントID/メールの local-part として安全に使うため encodeURIComponent
+  return encodeURIComponent(normalized);
+}
+
+// ---------------------------------------------------------
+// DOM 要素
+// ---------------------------------------------------------
+const nicknameInput = document.getElementById('nickname');
 const passInput = document.getElementById('password');
 const loginBtn = document.getElementById('login');
 const signupBtn = document.getElementById('signup');
@@ -72,34 +85,122 @@ const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
 const cardContainer = document.getElementById('card-container');
 
-// メッセージ表示
 function showMessage(msg, type='error'){
   errorMsg.textContent = msg;
   errorMsg.className = type === 'error' ? 'error' : 'success';
 }
 
-// ログイン
+// ---------------------------------------------------------
+// 認証：ログイン / 新規登録 / ログアウト
+// ---------------------------------------------------------
+
+// ログイン（ニックネーム + パスワード -> fakeEmail を使って signIn）
 loginBtn.addEventListener('click', async () => {
+  const rawNick = nicknameInput.value || '';
+  const nick = rawNick.trim();
+  if(!nick){
+    showMessage('ニックネームを入力してください');
+    return;
+  }
+  const nickId = normalizeNicknameForKey(nick);
+  const fakeEmail = `${nickId}@no-reply.fake`;
+
   try {
-    await signInWithEmailAndPassword(auth, emailInput.value, passInput.value);
+    await signInWithEmailAndPassword(auth, fakeEmail, passInput.value);
     showMessage('ログインしました', 'success');
-  } catch {
-    showMessage('メールアドレスまたはパスワードが正しくありません');
+  } catch(err){
+    showMessage('ニックネームまたはパスワードが正しくありません');
+    console.error(err);
   }
 });
 
-// 新規登録
+// 新規登録（重複チェック → Auth 作成 → Firestore にニックネーム登録）
+// 競合が発生した場合、Auth ユーザーを削除してロールバックします。
 signupBtn.addEventListener('click', async () => {
-  if(passInput.value.length < 6){
+  const rawNick = nicknameInput.value || '';
+  const nick = rawNick.trim();
+  const password = passInput.value || '';
+
+  if(!nick){
+    showMessage('ニックネームを入力してください');
+    return;
+  }
+  if(password.length < 6){
     showMessage('パスワードは6文字以上です');
     return;
   }
+
+  const nickId = normalizeNicknameForKey(nick);
+  if(!nickId){
+    showMessage('ニックネームに使用できない文字が含まれています');
+    return;
+  }
+
+  const nickRef = doc(db, 'nicknames', nickId);
+
+  // 事前存在チェック（簡易）
   try{
-    const userCredential = await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
-    await setDoc(doc(db,'users',userCredential.user.uid), {});
-    showMessage('新規登録しました。自動でログインしました', 'success');
+    const pre = await getDoc(nickRef);
+    if(pre.exists()){
+      showMessage('このニックネームは既に使われています');
+      return;
+    }
   } catch(err){
-    showMessage('登録に失敗しました：' + err.message);
+    console.error('事前チェック失敗', err);
+    showMessage('登録処理でエラーが発生しました');
+    return;
+  }
+
+  const fakeEmail = `${nickId}@no-reply.fake`;
+
+  try{
+    // 1) Firebase Auth にユーザー作成（認証用）
+    const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, password);
+    const uid = userCredential.user.uid;
+
+    // 2) Firestore 側でニックネームの予約と users ドキュメント作成をトランザクションで行う
+    try{
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(nickRef);
+        if(snap.exists()){
+          // 既に別プロセスが確保していたらエラーにする
+          throw new Error('nickname-already-exists');
+        }
+        // 予約
+        tx.set(nickRef, { uid: uid, nickname: nick, createdAt: new Date().toISOString() });
+        // users ドキュメントにニックネームを保存（既存データがあるならマージ）
+        const userRef = doc(db, 'users', uid);
+        tx.set(userRef, { nickname: nick }, { merge: true });
+      });
+
+      showMessage('新規登録しました。自動でログインしました', 'success');
+
+    } catch(txErr){
+      console.error('トランザクションエラー', txErr);
+      // 競合等で tx が失敗したら、作成した Auth ユーザーを削除してロールバック
+      try {
+        if(auth.currentUser){
+          await deleteUser(auth.currentUser);
+        }
+      } catch(delErr){
+        console.error('Authユーザー削除に失敗しました', delErr);
+      }
+
+      if(txErr.message === 'nickname-already-exists'){
+        showMessage('このニックネームは既に使われています');
+      } else {
+        showMessage('登録中にエラーが発生しました：' + txErr.message);
+      }
+    }
+
+  } catch(err){
+    console.error('createUser エラー', err);
+    if(err.code === 'auth/email-already-in-use'){
+      // 何らかの理由で同じ fakeEmail が既に Auth に存在する場合
+      showMessage('このニックネームは既に使われています');
+    } else {
+      showMessage('登録に失敗しました：' + (err.message || err));
+    }
   }
 });
 
@@ -109,10 +210,13 @@ logoutBtn.addEventListener('click', async () => {
   showMessage('');
 });
 
-// 認証状態監視
+// ---------------------------------------------------------
+// 認証状態監視（既存ロジックを利用）
+// ---------------------------------------------------------
 onAuthStateChanged(auth, user => {
   if(user){
-    emailInput.style.display = 'none';
+    // ログイン状態
+    if(nicknameInput) nicknameInput.style.display = 'none';
     passInput.style.display  = 'none';
     loginBtn.style.display   = 'none';
     signupBtn.style.display  = 'none';
@@ -121,7 +225,8 @@ onAuthStateChanged(auth, user => {
     keywordSec.style.display = 'block';
     loadStamps(user.uid);
   } else {
-    emailInput.style.display = 'inline-block';
+    // ログアウト状態
+    if(nicknameInput) nicknameInput.style.display = 'inline-block';
     passInput.style.display  = 'inline-block';
     loginBtn.style.display   = 'inline-block';
     signupBtn.style.display  = 'inline-block';
@@ -132,7 +237,9 @@ onAuthStateChanged(auth, user => {
   }
 });
 
-// スタンプ押下
+// ---------------------------------------------------------
+// スタンプ押下（既存）
+// ---------------------------------------------------------
 stampBtn.addEventListener('click', async () => {
   const user = auth.currentUser;
   if(!user){ 
@@ -140,14 +247,13 @@ stampBtn.addEventListener('click', async () => {
     return; 
   }
 
-  const keyword = keywordInput.value.trim();
+  const keyword = (keywordInput.value || '').trim();
   if(!keyword){ 
     showMessage('合言葉を入力してください'); 
     return; 
   }
 
   try{
-    // Firestore からキーワードデータ取得
     const kwDocRef = doc(db, 'keywords', keyword);
     const kwSnap = await getDoc(kwDocRef);
 
@@ -156,9 +262,12 @@ stampBtn.addEventListener('click', async () => {
       return; 
     }
 
-    // 取得データをコンソールに出力して確認
+    // 取得データをコンソールに出力して確認（必要なら開発中のみ残す）
     const data = kwSnap.data();
+    console.log('Firestoreから取得したキーワードデータ:', data);
     const imgVal = extractImgField(data);
+    console.log('imgフィールドの型:', typeof imgVal);
+    console.log('imgフィールドの内容:', imgVal);
 
     // ユーザードキュメントにスタンプ情報を追加
     const userDocRef = doc(db, 'users', user.uid);
@@ -175,7 +284,9 @@ stampBtn.addEventListener('click', async () => {
   }
 });
 
-// スタンプ描画
+// ---------------------------------------------------------
+// スタンプ描画：Firestoreのキー名が不正（""付き）だったケースに対応
+// ---------------------------------------------------------
 async function loadStamps(uid){
   clearStampsFromUI();
   const userSnap = await getDoc(doc(db,'users',uid));
@@ -189,16 +300,16 @@ async function loadStamps(uid){
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;
 
-    // ★キー正規化★
+    // ★キー正規化（例: '"x"' -> 'x'）
     const raw = kwSnap.data();
     const norm = {};
     for(const k of Object.keys(raw)){
-      const cleanKey = k.replace(/^['"]+|['"]+$/g,''); // "x" -> x
+      const cleanKey = k.replace(/^['"]+|['"]+$/g,'');
       norm[cleanKey] = raw[k];
     }
     console.log('正規化後データ:', norm);
 
-    // imgパス
+    // imgパス（安全取得）
     let src = extractImgField(norm);
     if(!src){
       console.warn(`画像パスが取得できません: ${keyword}`);
@@ -209,7 +320,7 @@ async function loadStamps(uid){
       src = 'images/' + src;
     }
 
-    // 数値は必ず Number() で変換
+    // 数値に変換（必ず Number() ）
     const xPos = Number(norm.x);
     const yPos = Number(norm.y);
     const wPercent = Number(norm.widthPercent);

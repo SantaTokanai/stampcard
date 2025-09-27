@@ -1,35 +1,58 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>スタンプカード</title>
 <link rel="stylesheet" href="style.css">
 <script type="module" src="script.js"></script>
+<style>
+  /* カード背景とスタンプの基本スタイル */
+  #card-container {
+    position: relative;
+    width: 90%;
+    max-width: 600px;
+    margin-top: 30px;
+  }
+  #card-container img.card-bg {
+    width: 100%;
+    height: auto;       /* 高さを自動調整 */
+    display: block;
+  }
+  .stamp {
+    position: absolute;
+    transform: translate(-50%, -50%);
+  }
+  #keyword-section, #auth-section, #error-msg, #password-msg {
+    margin-top: 10px;
+  }
+  .error { color: red; }
+  .success { color: green; }
+</style>
 </head>
 <body>
   <h1 class="cute-title">スタンプカード</h1>
 
-  <!-- 認証フォーム（ニックネーム + パスワード） -->
+  <!-- 認証フォーム -->
   <div id="auth-section">
-    <input type="text" id="nickname" placeholder="ニックネーム（例：yu）" />
-    <input type="password" id="password" placeholder="パスワード（6文字以上）" />
+    <input type="text" id="nickname" placeholder="ニックネーム">
+    <input type="password" id="password" placeholder="パスワード">
     <div id="password-msg">パスワードは6文字以上です</div>
     <button id="signup">新規登録</button>
     <button id="login">ログイン</button>
     <button id="logout" style="display:none;">ログアウト</button>
-    <div id="error-msg" aria-live="polite"></div>
+    <div id="error-msg"></div>
   </div>
 
   <!-- 合言葉フォーム -->
   <div id="keyword-section" style="display:none; margin-top:20px;">
-    <input type="text" id="keyword" placeholder="合言葉を入力" />
+    <input type="text" id="keyword" placeholder="合言葉を入力">
     <button id="stampBtn">スタンプを押す</button>
   </div>
 
   <!-- スタンプカード -->
-  <div id="card-container" style="margin-top:30px; position:relative; width:480px; height:320px;">
-    <img src="images/card_background.png" class="card-bg" alt="スタンプカード" style="width:100%; height:100%; display:block;" />
+  <div id="card-container">
+    <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
   </div>
 </body>
 </html>

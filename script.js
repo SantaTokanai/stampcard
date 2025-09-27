@@ -160,6 +160,8 @@ async function loadStamps(uid){
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;
     const d = kwSnap.data();
+    console.log('Firestoreの生データ:', d);
+    console.log('取得できるキー:', Object.keys(d));
 
     // img フィールド補正
     let src = (d.img || '').trim();

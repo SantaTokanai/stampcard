@@ -46,12 +46,10 @@ function showMessage(msg, type='error'){
   errorMsg.className = type==='error'?'error':'success';
 }
 
-// パスワードハッシュ化
 async function hashPassword(pw){ return sha256(pw); }
 
 // --------------------------------------------
 // 新規登録
-// --------------------------------------------
 signupBtn.addEventListener('click', async ()=>{
   const nickname = nicknameInput.value.trim();
   if(!nickname){ showMessage('ニックネームを入力してください'); return; }
@@ -72,60 +70,57 @@ signupBtn.addEventListener('click', async ()=>{
     showMessage('新規登録しました。自動でログインします','success');
     handleLogin();
   }catch(err){
-    showMessage('登録処理でエラー：'+err.message);
+    showMessage('登録処理でエラー:'+err.message);
     console.error(err);
   }
 });
 
 // --------------------------------------------
 // ログイン
-// --------------------------------------------
 loginBtn.addEventListener('click', handleLogin);
 
 async function handleLogin(){
   const nickname = nicknameInput.value.trim();
-  if(!nickname){ showMessage('ニックネームを入力してください'); return; }
-
   const password = passInput.value;
+
+  if(!nickname){ showMessage('ニックネームを入力してください'); return; }
   if(!password){ showMessage('パスワードを入力してください'); return; }
 
-  try{
-    const userSnap = await getDoc(doc(db,'users',nickname));
-    if(!userSnap.exists()){ showMessage('ユーザーが存在しません'); return; }
-    const userData = userSnap.data();
-    const pwHash = await hashPassword(password);
-    if(pwHash !== userData.password){ showMessage('パスワードが違います'); return; }
+  const userSnap = await getDoc(doc(db,'users',nickname));
+  if(!userSnap.exists()){ showMessage('ユーザーが存在しません'); return; }
 
-    // ログイン成功：UI切替
-    showMessage('ログインしました','success');
-    document.getElementById('auth-section').style.display = 'none';
-    logoutBtn.style.display = 'inline-block';
-    keywordSec.style.display = 'block';
-    loadStamps(nickname);
-  }catch(err){
-    showMessage('ログイン処理でエラー：'+err.message);
-  }
+  const userData = userSnap.data();
+  const pwHash = await hashPassword(password);
+  if(userData.password !== pwHash){ showMessage('パスワードが違います'); return; }
+
+  // ログイン成功
+  showMessage('ログインしました','success');
+  nicknameInput.style.display = 'none';
+  passInput.style.display = 'none';
+  loginBtn.style.display = 'none';
+  signupBtn.style.display = 'none';
+  logoutBtn.style.display = 'inline-block';
+  secretSec.style.display = 'none';
+  keywordSec.style.display = 'block';
+  loadStamps(nickname);
 }
 
 // --------------------------------------------
 // ログアウト
-// --------------------------------------------
 logoutBtn.addEventListener('click', ()=>{
   nicknameInput.style.display = 'inline-block';
   passInput.style.display = 'inline-block';
   loginBtn.style.display = 'inline-block';
   signupBtn.style.display = 'inline-block';
-  secretSec.style.display = 'none';
   logoutBtn.style.display = 'none';
+  secretSec.style.display = 'none';
   keywordSec.style.display = 'none';
   clearStampsFromUI();
   showMessage('');
-  document.getElementById('auth-section').style.display = 'flex';
 });
 
 // --------------------------------------------
-// スタンプ押下
-// --------------------------------------------
+// スタンプ処理
 stampBtn.addEventListener('click', async ()=>{
   const nickname = nicknameInput.value.trim();
   if(!nickname){ showMessage('ログインしてください'); return; }
@@ -133,21 +128,21 @@ stampBtn.addEventListener('click', async ()=>{
   const keyword = keywordInput.value.trim();
   if(!keyword){ showMessage('合言葉を入力してください'); return; }
 
+  const kwSnap = await getDoc(doc(db,'keywords',keyword));
+  if(!kwSnap.exists()){ showMessage('その合言葉は存在しません'); return; }
+
   try{
-    const kwSnap = await getDoc(doc(db,'keywords',keyword));
-    if(!kwSnap.exists()){ showMessage('その合言葉は存在しません'); return; }
-    const data = kwSnap.data();
     await setDoc(doc(db,'users',nickname),{[keyword]:true},{merge:true});
     showMessage('スタンプを押しました','success');
     loadStamps(nickname);
   }catch(err){
-    showMessage('スタンプ押下で失敗：'+err.message);
+    showMessage('スタンプ押下に失敗:'+err.message);
+    console.error(err);
   }
 });
 
 // --------------------------------------------
 // スタンプ描画
-// --------------------------------------------
 async function loadStamps(uid){
   clearStampsFromUI();
   const userSnap = await getDoc(doc(db,'users',uid));
@@ -161,27 +156,16 @@ async function loadStamps(uid){
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;
     const d = kwSnap.data();
-
-    const keys = Object.keys(d);
-    const norm = {};
-    for(const k of keys){
-      const cleanKey = k.replace(/^['"]+|['"]+$/g,'');
-      norm[cleanKey] = d[k];
-    }
-
-    const src = norm.img;
-    if(!src) return;
-    const xPos = Number(norm.x);
-    const yPos = Number(norm.y);
-    const wPercent = Number(norm.widthPercent);
+    if(!d.img) return;
 
     const img = new Image();
     img.className = 'stamp';
     img.style.position = 'absolute';
     img.style.transform = 'translate(-50%, -50%)';
-    img.style.left = (xPos*w)+'px';
-    img.style.top = (yPos*h)+'px';
-    img.style.width = (wPercent*w)+'px';
+    img.style.left = (Number(d.x)*w)+'px';
+    img.style.top = (Number(d.y)*h)+'px';
+    img.style.width = (Number(d.widthPercent)*w)+'px';
+    img.src = d.img;
     img.onload = ()=> cardContainer.appendChild(img);
   });
 
@@ -191,40 +175,3 @@ async function loadStamps(uid){
 function clearStampsFromUI(){
   document.querySelectorAll('#card-container .stamp').forEach(e=>e.remove());
 }
-
-// --------------------------------------------
-// パスワードリセット
-// --------------------------------------------
-forgotLink.addEventListener('click', ()=>{
-  resetSection.style.display = 'block';
-});
-
-resetStartBtn.addEventListener('click', async ()=>{
-  const nickname = resetNickname.value.trim();
-  if(!nickname){ showMessage('ニックネームを入力してください'); return; }
-
-  const userSnap = await getDoc(doc(db,'users',nickname));
-  if(!userSnap.exists()){ showMessage('ユーザーが存在しません'); return; }
-  showQuestionDiv.style.display = 'block';
-  showQuestionDiv.textContent = userSnap.data().secretQ || '';
-});
-
-resetSubmitBtn.addEventListener('click', async ()=>{
-  const nickname = resetNickname.value.trim();
-  const answer = resetAnswerInput.value.trim();
-  const newpass = resetNewPass.value;
-
-  if(!nickname || !answer || !newpass){ showMessage('すべて入力してください'); return; }
-
-  const userSnap = await getDoc(doc(db,'users',nickname));
-  if(!userSnap.exists()){ showMessage('ユーザーが存在しません'); return; }
-
-  const userData = userSnap.data();
-  if(answer !== userData.secretA){ showMessage('答えが違います'); return; }
-
-  const pwHash = await hashPassword(newpass);
-  await setDoc(doc(db,'users',nickname),{password: pwHash},{merge:true});
-  showMessage('パスワードを更新しました','success');
-  resetSection.style.display = 'none';
-  showQuestionDiv.style.display = 'none';
-});

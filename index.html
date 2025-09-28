@@ -20,9 +20,9 @@
       <input type="text" id="secretA" placeholder="質問の答え">
     </div>
 
-    <button id="signup">新規登録</button>
-    <button id="login">ログイン</button>
-    <button id="logout" style="display:none;">ログアウト</button>
+    <button type="button" id="signup">新規登録</button>
+    <button type="button" id="login">ログイン</button>
+    <button type="button" id="logout" style="display:none;">ログアウト</button>
 
     <!-- パスワードリセットリンク -->
     <a href="#" id="forgot-password">パスワードを忘れた場合</a>
@@ -33,20 +33,20 @@
   <!-- パスワードリセットフォーム -->
   <div id="reset-section" style="display:none;">
     <input type="text" id="reset-nickname" placeholder="ニックネーム">
-    <button id="reset-start">質問を表示</button>
+    <button type="button" id="reset-start">質問を表示</button>
 
     <div id="reset-question" style="display:none;">
       <div id="show-question" class="question-text"></div>
       <input type="text" id="reset-answer" placeholder="答えを入力">
       <input type="password" id="reset-newpass" placeholder="新しいパスワード">
-      <button id="reset-submit">更新</button>
+      <button type="button" id="reset-submit">更新</button>
     </div>
   </div>
 
   <!-- 合言葉フォーム -->
   <div id="keyword-section" style="display:none; margin-top:20px;">
     <input type="text" id="keyword" placeholder="合言葉を入力">
-    <button id="stampBtn">スタンプを押す</button>
+    <button type="button" id="stampBtn">スタンプを押す</button>
   </div>
 
   <!-- スタンプカード -->

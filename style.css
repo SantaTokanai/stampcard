@@ -12,46 +12,44 @@ body {
   margin: 20px 0;
 }
 
-/* 認証フォーム */
+/* 認証フォーム全体 */
 #auth-section, #reset-section, #secret-section, #keyword-section {
   max-width: 400px;
   margin: 0 auto 15px auto;
   padding: 10px;
 }
 
-/* 入力欄 */
-input[type="text"],
-input[type="password"] {
-  width: 90%;
-  padding: 8px;
-  margin: 5px auto;
-  display: block;
-  box-sizing: border-box;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  font-size: 1em;
+/* 認証フォームをフレックス縦並びに */
+#auth-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* ボタン */
-button {
-  padding: 8px 15px;
-  margin: 5px auto;
-  display: block;
+/* 入力欄・ボタン・リンクをフル幅で揃える */
+#auth-section input[type="text"],
+#auth-section input[type="password"],
+#auth-section button,
+#auth-section a,
+#secret-section input,
+#reset-section input,
+#reset-section button {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
   font-size: 1em;
   border-radius: 5px;
-  cursor: pointer;
+  border: 1px solid #ccc;
+  text-align: center;
 }
 
 /* リンク */
-#forgot-password {
-  display: block;
-  margin-top: 5px;
-  font-size: 0.9em;
-  color: #007bff;
+#auth-section a {
   text-decoration: none;
+  color: #007bff;
 }
 
-#forgot-password:hover {
+#auth-section a:hover {
   text-decoration: underline;
 }
 
@@ -99,10 +97,14 @@ button {
 @media screen and (max-width: 500px) {
   #auth-section, #reset-section, #keyword-section {
     width: 95%;
-    padding: 5px;
   }
 
-  input[type="text"], input[type="password"], button {
-    width: 95%;
+  #auth-section input,
+  #auth-section button,
+  #auth-section a,
+  #secret-section input,
+  #reset-section input,
+  #reset-section button {
+    width: 100%;
   }
 }

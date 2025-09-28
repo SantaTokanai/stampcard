@@ -17,11 +17,24 @@ const db = getFirestore(app);
 // DOM
 const nicknameInput = document.getElementById('nickname');
 const passInput = document.getElementById('password');
+const secretSection = document.getElementById('secret-section');
+const secretQInput = document.getElementById('secretQ');
+const secretAInput = document.getElementById('secretA');
 const loginBtn = document.getElementById('login');
 const signupBtn = document.getElementById('signup');
 const logoutBtn = document.getElementById('logout');
 const errorMsg = document.getElementById('error-msg');
-const passwordMsg = document.getElementById('password-msg');
+
+const forgotLink = document.getElementById('forgot-password');
+const resetSection = document.getElementById('reset-section');
+const resetNicknameInput = document.getElementById('reset-nickname');
+const resetStartBtn = document.getElementById('reset-start');
+const resetQuestionDiv = document.getElementById('reset-question');
+const showQuestionDiv = document.getElementById('show-question');
+const resetAnswerInput = document.getElementById('reset-answer');
+const resetNewPassInput = document.getElementById('reset-newpass');
+const resetSubmitBtn = document.getElementById('reset-submit');
+
 const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
@@ -34,21 +47,16 @@ function showMessage(msg, type='error'){
   errorMsg.className = type === 'error' ? 'error' : 'success';
 }
 
-// --------------------------------------------
 // パスワードハッシュ化 (SHA-256)
-// --------------------------------------------
 async function hashPassword(password){
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
-  return hashHex;
+  return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-// --------------------------------------------
 // Firestore ヘルパー
-// --------------------------------------------
 function cleanString(s){
   return (typeof s === "string") ? s.trim().replace(/^['"]+|['"]+$/g,'') : s;
 }
@@ -68,15 +76,18 @@ function extractImgField(docData){
   return "";
 }
 
-// --------------------------------------------
-// サインアップ処理
-// --------------------------------------------
+// ------------------
+// サインアップ
+// ------------------
 signupBtn.addEventListener('click', async () => {
   const nickname = nicknameInput.value.trim();
   const password = passInput.value;
+  const secretQ = secretQInput.value.trim();
+  const secretA = secretAInput.value.trim();
 
   if(!nickname){ showMessage('ニックネームを入力してください'); return; }
-  if(password.length < 6){ showMessage('パスワードは6文字以上です'); return; }
+  if(!password){ showMessage('パスワードを入力してください'); return; }
+  if(!secretQ || !secretA){ showMessage('秘密の質問と答えを入力してください'); return; }
 
   try {
     const userDocRef = doc(db,'users',nickname);
@@ -85,19 +96,23 @@ signupBtn.addEventListener('click', async () => {
     if(userSnap.exists()){ showMessage('そのニックネームは既に使用されています'); return; }
 
     const passwordHash = await hashPassword(password);
-    await setDoc(userDocRef, { password: passwordHash }, { merge: true });
+    await setDoc(userDocRef,{
+      password: passwordHash,
+      secretQ,
+      secretA
+    }, { merge: true });
 
     showMessage('新規登録しました。自動でログインします', 'success');
-    await loginUser(nickname, password); // 自動ログイン
+    await loginUser(nickname, password);
   } catch(err){
     showMessage('登録処理でエラーが発生しました：' + err.message);
     console.error(err);
   }
 });
 
-// --------------------------------------------
-// ログイン処理
-// --------------------------------------------
+// ------------------
+// ログイン
+// ------------------
 loginBtn.addEventListener('click', async () => {
   const nickname = nicknameInput.value.trim();
   const password = passInput.value;
@@ -120,40 +135,99 @@ async function loginUser(nickname, password){
     const inputHash = await hashPassword(password);
     if(inputHash !== userData.password){ showMessage('パスワードが違います'); return; }
 
-    // 成功時：UI切替
+    // 成功時UI切替
     showMessage('ログインしました', 'success');
     nicknameInput.style.display = 'none';
     passInput.style.display = 'none';
+    secretSection.style.display = 'none';
     loginBtn.style.display = 'none';
     signupBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
-    passwordMsg.style.display = 'none';
     keywordSec.style.display = 'block';
+
     loadStamps(nickname);
   } catch(err){
     showMessage('ログイン処理でエラーが発生しました：' + err.message);
-    console.error(err);
   }
 }
 
-// --------------------------------------------
-// ログアウト処理
-// --------------------------------------------
+// ------------------
+// ログアウト
+// ------------------
 logoutBtn.addEventListener('click', () => {
   nicknameInput.style.display = 'inline-block';
   passInput.style.display = 'inline-block';
   loginBtn.style.display = 'inline-block';
   signupBtn.style.display = 'inline-block';
   logoutBtn.style.display = 'none';
-  passwordMsg.style.display = 'block';
+  secretSection.style.display = 'none';
   keywordSec.style.display = 'none';
   clearStampsFromUI();
   showMessage('');
 });
 
-// --------------------------------------------
+// ------------------
+// パスワードリセットリンク
+// ------------------
+forgotLink.addEventListener('click', (e)=>{
+  e.preventDefault();
+  resetSection.style.display = 'block';
+  document.getElementById('auth-section').style.display = 'none';
+});
+
+// ------------------
+// リセット開始
+// ------------------
+resetStartBtn.addEventListener('click', async () => {
+  const nickname = resetNicknameInput.value.trim();
+  if(!nickname){ showMessage('ニックネームを入力してください'); return; }
+
+  try {
+    const userSnap = await getDoc(doc(db,'users',nickname));
+    if(!userSnap.exists()){ showMessage('ユーザーが存在しません'); return; }
+
+    const data = userSnap.data();
+    if(!data.secretQ){ showMessage('秘密の質問が設定されていません'); return; }
+
+    showQuestionDiv.textContent = data.secretQ;
+    resetQuestionDiv.style.display = 'block';
+  } catch(err){
+    showMessage('リセット処理でエラー：' + err.message);
+  }
+});
+
+// ------------------
+// リセット送信
+// ------------------
+resetSubmitBtn.addEventListener('click', async () => {
+  const nickname = resetNicknameInput.value.trim();
+  const answer = resetAnswerInput.value.trim();
+  const newPass = resetNewPassInput.value;
+
+  if(!nickname || !answer || !newPass){ showMessage('全て入力してください'); return; }
+
+  try {
+    const userRef = doc(db,'users',nickname);
+    const userSnap = await getDoc(userRef);
+    const data = userSnap.data();
+
+    if(answer !== data.secretA){ showMessage('答えが違います'); return; }
+
+    const newHash = await hashPassword(newPass);
+    await setDoc(userRef, { password: newHash }, { merge:true });
+    showMessage('パスワードを更新しました。再度ログインしてください', 'success');
+
+    // UI戻す
+    resetSection.style.display = 'none';
+    document.getElementById('auth-section').style.display = 'block';
+  } catch(err){
+    showMessage('パスワード更新でエラー：' + err.message);
+  }
+});
+
+// ------------------
 // スタンプ処理
-// --------------------------------------------
+// ------------------
 stampBtn.addEventListener('click', async () => {
   const nickname = nicknameInput.value.trim();
   if(!nickname){ showMessage('ログインしてください'); return; }
@@ -176,9 +250,9 @@ stampBtn.addEventListener('click', async () => {
   }
 });
 
-// --------------------------------------------
+// ------------------
 // スタンプ描画
-// --------------------------------------------
+// ------------------
 async function loadStamps(uid){
   clearStampsFromUI();
   const userSnap = await getDoc(doc(db,'users',uid));
@@ -189,7 +263,6 @@ async function loadStamps(uid){
   const h = cardContainer.clientHeight;
 
   const promises = Object.keys(userData).map(async keyword=>{
-    if(keyword === 'password') return; // passwordフィールドはスキップ
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;
     const d = kwSnap.data();
@@ -225,3 +298,10 @@ async function loadStamps(uid){
 function clearStampsFromUI(){
   document.querySelectorAll('#card-container .stamp').forEach(e=>e.remove());
 }
+
+// ------------------
+// サインアップ時に秘密質問欄表示
+// ------------------
+nicknameInput.addEventListener('input', ()=>{
+  secretSection.style.display = 'block';
+});

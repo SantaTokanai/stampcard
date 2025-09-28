@@ -4,12 +4,12 @@ import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/fireb
 
 /*
   前提:
-  - index.html で普通の <script src="...sha256.min.js"> を読み込んでいるため
+  - index.html で通常の <script src="...sha256.min.js"> を読み込んでいるため
     グローバル関数 sha256(...) が使えます。
   - このファイルは type="module" で読み込まれます。
 */
 
-// Firebase 設定 (既存値をそのまま使用)
+// Firebase 設定（既存値をそのまま）
 const firebaseConfig = {
   apiKey: "AIzaSyBI_XbbC78cXCBmm6ue-h0HJ15dNsDAnzo",
   authDomain: "stampcard-project.firebaseapp.com",
@@ -51,7 +51,11 @@ const stampBtn = document.getElementById('stampBtn');
 
 const cardContainer = document.getElementById('card-container');
 
-// ヘルパー: メッセージ表示
+// アプリ状態：現在ログインしているユーザー（ニックネーム）
+// これを使ってスタンプなどを実行する（nicknameInput が非表示になっても確実）
+let currentUser = null;
+
+// メッセージ表示
 function showMessage(msg = '', type = 'error') {
   errorMsg.textContent = msg;
   if (type === 'success') {
@@ -61,30 +65,28 @@ function showMessage(msg = '', type = 'error') {
   }
 }
 
-// 簡単なハッシュラッパー（グローバル sha256 を利用）
+// ハッシュ（グローバル sha256 を利用）
 function hashPassword(pw) {
-  // sha256 がグローバルで定義されていることが前提
   return typeof sha256 === 'function' ? sha256(pw) : '';
 }
 
 // --------------------
-// 新規登録 (動作の流れ)
-// ・ボタン押下で秘密質問エリアを表示（もし空なら）
-// ・必要項目が揃って初めて Firestore に保存
+// 新規登録（2段階対応）
+// ・初回クリックで秘密質問欄を表示（未表示だった場合）
+// ・もし既に秘密質問・答え・パスワードが入力済なら即登録を行う
 // --------------------
 signupBtn.addEventListener('click', async () => {
-  // まず表示（ユーザーがまだ入力していない場合、欄を見せる）
-  if (secretSec.style.display === 'none' || secretSec.style.display === '') {
+  // 表示されていなければまず表示させる（ユーザーが意図せず消した場合など）
+  if (!secretSec || secretSec.style.display === 'none' || secretSec.style.display === '') {
     secretSec.style.display = 'flex';
-    showMessage('秘密の質問を入力してからもう一度「新規登録」を押してください', 'error');
-    // ユーザーに入力してもらうため、ここでは登録処理は止める
-    // 次にもう一度押されたときに処理を進める
-    // To allow "two-step" UX: first click shows fields, second click registers
-    // If fields already filled, allow immediate registration:
-    if (!secretQInput.value.trim() || !secretAInput.value.trim() || !passInput.value) return;
+    // もしまだ入力が揃っていなければ一旦止めて入力を促す
+    if (!secretQInput.value.trim() || !secretAInput.value.trim() || !passInput.value) {
+      showMessage('秘密の質問・答えとパスワードを入力してから再度「新規登録」を押してください');
+      return;
+    }
+    // else fallthrough to proceed
   }
 
-  // 必須チェック
   const nickname = nicknameInput.value.trim();
   const password = passInput.value;
   const secretQ = secretQInput.value.trim();
@@ -95,7 +97,6 @@ signupBtn.addEventListener('click', async () => {
   if (!secretQ || !secretA) { showMessage('秘密の質問と答えを入力してください'); return; }
 
   try {
-    // 既存確認（重複チェック）
     const userRef = doc(db, 'users', nickname);
     const userSnap = await getDoc(userRef);
     if (userSnap.exists()) {
@@ -110,36 +111,22 @@ signupBtn.addEventListener('click', async () => {
       secretA: secretA
     }, { merge: true });
 
+    // 登録成功 → 自動ログインのため currentUser を設定して UI 切替
+    currentUser = nickname;
     showMessage('新規登録に成功しました。自動でログインします', 'success');
-    await loginUserAfterSignup(nickname, password);
+
+    // UI 切替：auth セクションを隠し、ログアウトボタンとスタンプ領域を表示
+    authSection.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
+    keywordSec.style.display = 'block';
+    secretSec.style.display = 'none';
+
+    await loadStamps(currentUser);
   } catch (err) {
     console.error(err);
     showMessage('登録処理でエラーが発生しました: ' + (err.message || err));
   }
 });
-
-// helper: サインアップ直後のログイン処理（同じ処理を呼ぶ）
-async function loginUserAfterSignup(nickname, password) {
-  // nick and password are provided
-  try {
-    const userRef = doc(db, 'users', nickname);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) { showMessage('登録直後にユーザーが見つかりませんでした'); return; }
-    const userData = userSnap.data();
-    if (userData.password !== hashPassword(password)) { showMessage('自動ログインに失敗しました'); return; }
-
-    // UI 切替
-    authSection.style.display = 'none';
-    logoutBtn.style.display = 'inline-block';
-    keywordSec.style.display = 'block';
-    secretSec.style.display = 'none';
-    showMessage('ログインしました', 'success');
-    await loadStamps(nickname);
-  } catch (err) {
-    console.error(err);
-    showMessage('自動ログインでエラー: ' + (err.message || err));
-  }
-}
 
 // --------------------
 // ログイン処理
@@ -160,19 +147,19 @@ async function handleLogin() {
 
     const userData = userSnap.data();
     const pwHash = hashPassword(password);
-    if (!userData.password || userData.password !== pwHash) {
-      showMessage('パスワードが違います');
-      return;
-    }
+    if (!userData.password || userData.password !== pwHash) { showMessage('パスワードが違います'); return; }
 
-    // ログイン成功：UI 切替（auth セクションを丸ごと隠す）
-    authSection.style.display = 'none';
-    logoutBtn.style.display = 'inline-block';
-    keywordSec.style.display = 'block';
-    secretSec.style.display = 'none';
+    // 成功
+    currentUser = nickname;
     showMessage('ログインしました', 'success');
 
-    await loadStamps(nickname);
+    // UI 切替：auth を隠す（これも「パスワードを忘れた場合」リンクを消す目的）
+    authSection.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
+    secretSec.style.display = 'none';
+    keywordSec.style.display = 'block';
+
+    await loadStamps(currentUser);
   } catch (err) {
     console.error(err);
     showMessage('ログイン処理でエラー: ' + (err.message || err));
@@ -183,34 +170,31 @@ async function handleLogin() {
 // ログアウト
 // --------------------
 logoutBtn.addEventListener('click', () => {
-  // UI を元に戻す
+  // 状態リセット
+  currentUser = null;
+
+  // UIを元に戻す
   authSection.style.display = 'flex';
-  nicknameInput.style.display = 'inline-block';
-  passInput.style.display = 'inline-block';
-  loginBtn.style.display = 'inline-block';
-  signupBtn.style.display = 'inline-block';
-  logoutBtn.style.display = 'none';
   secretSec.style.display = 'none';
-  keywordSec.style.display = 'none';
   resetSection.style.display = 'none';
   resetQuestionDiv.style.display = 'none';
+  keywordSec.style.display = 'none';
+  logoutBtn.style.display = 'none';
+
+  // 入力欄の値は残す（ユーザー利便性） -- 必要ならここで clear できます
   clearStampsFromUI();
   showMessage('');
 });
 
 // --------------------
-// パスワードリセットの表示
+// パスワードリセットの表示と処理
 // --------------------
 forgotLink.addEventListener('click', (e) => {
   e.preventDefault();
-  // show reset section; keep auth section visible — user will enter nickname
   resetSection.style.display = 'block';
   resetQuestionDiv.style.display = 'none';
 });
 
-// --------------------
-// パスワードリセット: 質問を表示
-// --------------------
 resetStartBtn.addEventListener('click', async () => {
   const nick = resetNickname.value.trim();
   if (!nick) { showMessage('ニックネームを入力してください'); return; }
@@ -224,16 +208,13 @@ resetStartBtn.addEventListener('click', async () => {
 
     showQuestionDiv.textContent = data.secretQ;
     resetQuestionDiv.style.display = 'block';
-    showMessage('', ''); // clear message
+    showMessage('');
   } catch (err) {
     console.error(err);
     showMessage('リセット処理でエラー: ' + (err.message || err));
   }
 });
 
-// --------------------
-// パスワードリセット: 更新送信
-// --------------------
 resetSubmitBtn.addEventListener('click', async () => {
   const nick = resetNickname.value.trim();
   const ans = resetAnswerInput.value.trim();
@@ -246,13 +227,12 @@ resetSubmitBtn.addEventListener('click', async () => {
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) { showMessage('ユーザーが存在しません'); return; }
     const data = userSnap.data();
-    if (!data.secretA || (data.secretA !== ans)) { showMessage('答えが違います'); return; }
+    if (!data.secretA || data.secretA !== ans) { showMessage('答えが違います'); return; }
 
     const newHash = hashPassword(newPass);
     await setDoc(userRef, { password: newHash }, { merge: true });
     showMessage('パスワードを更新しました。再度ログインしてください', 'success');
 
-    // UI を元に戻す
     resetSection.style.display = 'none';
     resetQuestionDiv.style.display = 'none';
   } catch (err) {
@@ -262,11 +242,13 @@ resetSubmitBtn.addEventListener('click', async () => {
 });
 
 // --------------------
-// スタンプ処理（既存の仕様を壊さない）
+// スタンプ押下（必ず currentUser を使ってチェックする）
 // --------------------
 stampBtn.addEventListener('click', async () => {
-  const nickname = nicknameInput.value.trim();
-  if (!nickname) { showMessage('ログインしてください'); return; }
+  if (!currentUser) {
+    showMessage('ログインしてください');
+    return;
+  }
 
   const keyword = keywordInput.value.trim();
   if (!keyword) { showMessage('合言葉を入力してください'); return; }
@@ -275,10 +257,11 @@ stampBtn.addEventListener('click', async () => {
     const kwRef = doc(db, 'keywords', keyword);
     const kwSnap = await getDoc(kwRef);
     if (!kwSnap.exists()) { showMessage('その合言葉は存在しません'); return; }
-    // mark user doc
-    await setDoc(doc(db, 'users', nickname), { [keyword]: true }, { merge: true });
+
+    // ユーザードキュメントにスタンプ印を付ける
+    await setDoc(doc(db, 'users', currentUser), { [keyword]: true }, { merge: true });
     showMessage('スタンプを押しました', 'success');
-    await loadStamps(nickname);
+    await loadStamps(currentUser);
   } catch (err) {
     console.error(err);
     showMessage('スタンプ押下に失敗しました: ' + (err.message || err));
@@ -286,10 +269,11 @@ stampBtn.addEventListener('click', async () => {
 });
 
 // --------------------
-// スタンプ描画（既存動作を維持、password/secret はスキップ）
+// スタンプ描画（password/secret フィールドはスキップ）
 // --------------------
 async function loadStamps(uid) {
   clearStampsFromUI();
+  if (!uid) return;
   try {
     const userRef = doc(db, 'users', uid);
     const userSnap = await getDoc(userRef);
@@ -301,10 +285,8 @@ async function loadStamps(uid) {
 
     const keys = Object.keys(userData || {});
     const promises = keys.map(async (k) => {
-      // スタンプ以外のフィールドをスキップ
       if (k === 'password' || k === 'secretQ' || k === 'secretA') return;
-      // value true/whatever indicates obtained stamp
-      // fetch keyword doc
+      // k is assumed to be a keyword id string
       const kwRef = doc(db, 'keywords', k);
       const kwSnap = await getDoc(kwRef);
       if (!kwSnap.exists()) return;
@@ -334,11 +316,10 @@ async function loadStamps(uid) {
 }
 
 // --------------------
-// UI helper: スタンプを全部消す
-// --------------------
+// clear stamps
 function clearStampsFromUI() {
   document.querySelectorAll('#card-container .stamp').forEach(e => e.remove());
 }
 
-// 初期メッセージクリア
+// 初期化: 何も表示しない
 showMessage('');

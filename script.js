@@ -39,7 +39,6 @@ const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
 const cardContainer = document.getElementById('card-container');
-const cardBg = document.querySelector('.card-bg');
 
 // メッセージ表示
 function showMessage(msg, type='error'){
@@ -47,7 +46,7 @@ function showMessage(msg, type='error'){
   errorMsg.className = type === 'error' ? 'error' : 'success';
 }
 
-// パスワードハッシュ化 (SHA-256)
+// パスワードハッシュ化
 async function hashPassword(password){
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
@@ -167,6 +166,31 @@ logoutBtn.addEventListener('click', () => {
 });
 
 // ------------------
+// サインアップ用に秘密質問欄表示
+// ------------------
+nicknameInput.addEventListener('input', async () => {
+  const nickname = nicknameInput.value.trim();
+  if(!nickname){
+    secretSection.style.display = 'none';
+    return;
+  }
+
+  try {
+    const userSnap = await getDoc(doc(db,'users',nickname));
+    if(userSnap.exists()){
+      // 既存ユーザーの場合は秘密質問欄を非表示
+      secretSection.style.display = 'none';
+    } else {
+      // 新規ユーザーの場合のみ表示
+      secretSection.style.display = 'block';
+    }
+  } catch(err){
+    console.error('秘密質問表示チェックでエラー', err);
+    secretSection.style.display = 'block';
+  }
+});
+
+// ------------------
 // パスワードリセットリンク
 // ------------------
 forgotLink.addEventListener('click', (e)=>{
@@ -217,7 +241,6 @@ resetSubmitBtn.addEventListener('click', async () => {
     await setDoc(userRef, { password: newHash }, { merge:true });
     showMessage('パスワードを更新しました。再度ログインしてください', 'success');
 
-    // UI戻す
     resetSection.style.display = 'none';
     document.getElementById('auth-section').style.display = 'block';
   } catch(err){
@@ -298,10 +321,3 @@ async function loadStamps(uid){
 function clearStampsFromUI(){
   document.querySelectorAll('#card-container .stamp').forEach(e=>e.remove());
 }
-
-// ------------------
-// サインアップ時に秘密質問欄表示
-// ------------------
-nicknameInput.addEventListener('input', ()=>{
-  secretSection.style.display = 'block';
-});

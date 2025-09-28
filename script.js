@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
 // Firebase 設定
@@ -13,7 +12,6 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
 
 // DOM
@@ -37,7 +35,19 @@ function showMessage(msg, type='error'){
 }
 
 // --------------------------------------------
-// ヘルパー：Firestoreの img フィールド取得
+// パスワードハッシュ化 (SHA-256)
+// --------------------------------------------
+async function hashPassword(password){
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+  return hashHex;
+}
+
+// --------------------------------------------
+// Firestore ヘルパー
 // --------------------------------------------
 function cleanString(s){
   return (typeof s === "string") ? s.trim().replace(/^['"]+|['"]+$/g,'') : s;
@@ -59,34 +69,58 @@ function extractImgField(docData){
 }
 
 // --------------------------------------------
-// 認証処理
+// サインアップ処理
 // --------------------------------------------
 signupBtn.addEventListener('click', async () => {
-  if(passInput.value.length < 6){
-    showMessage('パスワードは6文字以上です');
-    return;
-  }
+  const nickname = nicknameInput.value.trim();
+  const password = passInput.value;
+
+  if(!nickname){ showMessage('ニックネームを入力してください'); return; }
+  if(password.length < 6){ showMessage('パスワードは6文字以上です'); return; }
+
   try {
-    // ニックネームを uid としてユーザー管理（Firebase Authenticationは使わない）
-    const userDocRef = doc(db,'users',nicknameInput.value.trim());
-    await setDoc(userDocRef, {});
-    showMessage('新規登録しました。自動でログインしました', 'success');
-    handleLogin();
-  } catch(err) {
+    const userDocRef = doc(db,'users',nickname);
+    const userSnap = await getDoc(userDocRef);
+
+    if(userSnap.exists()){ showMessage('そのニックネームは既に使用されています'); return; }
+
+    const passwordHash = await hashPassword(password);
+    await setDoc(userDocRef, { password: passwordHash }, { merge: true });
+
+    showMessage('新規登録しました。自動でログインします', 'success');
+    await loginUser(nickname, password); // 自動ログイン
+  } catch(err){
     showMessage('登録処理でエラーが発生しました：' + err.message);
     console.error(err);
   }
 });
 
-loginBtn.addEventListener('click', handleLogin);
-
-async function handleLogin(){
+// --------------------------------------------
+// ログイン処理
+// --------------------------------------------
+loginBtn.addEventListener('click', async () => {
   const nickname = nicknameInput.value.trim();
+  const password = passInput.value;
   if(!nickname){ showMessage('ニックネームを入力してください'); return; }
-  // 実質「ログイン」はユーザドキュメントの存在チェック
+  if(!password){ showMessage('パスワードを入力してください'); return; }
+
+  await loginUser(nickname, password);
+});
+
+async function loginUser(nickname, password){
   try {
-    const userSnap = await getDoc(doc(db,'users',nickname));
+    const userDocRef = doc(db,'users',nickname);
+    const userSnap = await getDoc(userDocRef);
+
     if(!userSnap.exists()){ showMessage('ユーザーが存在しません'); return; }
+
+    const userData = userSnap.data();
+    if(!userData.password){ showMessage('パスワードが設定されていません'); return; }
+
+    const inputHash = await hashPassword(password);
+    if(inputHash !== userData.password){ showMessage('パスワードが違います'); return; }
+
+    // 成功時：UI切替
     showMessage('ログインしました', 'success');
     nicknameInput.style.display = 'none';
     passInput.style.display = 'none';
@@ -98,9 +132,13 @@ async function handleLogin(){
     loadStamps(nickname);
   } catch(err){
     showMessage('ログイン処理でエラーが発生しました：' + err.message);
+    console.error(err);
   }
 }
 
+// --------------------------------------------
+// ログアウト処理
+// --------------------------------------------
 logoutBtn.addEventListener('click', () => {
   nicknameInput.style.display = 'inline-block';
   passInput.style.display = 'inline-block';
@@ -151,6 +189,7 @@ async function loadStamps(uid){
   const h = cardContainer.clientHeight;
 
   const promises = Object.keys(userData).map(async keyword=>{
+    if(keyword === 'password') return; // passwordフィールドはスキップ
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;
     const d = kwSnap.data();

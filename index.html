@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>スタンプカード</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css" />
 
-<!-- sha256 をグローバルで読み込む（moduleではなく普通のスクリプト） -->
+<!-- sha256 をグローバルで読み込む（module ではない通常スクリプト） -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
 </head>
 <body>
@@ -14,20 +14,19 @@
 
   <!-- 認証フォーム -->
   <div id="auth-section">
-    <input type="text" id="nickname" placeholder="ニックネーム" autocomplete="off">
-    <input type="password" id="password" placeholder="パスワード" autocomplete="off">
+    <input type="text" id="nickname" placeholder="ニックネーム" autocomplete="off" />
+    <input type="password" id="password" placeholder="パスワード" autocomplete="off" />
 
     <!-- 秘密質問（新規登録時のみ表示） -->
     <div id="secret-section" style="display:none;">
-      <input type="text" id="secretQ" placeholder="秘密の質問（例：母の旧姓）" autocomplete="off">
-      <input type="text" id="secretA" placeholder="質問の答え" autocomplete="off">
+      <input type="text" id="secretQ" placeholder="秘密の質問（例：母の旧姓）" autocomplete="off" />
+      <input type="text" id="secretA" placeholder="質問の答え" autocomplete="off" />
     </div>
 
     <button type="button" id="signup">新規登録</button>
     <button type="button" id="login">ログイン</button>
     <button type="button" id="logout" style="display:none;">ログアウト</button>
 
-    <!-- パスワードリセットリンク -->
     <a href="#" id="forgot-password">パスワードを忘れた場合</a>
 
     <div id="error-msg" aria-live="polite"></div>
@@ -35,29 +34,29 @@
 
   <!-- パスワードリセットフォーム -->
   <div id="reset-section" style="display:none;">
-    <input type="text" id="reset-nickname" placeholder="ニックネーム" autocomplete="off">
+    <input type="text" id="reset-nickname" placeholder="ニックネーム" autocomplete="off" />
     <button type="button" id="reset-start">質問を表示</button>
 
     <div id="reset-question" style="display:none;">
       <div id="show-question" class="question-text"></div>
-      <input type="text" id="reset-answer" placeholder="答えを入力" autocomplete="off">
-      <input type="password" id="reset-newpass" placeholder="新しいパスワード" autocomplete="off">
+      <input type="text" id="reset-answer" placeholder="答えを入力" autocomplete="off" />
+      <input type="password" id="reset-newpass" placeholder="新しいパスワード" autocomplete="off" />
       <button type="button" id="reset-submit">更新</button>
     </div>
   </div>
 
   <!-- 合言葉フォーム -->
   <div id="keyword-section" style="display:none; margin-top:20px;">
-    <input type="text" id="keyword" placeholder="合言葉を入力" autocomplete="off">
+    <input type="text" id="keyword" placeholder="合言葉を入力" autocomplete="off" />
     <button type="button" id="stampBtn">スタンプを押す</button>
   </div>
 
   <!-- スタンプカード -->
   <div id="card-container">
-    <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
+    <img src="images/card_background.png" class="card-bg" alt="スタンプカード" />
   </div>
 
-  <!-- 主スクリプト（module） -->
+  <!-- メイン（module）スクリプト -->
   <script type="module" src="script.js"></script>
 </body>
 </html>

@@ -92,7 +92,10 @@ signupBtn.addEventListener('click', async () => {
     const userDocRef = doc(db,'users',nickname);
     const userSnap = await getDoc(userDocRef);
 
-    if(userSnap.exists()){ showMessage('そのニックネームは既に使用されています'); return; }
+    if(userSnap.exists()){ 
+      showMessage('そのニックネームは既に使用されています'); 
+      return; 
+    }
 
     const passwordHash = await hashPassword(password);
     await setDoc(userDocRef,{
@@ -166,22 +169,19 @@ logoutBtn.addEventListener('click', () => {
 });
 
 // ------------------
-// サインアップ用に秘密質問欄表示
+// 秘密質問欄表示はサインアップ時のみ
 // ------------------
-nicknameInput.addEventListener('input', async () => {
+signupBtn.addEventListener('mouseover', async () => {
   const nickname = nicknameInput.value.trim();
-  if(!nickname){
-    secretSection.style.display = 'none';
-    return;
+  if(!nickname){ 
+    secretSection.style.display = 'block';
+    return; 
   }
-
   try {
     const userSnap = await getDoc(doc(db,'users',nickname));
     if(userSnap.exists()){
-      // 既存ユーザーの場合は秘密質問欄を非表示
       secretSection.style.display = 'none';
     } else {
-      // 新規ユーザーの場合のみ表示
       secretSection.style.display = 'block';
     }
   } catch(err){

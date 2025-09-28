@@ -1,4 +1,3 @@
-/* 基本 */
 body {
   font-family: sans-serif;
   text-align: center;
@@ -6,34 +5,25 @@ body {
   padding:0;
 }
 
-/* タイトル */
 .cute-title {
   font-size: 2em;
   margin: 20px 0;
 }
 
-/* 認証フォーム全体 */
+/* フォーム全体 */
 #auth-section, #reset-section, #secret-section, #keyword-section {
   max-width: 400px;
   margin: 0 auto 15px auto;
   padding: 10px;
-}
-
-/* 認証フォームをフレックス縦並びに */
-#auth-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-/* 入力欄・ボタン・リンクをフル幅で揃える */
-#auth-section input[type="text"],
-#auth-section input[type="password"],
-#auth-section button,
-#auth-section a,
+#auth-section input, #auth-section button, #auth-section a,
 #secret-section input,
-#reset-section input,
-#reset-section button {
+#reset-section input, #reset-section button,
+#keyword-section input, #keyword-section button {
   width: 100%;
   box-sizing: border-box;
   padding: 8px;
@@ -43,16 +33,12 @@ body {
   text-align: center;
 }
 
-/* リンク */
 #auth-section a {
   text-decoration: none;
   color: #007bff;
 }
-#auth-section a:hover {
-  text-decoration: underline;
-}
+#auth-section a:hover { text-decoration: underline; }
 
-/* スタンプカード */
 #card-container {
   margin: 30px auto;
   position: relative;
@@ -60,7 +46,6 @@ body {
   max-width: 500px;
 }
 
-/* カード背景 */
 .card-bg {
   width: 100%;
   height: auto;
@@ -68,42 +53,18 @@ body {
   margin: 0 auto;
 }
 
-/* スタンプ画像 */
 .stamp {
   position: absolute;
   transform: translate(-50%, -50%);
 }
 
-/* リセット質問 */
-.question-text {
-  font-weight: bold;
-  margin: 10px 0;
-}
+.question-text { font-weight: bold; margin: 10px 0; }
 
-/* メッセージ表示 */
-#error-msg {
-  margin-top: 5px;
-  font-size: 0.9em;
-  color: red;
-}
+#error-msg { margin-top: 5px; font-size: 0.9em; color: red; }
+.success { color: green; }
 
-/* 成功メッセージ */
-.success {
-  color: green;
-}
-
-/* モバイル対応 */
 @media screen and (max-width: 500px) {
-  #auth-section, #reset-section, #keyword-section {
+  #auth-section, #reset-section, #secret-section, #keyword-section {
     width: 95%;
-  }
-
-  #auth-section input,
-  #auth-section button,
-  #auth-section a,
-  #secret-section input,
-  #reset-section input,
-  #reset-section button {
-    width: 100%;
   }
 }

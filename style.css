@@ -3,10 +3,19 @@ body {
   text-align: center;
 }
 
+#card-container {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;   /* 横方向中央寄せ */
+}
+
 .card-bg {
   width: 100%;
   height: auto;
   display: block;
+  max-width: 500px;  /* 元々の最大幅 */
+  margin: 0 auto;    /* 横方向中央寄せ */
 }
 
 .stamp {

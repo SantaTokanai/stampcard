@@ -1,70 +1,116 @@
+/* 基本 */
 body {
-  font-family: sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   text-align: center;
   margin:0;
   padding:0;
+  background: #fafafa;
+  color: #222;
 }
 
+/* タイトル */
 .cute-title {
-  font-size: 2em;
-  margin: 20px 0;
+  font-size: 1.8rem;
+  margin: 18px 0;
 }
 
-/* フォーム全体 */
-#auth-section, #reset-section, #secret-section, #keyword-section {
-  max-width: 400px;
-  margin: 0 auto 15px auto;
+/* フォームコンテナ共通 */
+#auth-section,
+#reset-section,
+#keyword-section {
+  max-width: 420px;
+  margin: 0 auto 16px;
   padding: 10px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-#auth-section input, #auth-section button, #auth-section a,
-#secret-section input,
-#reset-section input, #reset-section button,
-#keyword-section input, #keyword-section button {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 8px;
-  font-size: 1em;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  text-align: center;
+/* 秘密欄は内包 */
+#secret-section {
+  display: none;
+  gap: 8px;
 }
 
+/* 入力欄・ボタン */
+input[type="text"],
+input[type="password"],
+button,
+a {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+/* ボタン見た目 */
+button {
+  cursor: pointer;
+  background: linear-gradient(#fff, #f2f2f2);
+  border: 1px solid #ccc;
+}
+
+/* リンク風表示（パスワード忘れ） */
 #auth-section a {
   text-decoration: none;
   color: #007bff;
+  background: none;
+  border: none;
+  padding: 6px 0;
+  font-size: 0.95rem;
 }
-#auth-section a:hover { text-decoration: underline; }
 
+/* スタンプカード */
 #card-container {
-  margin: 30px auto;
+  margin: 22px auto;
   position: relative;
-  width: 90%;
-  max-width: 500px;
+  width: 92%;
+  max-width: 520px;
 }
 
+/* カード背景 */
 .card-bg {
   width: 100%;
   height: auto;
   display: block;
   margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
+/* スタンプ画像 */
 .stamp {
   position: absolute;
   transform: translate(-50%, -50%);
+  pointer-events: none; /* スタンプ自体はクリック妨げない */
 }
 
-.question-text { font-weight: bold; margin: 10px 0; }
+/* メッセージ表示 */
+#error-msg {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: #b00020;
+  min-height: 1.2em;
+}
 
-#error-msg { margin-top: 5px; font-size: 0.9em; color: red; }
-.success { color: green; }
+/* 成功 */
+.success {
+  color: #0b8043;
+}
 
-@media screen and (max-width: 500px) {
-  #auth-section, #reset-section, #secret-section, #keyword-section {
-    width: 95%;
-  }
+/* リセット質問強調 */
+.question-text {
+  font-weight: 600;
+  margin: 6px 0;
+}
+
+/* モバイル調整 */
+@media (max-width: 520px) {
+  .cute-title { font-size: 1.6rem; margin: 14px 0; }
+  #auth-section, #reset-section, #keyword-section { width: 96%; padding: 8px; }
+  input, button { padding: 10px; font-size: 1rem; }
 }

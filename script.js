@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
-import { sha256 } from "https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js";
 
 // Firebase 設定
 const firebaseConfig = {
@@ -41,12 +40,11 @@ const resetAnswerInput = document.getElementById('reset-answer');
 const resetNewPass = document.getElementById('reset-newpass');
 const resetSubmitBtn = document.getElementById('reset-submit');
 
+// メッセージ表示
 function showMessage(msg, type='error'){
   errorMsg.textContent = msg;
   errorMsg.className = type==='error'?'error':'success';
 }
-
-async function hashPassword(pw){ return sha256(pw); }
 
 // --------------------------------------------
 // 新規登録
@@ -60,7 +58,8 @@ signupBtn.addEventListener('click', async ()=>{
 
   if(!password || !secretQ || !secretA){ showMessage('パスワードと秘密質問・答えを入力してください'); return; }
 
-  const pwHash = await hashPassword(password);
+  const pwHash = sha256(password);
+
   try{
     await setDoc(doc(db,'users',nickname),{
       password: pwHash,
@@ -90,7 +89,7 @@ async function handleLogin(){
   if(!userSnap.exists()){ showMessage('ユーザーが存在しません'); return; }
 
   const userData = userSnap.data();
-  const pwHash = await hashPassword(password);
+  const pwHash = sha256(password);
   if(userData.password !== pwHash){ showMessage('パスワードが違います'); return; }
 
   // ログイン成功
@@ -117,6 +116,41 @@ logoutBtn.addEventListener('click', ()=>{
   keywordSec.style.display = 'none';
   clearStampsFromUI();
   showMessage('');
+});
+
+// --------------------------------------------
+// パスワードリセット表示
+forgotLink.addEventListener('click',(e)=>{
+  e.preventDefault();
+  resetSection.style.display='block';
+});
+
+// --------------------------------------------
+// パスワードリセット処理
+resetStartBtn.addEventListener('click', async ()=>{
+  const nick = resetNickname.value.trim();
+  if(!nick){ showMessage('ニックネームを入力してください'); return; }
+
+  const userSnap = await getDoc(doc(db,'users',nick));
+  if(!userSnap.exists()){ showMessage('ユーザーが存在しません'); return; }
+
+  showQuestionDiv.textContent = userSnap.data().secretQ;
+  resetQuestionDiv.style.display='block';
+});
+
+resetSubmitBtn.addEventListener('click', async ()=>{
+  const nick = resetNickname.value.trim();
+  const ans = resetAnswerInput.value.trim();
+  const newPass = resetNewPass.value;
+
+  const userSnap = await getDoc(doc(db,'users',nick));
+  if(!userSnap.exists()){ showMessage('ユーザーが存在しません'); return; }
+
+  if(userSnap.data().secretA !== ans){ showMessage('答えが違います'); return; }
+
+  await setDoc(doc(db,'users',nick),{password:sha256(newPass)},{merge:true});
+  showMessage('パスワードを更新しました','success');
+  resetSection.style.display='none';
 });
 
 // --------------------------------------------
@@ -159,13 +193,13 @@ async function loadStamps(uid){
     if(!d.img) return;
 
     const img = new Image();
-    img.className = 'stamp';
-    img.style.position = 'absolute';
-    img.style.transform = 'translate(-50%, -50%)';
-    img.style.left = (Number(d.x)*w)+'px';
-    img.style.top = (Number(d.y)*h)+'px';
-    img.style.width = (Number(d.widthPercent)*w)+'px';
-    img.src = d.img;
+    img.className='stamp';
+    img.style.position='absolute';
+    img.style.transform='translate(-50%, -50%)';
+    img.style.left=(Number(d.x)*w)+'px';
+    img.style.top=(Number(d.y)*h)+'px';
+    img.style.width=(Number(d.widthPercent)*w)+'px';
+    img.src=d.img;
     img.onload = ()=> cardContainer.appendChild(img);
   });
 

@@ -13,10 +13,10 @@
   <div id="auth-section">
     <input type="text" id="nickname" placeholder="ニックネーム">
     <input type="password" id="password" placeholder="パスワード">
-
-    <!-- 秘密の質問と答え（サインアップ時のみ表示） -->
-    <div id="secret-section" style="display:none; margin-top:10px;">
-      <input type="text" id="secretQ" placeholder="秘密の質問（例：母の旧姓）">
+    
+    <!-- 秘密質問（新規登録時のみ表示） -->
+    <div id="secret-section" style="display:none;">
+      <input type="text" id="secretQ" placeholder="秘密の質問">
       <input type="text" id="secretA" placeholder="質問の答え">
     </div>
 
@@ -25,21 +25,20 @@
     <button id="logout" style="display:none;">ログアウト</button>
     <div id="error-msg"></div>
 
-    <div style="margin-top:5px;">
-      <a href="#" id="forgot-password">パスワードを忘れた場合</a>
-    </div>
+    <!-- パスワードリセットリンク -->
+    <a href="#" id="forgot-password">パスワードを忘れた場合</a>
   </div>
 
   <!-- パスワードリセットフォーム -->
-  <div id="reset-section" style="display:none; margin-top:20px;">
+  <div id="reset-section" style="display:none;">
     <input type="text" id="reset-nickname" placeholder="ニックネーム">
     <button id="reset-start">質問を表示</button>
 
-    <div id="reset-question" style="display:none; margin-top:10px;">
-      <div id="show-question" style="margin-bottom:5px;"></div>
+    <div id="reset-question" style="display:none;">
+      <div id="show-question" class="question-text"></div>
       <input type="text" id="reset-answer" placeholder="答えを入力">
       <input type="password" id="reset-newpass" placeholder="新しいパスワード">
-      <button id="reset-submit">パスワードを更新</button>
+      <button id="reset-submit">更新</button>
     </div>
   </div>
 

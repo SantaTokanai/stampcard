@@ -1,42 +1,108 @@
+/* 基本 */
 body {
   font-family: sans-serif;
   text-align: center;
+  margin:0;
+  padding:0;
 }
 
+/* タイトル */
+.cute-title {
+  font-size: 2em;
+  margin: 20px 0;
+}
+
+/* 認証フォーム */
+#auth-section, #reset-section, #secret-section, #keyword-section {
+  max-width: 400px;
+  margin: 0 auto 15px auto;
+  padding: 10px;
+}
+
+/* 入力欄 */
+input[type="text"],
+input[type="password"] {
+  width: 90%;
+  padding: 8px;
+  margin: 5px auto;
+  display: block;
+  box-sizing: border-box;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 1em;
+}
+
+/* ボタン */
+button {
+  padding: 8px 15px;
+  margin: 5px auto;
+  display: block;
+  font-size: 1em;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* リンク */
+#forgot-password {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.9em;
+  color: #007bff;
+  text-decoration: none;
+}
+
+#forgot-password:hover {
+  text-decoration: underline;
+}
+
+/* スタンプカード */
 #card-container {
+  margin: 30px auto;
   position: relative;
-  width: 100%;
+  width: 90%;
   max-width: 500px;
-  margin: 30px auto 0 auto;   /* 上マージンと横中央寄せ */
 }
 
+/* カード背景 */
 .card-bg {
   width: 100%;
   height: auto;
   display: block;
-  max-width: 500px;
-  margin: 0 auto;    /* 横中央寄せ */
+  margin: 0 auto;
 }
 
+/* スタンプ画像 */
 .stamp {
   position: absolute;
   transform: translate(-50%, -50%);
 }
 
-/* 入力欄とボタンのマージンを統一 */
-#auth-section input,
-#reset-section input,
-#auth-section button,
-#reset-section button,
-#keyword-section input,
-#keyword-section button {
-  margin: 5px 0;
-  padding: 8px;
-  font-size: 1rem;
+/* リセット質問 */
+.question-text {
+  font-weight: bold;
+  margin: 10px 0;
 }
 
-#forgot-password {
-  font-size: 0.9rem;
-  text-decoration: underline;
-  cursor: pointer;
+/* メッセージ表示 */
+#error-msg {
+  margin-top: 5px;
+  font-size: 0.9em;
+  color: red;
+}
+
+/* 成功メッセージ */
+.success {
+  color: green;
+}
+
+/* モバイル対応 */
+@media screen and (max-width: 500px) {
+  #auth-section, #reset-section, #keyword-section {
+    width: 95%;
+    padding: 5px;
+  }
+
+  input[type="text"], input[type="password"], button {
+    width: 95%;
+  }
 }

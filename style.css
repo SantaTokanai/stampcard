@@ -7,18 +7,36 @@ body {
   position: relative;
   width: 100%;
   max-width: 500px;
-  margin: 0 auto;   /* 横方向中央寄せ */
+  margin: 30px auto 0 auto;   /* 上マージンと横中央寄せ */
 }
 
 .card-bg {
   width: 100%;
   height: auto;
   display: block;
-  max-width: 500px;  /* 元々の最大幅 */
-  margin: 0 auto;    /* 横方向中央寄せ */
+  max-width: 500px;
+  margin: 0 auto;    /* 横中央寄せ */
 }
 
 .stamp {
   position: absolute;
   transform: translate(-50%, -50%);
+}
+
+/* 入力欄とボタンのマージンを統一 */
+#auth-section input,
+#reset-section input,
+#auth-section button,
+#reset-section button,
+#keyword-section input,
+#keyword-section button {
+  margin: 5px 0;
+  padding: 8px;
+  font-size: 1rem;
+}
+
+#forgot-password {
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
 }

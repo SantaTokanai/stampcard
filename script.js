@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-// Firebase 設定
+// Firebase 設定 (編集しないでください)
 const firebaseConfig = {
   apiKey: "AIzaSyBI_XbbC78cXCBmm6ue-h0HJ15dNsDAnzo",
   authDomain: "stampcard-project.firebaseapp.com",
@@ -28,18 +28,33 @@ const stampBtn = document.getElementById('stampBtn');
 const cardContainer = document.getElementById('card-container');
 const cardBg = document.querySelector('.card-bg');
 
+const secretQuestion = document.getElementById('secret-question');
+const secretAnswer = document.getElementById('secret-answer');
+
+const forgotBtn = document.getElementById('forgot-password');
+const resetSection = document.getElementById('reset-section');
+const resetNickname = document.getElementById('reset-nickname');
+const resetStep1Btn = document.getElementById('reset-step1-btn');
+const resetQuestionDiv = document.getElementById('reset-question');
+const resetAnswer = document.getElementById('reset-answer');
+const resetVerifyBtn = document.getElementById('reset-verify-btn');
+const resetNewPass = document.getElementById('reset-newpass');
+const resetSetPassBtn = document.getElementById('reset-setpass-btn');
+const resetCancelBtn = document.getElementById('reset-cancel');
+
 // メッセージ表示
 function showMessage(msg, type='error'){
   errorMsg.textContent = msg;
   errorMsg.className = type === 'error' ? 'error' : 'success';
+  console.debug('[UI message]', type, msg);
 }
 
 // --------------------------------------------
 // パスワードハッシュ化 (SHA-256)
 // --------------------------------------------
-async function hashPassword(password){
+async function hashPassword(str){
   const encoder = new TextEncoder();
-  const data = encoder.encode(password);
+  const data = encoder.encode(str);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
@@ -69,29 +84,68 @@ function extractImgField(docData){
 }
 
 // --------------------------------------------
-// サインアップ処理
+// 状態（signup の段階管理）
+// --------------------------------------------
+let signupState = 'start'; // 'start' -> 初回押下で秘密欄を表示 -> 'secret' -> もう一度押すと登録実行
+
+// --------------------------------------------
+// サインアップ処理（2段階）
 // --------------------------------------------
 signupBtn.addEventListener('click', async () => {
-  const nickname = nicknameInput.value.trim();
-  const password = passInput.value;
-
-  if(!nickname){ showMessage('ニックネームを入力してください'); return; }
-  if(password.length < 6){ showMessage('パスワードは6文字以上です'); return; }
-
   try {
+    signupBtn.disabled = true;
+    const nickname = nicknameInput.value.trim();
+    const password = passInput.value;
+
+    if(!nickname){ showMessage('ニックネームを入力してください'); return; }
+    if(password.length < 6){ showMessage('パスワードは6文字以上です'); return; }
+
+    if(signupState === 'start'){
+      // 秘密欄を表示して2段階目へ
+      secretQuestion.style.display = 'block';
+      secretAnswer.style.display = 'block';
+      signupState = 'secret';
+      showMessage('秘密の質問と答えを入力して、もう一度「新規登録」を押してください。','success');
+      console.debug('signup: revealed secret inputs');
+      return;
+    }
+
+    // signupState === 'secret' -> 実際の登録処理
+    const question = secretQuestion.value.trim();
+    const answer = secretAnswer.value.trim();
+    if(!question || !answer){ showMessage('秘密の質問と答えを入力してください'); return; }
+
     const userDocRef = doc(db,'users',nickname);
     const userSnap = await getDoc(userDocRef);
 
     if(userSnap.exists()){ showMessage('そのニックネームは既に使用されています'); return; }
 
     const passwordHash = await hashPassword(password);
-    await setDoc(userDocRef, { password: passwordHash }, { merge: true });
+    const answerHash = await hashPassword(answer);
+    // 保存（password + secretQuestion + secretAnswerHash）
+    await setDoc(userDocRef, {
+      password: passwordHash,
+      secretQuestion: question,
+      secretAnswerHash: answerHash
+    }, { merge: true });
 
+    console.debug('signup: user created', { nickname, passwordHashSnippet: passwordHash.slice(0,8), answerHashSnippet: answerHash.slice(0,8) });
     showMessage('新規登録しました。自動でログインします', 'success');
-    await loginUser(nickname, password); // 自動ログイン
+
+    // 初期状態に戻す（UI）
+    secretQuestion.style.display = 'none';
+    secretAnswer.style.display = 'none';
+    secretQuestion.value = '';
+    secretAnswer.value = '';
+    signupState = 'start';
+
+    // 自動ログイン（パラメータに平文パスワードを渡す）
+    await loginUser(nickname, password);
   } catch(err){
-    showMessage('登録処理でエラーが発生しました：' + err.message);
     console.error(err);
+    showMessage('登録処理でエラーが発生しました：' + (err.message || err));
+  } finally {
+    signupBtn.disabled = false;
   }
 });
 
@@ -109,6 +163,7 @@ loginBtn.addEventListener('click', async () => {
 
 async function loginUser(nickname, password){
   try {
+    console.debug('loginUser start', nickname);
     const userDocRef = doc(db,'users',nickname);
     const userSnap = await getDoc(userDocRef);
 
@@ -129,10 +184,15 @@ async function loginUser(nickname, password){
     logoutBtn.style.display = 'inline-block';
     passwordMsg.style.display = 'none';
     keywordSec.style.display = 'block';
-    loadStamps(nickname);
+
+    // 隠れているリセットセクションがあれば閉じる
+    resetSection.style.display = 'none';
+
+    // スタンプを読み込む
+    await loadStamps(nickname);
   } catch(err){
-    showMessage('ログイン処理でエラーが発生しました：' + err.message);
     console.error(err);
+    showMessage('ログイン処理でエラーが発生しました：' + (err.message || err));
   }
 }
 
@@ -149,6 +209,10 @@ logoutBtn.addEventListener('click', () => {
   keywordSec.style.display = 'none';
   clearStampsFromUI();
   showMessage('');
+  // reset signup state & hide secret inputs
+  signupState = 'start';
+  secretQuestion.style.display = 'none';
+  secretAnswer.style.display = 'none';
 });
 
 // --------------------------------------------
@@ -171,13 +235,13 @@ stampBtn.addEventListener('click', async () => {
     showMessage('スタンプを押しました', 'success');
     loadStamps(nickname);
   } catch(err){
-    showMessage('スタンプ押下に失敗しました：' + err.message);
     console.error(err);
+    showMessage('スタンプ押下に失敗しました：' + (err.message || err));
   }
 });
 
 // --------------------------------------------
-// スタンプ描画
+// スタンプ描画（既存コードそのまま）
 // --------------------------------------------
 async function loadStamps(uid){
   clearStampsFromUI();
@@ -189,7 +253,7 @@ async function loadStamps(uid){
   const h = cardContainer.clientHeight;
 
   const promises = Object.keys(userData).map(async keyword=>{
-    if(keyword === 'password') return; // passwordフィールドはスキップ
+    if(keyword === 'password' || keyword === 'secretQuestion' || keyword === 'secretAnswerHash') return; // password等はスキップ
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;
     const d = kwSnap.data();
@@ -225,3 +289,99 @@ async function loadStamps(uid){
 function clearStampsFromUI(){
   document.querySelectorAll('#card-container .stamp').forEach(e=>e.remove());
 }
+
+// --------------------------------------------
+// パスワードリセット機能（秘密の質問で認証 → 新パスワード設定）
+// --------------------------------------------
+forgotBtn.addEventListener('click', () => {
+  // トグル表示（簡易）
+  resetSection.style.display = resetSection.style.display === 'none' ? 'block' : 'none';
+  showMessage('');
+  // reset the reset UI
+  resetQuestionDiv.style.display = 'none';
+  resetQuestionDiv.textContent = '';
+  resetAnswer.style.display = 'none';
+  resetAnswer.value = '';
+  resetVerifyBtn.style.display = 'none';
+  resetNewPass.style.display = 'none';
+  resetNewPass.value = '';
+  resetSetPassBtn.style.display = 'none';
+});
+
+resetStep1Btn.addEventListener('click', async () => {
+  const nick = resetNickname.value.trim();
+  if(!nick){ showMessage('リセットするニックネームを入力してください'); return; }
+  try {
+    const userSnap = await getDoc(doc(db,'users',nick));
+    if(!userSnap.exists()){ showMessage('そのニックネームは存在しません'); return; }
+    const d = userSnap.data();
+    if(!d.secretQuestion){ showMessage('このアカウントは秘密の質問が設定されていません'); return; }
+    resetQuestionDiv.textContent = '秘密の質問：' + d.secretQuestion;
+    resetQuestionDiv.style.display = 'block';
+    resetAnswer.style.display = 'block';
+    resetVerifyBtn.style.display = 'inline-block';
+    showMessage('秘密の質問が表示されました。答えを入力してください。','success');
+    console.debug('reset: showed question for', nick);
+  } catch(err){
+    console.error(err);
+    showMessage('処理中にエラーが発生しました：' + (err.message || err));
+  }
+});
+
+resetVerifyBtn.addEventListener('click', async () => {
+  const nick = resetNickname.value.trim();
+  const answer = resetAnswer.value.trim();
+  if(!nick || !answer){ showMessage('ニックネームと答えを入力してください'); return; }
+  try {
+    const userDocRef = doc(db,'users',nick);
+    const userSnap = await getDoc(userDocRef);
+    if(!userSnap.exists()){ showMessage('そのニックネームは存在しません'); return; }
+    const d = userSnap.data();
+    if(!d.secretAnswerHash){ showMessage('秘密の質問の答えが設定されていません'); return; }
+
+    const answerHash = await hashPassword(answer);
+    if(answerHash !== d.secretAnswerHash){ showMessage('秘密の質問の答えが違います'); return; }
+
+    // 正解 -> 新パスワード入力を表示
+    resetNewPass.style.display = 'block';
+    resetSetPassBtn.style.display = 'inline-block';
+    showMessage('認証成功。新しいパスワードを入力してください。','success');
+    console.debug('reset: answer correct for', nick);
+  } catch(err){
+    console.error(err);
+    showMessage('処理中にエラーが発生しました：' + (err.message || err));
+  }
+});
+
+resetSetPassBtn.addEventListener('click', async () => {
+  const nick = resetNickname.value.trim();
+  const newPass = resetNewPass.value;
+  if(!newPass || newPass.length < 6){ showMessage('新しいパスワードは6文字以上にしてください'); return; }
+  try {
+    const newHash = await hashPassword(newPass);
+    await setDoc(doc(db,'users',nick), { password: newHash }, { merge: true });
+    showMessage('パスワードを更新しました。自動でログインします', 'success');
+    console.debug('reset: password updated for', nick, 'hashSnippet:', newHash.slice(0,8));
+    // 自動ログイン
+    await loginUser(nick, newPass);
+
+    // クリーンアップ UI
+    resetSection.style.display = 'none';
+    resetNickname.value = '';
+    resetQuestionDiv.textContent = '';
+    resetAnswer.value = '';
+    resetNewPass.value = '';
+  } catch(err){
+    console.error(err);
+    showMessage('パスワード更新でエラーが発生しました：' + (err.message || err));
+  }
+});
+
+resetCancelBtn.addEventListener('click', () => {
+  resetSection.style.display = 'none';
+  resetNickname.value = '';
+  resetQuestionDiv.textContent = '';
+  resetAnswer.value = '';
+  resetNewPass.value = '';
+  showMessage('');
+});

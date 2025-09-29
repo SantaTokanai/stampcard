@@ -9,6 +9,9 @@ body {
   color: #222;
 }
 
+/* 便利なユーティリティ */
+.hidden { display: none !important; }
+
 /* タイトル */
 .cute-title {
   font-size: 1.8rem;
@@ -72,6 +75,7 @@ button {
   position: relative;
   width: 92%;
   max-width: 520px;
+  min-height: 260px;
 }
 
 /* カード背景 */

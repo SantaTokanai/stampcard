@@ -348,51 +348,122 @@ function clearStampsFromUI() {
 
 // スタンプを読み込んで表示
 async function loadStamps() {
-    if (!currentUser) return;
+    console.log("🔧 loadStamps()開始");
+    if (!currentUser) {
+        console.log("❌ currentUser が null");
+        return;
+    }
     
+    console.log("🔧 現在のユーザー:", currentUser);
     clearStampsFromUI();
     
     try {
+        console.log("🔧 ユーザーデータ取得開始...");
         const userSnap = await getDoc(doc(db, "users", currentUser));
-        if (!userSnap.exists()) return;
+        if (!userSnap.exists()) {
+            console.log("❌ ユーザードキュメントが存在しない");
+            return;
+        }
         
         const userData = userSnap.data();
+        console.log("🔧 ユーザーデータ:", userData);
+        
         const cardWidth = cardContainer.clientWidth;
         const cardHeight = cardContainer.clientHeight;
+        console.log("🔧 カードサイズ:", { cardWidth, cardHeight });
+        
+        let stampCount = 0;
         
         for (const key of Object.keys(userData)) {
             // システムフィールドをスキップ
-            if (['password', 'secretQ', 'secretA'].includes(key)) continue;
-            
-            const kwSnap = await getDoc(doc(db, 'keywords', key));
-            if (!kwSnap.exists()) continue;
-            
-            const kwData = kwSnap.data();
-            
-            // データの安全な取得
-            const imgSrc = kwData.img;
-            const x = parseFloat(kwData.x);
-            const y = parseFloat(kwData.y);
-            const wPct = parseFloat(kwData.widthPercent);
-            
-            if (isNaN(x) || isNaN(y) || isNaN(wPct) || !imgSrc) {
-                console.warn("無効なスタンプデータ:", key, kwData);
+            if (['password', 'secretQ', 'secretA'].includes(key)) {
+                console.log("🔧 システムフィールドをスキップ:", key);
                 continue;
             }
             
-            // スタンプ画像を作成
-            const imgEl = document.createElement('img');
-            imgEl.src = imgSrc;
-            imgEl.className = 'stamp';
-            imgEl.style.width = `${wPct * cardWidth}px`;
-            imgEl.style.left = `${x * cardWidth}px`;
-            imgEl.style.top = `${y * cardHeight}px`;
+            console.log("🔧 スタンプキー処理中:", key);
             
-            cardContainer.appendChild(imgEl);
+            try {
+                const kwSnap = await getDoc(doc(db, 'keywords', key));
+                console.log(`🔧 キーワード "${key}" 存在:`, kwSnap.exists());
+                
+                if (!kwSnap.exists()) {
+                    console.log(`❌ キーワード "${key}" が keywords コレクションに存在しない`);
+                    continue;
+                }
+                
+                const kwData = kwSnap.data();
+                console.log(`🔧 キーワード "${key}" データ:`, kwData);
+                
+                // データの安全な取得
+                const imgSrc = kwData.img;
+                const x = parseFloat(kwData.x);
+                const y = parseFloat(kwData.y);
+                const wPct = parseFloat(kwData.widthPercent);
+                
+                console.log(`🔧 スタンプデータ解析:`, {
+                    key,
+                    imgSrc,
+                    x,
+                    y,
+                    wPct,
+                    xValid: !isNaN(x),
+                    yValid: !isNaN(y),
+                    wPctValid: !isNaN(wPct),
+                    imgSrcValid: !!imgSrc
+                });
+                
+                if (isNaN(x) || isNaN(y) || isNaN(wPct) || !imgSrc) {
+                    console.warn("❌ 無効なスタンプデータ:", key, kwData);
+                    console.warn("  - x:", x, "isNaN:", isNaN(x));
+                    console.warn("  - y:", y, "isNaN:", isNaN(y)); 
+                    console.warn("  - wPct:", wPct, "isNaN:", isNaN(wPct));
+                    console.warn("  - imgSrc:", imgSrc, "exists:", !!imgSrc);
+                    continue;
+                }
+                
+                // スタンプ画像を作成
+                console.log("🔧 スタンプ画像作成開始:", key);
+                const imgEl = document.createElement('img');
+                imgEl.src = imgSrc;
+                imgEl.className = 'stamp';
+                
+                const finalWidth = wPct * cardWidth;
+                const finalLeft = x * cardWidth;
+                const finalTop = y * cardHeight;
+                
+                imgEl.style.width = `${finalWidth}px`;
+                imgEl.style.left = `${finalLeft}px`;
+                imgEl.style.top = `${finalTop}px`;
+                
+                console.log(`🔧 スタンプスタイル設定:`, {
+                    width: finalWidth,
+                    left: finalLeft,
+                    top: finalTop
+                });
+                
+                // 画像読み込み完了を待つ
+                imgEl.onload = () => {
+                    console.log(`✅ スタンプ画像読み込み完了: ${key}`);
+                };
+                
+                imgEl.onerror = () => {
+                    console.error(`❌ スタンプ画像読み込み失敗: ${key} (${imgSrc})`);
+                };
+                
+                cardContainer.appendChild(imgEl);
+                stampCount++;
+                console.log(`✅ スタンプ "${key}" をDOM に追加完了`);
+                
+            } catch (keyError) {
+                console.error(`❌ キー "${key}" の処理でエラー:`, keyError);
+            }
         }
         
+        console.log(`✅ loadStamps()完了 - 追加されたスタンプ数: ${stampCount}`);
+        
     } catch (error) {
-        console.error("Load stamps error:", error);
+        console.error("❌ loadStamps()エラー:", error);
     }
 }
 

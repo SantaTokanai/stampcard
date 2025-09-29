@@ -1,12 +1,21 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+// ---- Firebase設定（あなたのプロジェクト用）----
 const firebaseConfig = {
-  // あなたの Firebase 設定
+  apiKey: "AIzaSyBI_XbbC78cXCBmm6ue-h0HJ15dNsDAnzo",
+  authDomain: "stampcard-project.firebaseapp.com",
+  projectId: "stampcard-project",
+  storageBucket: "stampcard-project.firebasestorage.app",
+  messagingSenderId: "808808121881",
+  appId: "1:808808121881:web:57f6d536d40fc2d30fcc88"
 };
+// -----------------------------------------------
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// --- DOM要素 ---
 const nicknameInput = document.getElementById('nickname');
 const passwordInput = document.getElementById('password');
 const signupBtn = document.getElementById('signup');
@@ -17,39 +26,51 @@ const stampBtn = document.getElementById('stampBtn');
 const secretSection = document.getElementById('secret-section');
 const secretQInput = document.getElementById('secretQ');
 const secretAInput = document.getElementById('secretA');
-const registerSecretBtn = document.getElementById('registerSecret');
 const cardContainer = document.getElementById('card-container');
 
 let currentUser = null;
 
+// ---- 画面切り替え ----
 function showMain() {
-  document.getElementById('auth-section').classList.add('hidden');
-  document.getElementById('main-section').classList.remove('hidden');
+  document.getElementById('auth-section').style.display = 'none';
+  document.getElementById('logout').style.display = 'block';
+  document.getElementById('keyword-section').style.display = 'block';
 }
 
 function showAuth() {
-  document.getElementById('main-section').classList.add('hidden');
-  document.getElementById('auth-section').classList.remove('hidden');
+  document.getElementById('auth-section').style.display = 'flex';
+  document.getElementById('logout').style.display = 'none';
+  document.getElementById('keyword-section').style.display = 'none';
 }
 
+// ---- サインアップ処理 ----
 signupBtn.onclick = () => {
-  secretSection.classList.remove('hidden');
+  secretSection.style.display = 'flex'; // 質問欄を表示
 };
 
-registerSecretBtn.onclick = async () => {
+// 秘密の質問＋登録
+secretAInput.addEventListener('keypress', async (e) => {
+  if (e.key === 'Enter') await registerUser();
+});
+
+async function registerUser() {
   const nickname = nicknameInput.value.trim();
   const password = passwordInput.value.trim();
   const secretQ = secretQInput.value.trim();
   const secretA = secretAInput.value.trim();
-  if (!nickname || !password || !secretQ || !secretA) return alert("全て入力してください");
+  if (!nickname || !password || !secretQ || !secretA) {
+    alert("全て入力してください");
+    return;
+  }
 
   const ref = doc(db, "users", nickname);
   await setDoc(ref, { password, secretQ, secretA });
   currentUser = nickname;
   showMain();
   loadStamps();
-};
+}
 
+// ---- ログイン ----
 loginBtn.onclick = async () => {
   const nickname = nicknameInput.value.trim();
   const password = passwordInput.value.trim();
@@ -66,32 +87,39 @@ loginBtn.onclick = async () => {
   loadStamps();
 };
 
+// ---- ログアウト ----
 logoutBtn.onclick = () => {
   currentUser = null;
   showAuth();
   clearStampsFromUI();
 };
 
-function clearStampsFromUI() {
-  document.querySelectorAll('.stamp').forEach(el => el.remove());
-}
-
+// ---- スタンプ押印 ----
 stampBtn.onclick = async () => {
   if (!currentUser) return;
   const kw = keywordInput.value.trim();
   if (!kw) return;
+
   const kwSnap = await getDoc(doc(db, "keywords", kw));
   if (!kwSnap.exists()) {
     alert("キーワードがありません");
     return;
   }
+
   await updateDoc(doc(db, "users", currentUser), { [kw]: true });
   loadStamps();
 };
 
+// ---- UIクリア ----
+function clearStampsFromUI() {
+  document.querySelectorAll('.stamp').forEach(el => el.remove());
+}
+
+// ---- スタンプ読込 ----
 async function loadStamps() {
   if (!currentUser) return;
   clearStampsFromUI();
+
   const userSnap = await getDoc(doc(db, "users", currentUser));
   if (!userSnap.exists()) return;
 
@@ -106,7 +134,6 @@ async function loadStamps() {
     if (!kwSnap.exists()) continue;
 
     const kwData = kwSnap.data();
-    // ✅ Firestoreの数値フィールドを安全に取得
     const imgSrc = kwData.img;
     const x = parseFloat(kwData.x);
     const y = parseFloat(kwData.y);
@@ -123,9 +150,11 @@ async function loadStamps() {
     imgEl.style.width = `${wPct * cardWidth}px`;
     imgEl.style.left  = `${x * cardWidth}px`;
     imgEl.style.top   = `${y * cardHeight}px`;
+    imgEl.style.position = 'absolute';
+    imgEl.style.transform = 'translate(-50%, -50%)';
     cardContainer.appendChild(imgEl);
   }
 }
 
-// 初期表示
+// ---- 初期表示 ----
 showAuth();

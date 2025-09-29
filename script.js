@@ -261,36 +261,50 @@ function initializeApp() {
 
     // スタンプを押すボタンクリック
     stampBtn.addEventListener('click', async () => {
-        console.log('スタンプを押すボタンがクリックされました');
+        console.log('=== スタンプを押すボタンがクリックされました ===');
+        
         if (!currentUser) {
+            console.log('❌ ログインしていません');
             alert("ログインしてください");
             return;
         }
+        console.log('✅ ログイン中のユーザー:', currentUser);
         
         const kw = keywordInput.value.trim();
+        console.log('入力された合言葉:', kw);
+        
         if (!kw) {
+            console.log('❌ 合言葉が空です');
             alert("合言葉を入力してください");
             return;
         }
 
         try {
+            console.log(`📡 Firestoreから "${kw}" を検索中...`);
             const kwSnap = await getDoc(doc(db, "keywords", kw));
+            
             if (!kwSnap.exists()) {
+                console.log(`❌ "${kw}" は存在しません`);
                 alert("その合言葉は存在しません");
                 return;
             }
+            console.log(`✅ "${kw}" が見つかりました:`, kwSnap.data());
 
+            console.log('💾 ユーザーデータを更新中...');
             const userRef = doc(db, "users", currentUser);
             await updateDoc(userRef, {
                 [kw]: true
             });
+            console.log('✅ ユーザーデータ更新完了');
             
             keywordInput.value = '';
             alert("スタンプを押しました!");
+            
+            console.log('🎨 スタンプ表示を更新中...');
             loadStamps();
             
         } catch (error) {
-            console.error("Stamp error:", error);
+            console.error("❌ Stamp error:", error);
             alert("スタンプの追加に失敗しました: " + error.message);
         }
     });
@@ -302,40 +316,73 @@ function initializeApp() {
 
     // スタンプを読み込んで表示
     async function loadStamps() {
-        console.log('loadStamps()が呼び出されました');
-        if (!currentUser) return;
+        console.log('=== loadStamps()開始 ===');
+        console.log('currentUser:', currentUser);
+        
+        if (!currentUser) {
+            console.log('❌ currentUserが存在しません。処理を中断');
+            return;
+        }
         
         clearStampsFromUI();
         
         try {
+            console.log(`📡 Firestoreからユーザーデータ取得中: "${currentUser}"`);
             const userSnap = await getDoc(doc(db, "users", currentUser));
-            if (!userSnap.exists()) return;
+            
+            if (!userSnap.exists()) {
+                console.log('❌ ユーザードキュメントが存在しません');
+                return;
+            }
             
             const userData = userSnap.data();
+            console.log('✅ ユーザーデータ取得成功:', userData);
+            
             const cardWidth = cardContainer.clientWidth;
             const cardHeight = cardContainer.clientHeight;
-            
-            console.log('カードサイズ:', cardWidth, cardHeight);
+            console.log('📐 カードサイズ:', { width: cardWidth, height: cardHeight });
             
             // カードサイズが0の場合は少し待ってから再試行
             if (cardWidth === 0 || cardHeight === 0) {
+                console.log('⚠️ カードサイズが0です。100ms後に再試行...');
                 setTimeout(() => loadStamps(), 100);
                 return;
             }
             
+            console.log('🔍 スタンプデータをチェック中...');
+            let stampCount = 0;
+            
             for (const [key, value] of Object.entries(userData)) {
+                console.log(`\n--- チェック中: "${key}" = ${value} ---`);
+                
                 // システムフィールドをスキップ
-                if (['password', 'secretQ', 'secretA'].includes(key) || !value) continue;
+                if (['password', 'secretQ', 'secretA'].includes(key)) {
+                    console.log(`⏭️ システムフィールドのためスキップ: ${key}`);
+                    continue;
+                }
+                
+                if (!value) {
+                    console.log(`⏭️ 値がfalseのためスキップ: ${key}`);
+                    continue;
+                }
                 
                 try {
+                    console.log(`📡 Firestoreから "${key}" のスタンプ情報を取得中...`);
                     const kwSnap = await getDoc(doc(db, 'keywords', key));
+                    
                     if (!kwSnap.exists()) {
-                        console.warn(`キーワード "${key}" が見つかりません`);
+                        console.warn(`❌ キーワード "${key}" がFirestoreに存在しません`);
                         continue;
                     }
                     
                     const kwData = kwSnap.data();
-                    console.log(`キーワード "${key}" のデータ:`, kwData);
+                    console.log(`✅ "${key}" のFirestoreデータ:`, kwData);
+                    console.log(`   型情報:`, {
+                        img_type: typeof kwData.img,
+                        x_type: typeof kwData.x,
+                        y_type: typeof kwData.y,
+                        widthPercent_type: typeof kwData.widthPercent
+                    });
                     
                     // データを取得し、数値に変換（文字列の場合も対応）
                     const imgSrc = kwData.img;
@@ -343,12 +390,16 @@ function initializeApp() {
                     const y = parseFloat(kwData.y);
                     const wPct = parseFloat(kwData.widthPercent);
                     
-                    console.log(`"${key}" の詳細:`, {
+                    console.log(`   変換後の値:`, {
                         imgSrc: imgSrc,
                         x: x,
                         y: y,
-                        wPct: wPct,
+                        wPct: wPct
+                    });
+                    
+                    console.log(`   検証結果:`, {
                         imgSrc存在: !!imgSrc,
+                        imgSrc長さ: imgSrc ? imgSrc.length : 0,
                         xが数値: !isNaN(x),
                         yが数値: !isNaN(y),
                         wPctが数値: !isNaN(wPct)
@@ -356,10 +407,18 @@ function initializeApp() {
                     
                     // 値の妥当性チェック
                     if (!imgSrc || isNaN(x) || isNaN(y) || isNaN(wPct)) {
+                        console.error(`❌ 無効なスタンプデータ: "${key}"`);
+                        console.error(`   問題のある値:`, {
+                            imgSrc: imgSrc || '(空)',
+                            x: x,
+                            y: y,
+                            wPct: wPct
+                        });
                         console.warn("無効なスタンプデータをスキップ:", key, kwData);
-                        console.error(`具体的な問題: imgSrc=${imgSrc}, x=${x}, y=${y}, wPct=${wPct}`);
                         continue;
                     }
+                    
+                    console.log(`✅ データ検証OK: "${key}"`);
                     
                     // スタンプ画像要素を作成
                     const imgEl = document.createElement('img');
@@ -373,20 +432,32 @@ function initializeApp() {
                     imgEl.style.pointerEvents = 'none';
                     imgEl.style.zIndex = '10';
                     
+                    console.log(`🎨 スタンプのスタイル設定:`, {
+                        width: `${wPct * cardWidth}px`,
+                        left: `${x * cardWidth}px`,
+                        top: `${y * cardHeight}px`
+                    });
+                    
                     // 画像読み込み完了/エラーハンドラ
-                    imgEl.onload = () => console.log(`スタンプ画像読み込み完了: ${key}`);
-                    imgEl.onerror = () => console.error(`スタンプ画像読み込み失敗: ${key} (${imgSrc})`);
+                    imgEl.onload = () => console.log(`✅ スタンプ画像読み込み完了: ${key} (${imgSrc})`);
+                    imgEl.onerror = () => console.error(`❌ スタンプ画像読み込み失敗: ${key} (${imgSrc})`);
                     
                     cardContainer.appendChild(imgEl);
-                    console.log(`スタンプ追加成功: ${key} at (${x * cardWidth}, ${y * cardHeight})`);
+                    stampCount++;
+                    console.log(`✅ スタンプ要素追加成功: "${key}"`);
                     
                 } catch (keyError) {
-                    console.error(`キー "${key}" の処理でエラー:`, keyError);
+                    console.error(`❌ キー "${key}" の処理でエラー:`, keyError);
+                    console.error('エラー詳細:', keyError.stack);
                 }
             }
             
+            console.log(`\n=== loadStamps()完了 ===`);
+            console.log(`合計 ${stampCount} 個のスタンプを表示しました`);
+            
         } catch (error) {
-            console.error("loadStamps()エラー:", error);
+            console.error("❌ loadStamps()でエラー発生:", error);
+            console.error('エラー詳細:', error.stack);
         }
     }
 

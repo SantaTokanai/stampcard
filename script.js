@@ -317,6 +317,18 @@ stampBtn.onclick = async () => {
         const kwSnap = await getDoc(doc(db, "keywords", kw));
         console.log("🔧 キーワード存在:", kwSnap.exists());
         
+        // *** デバッグ: キーワードの実際のデータを確認 ***
+        if (kwSnap.exists()) {
+            const kwData = kwSnap.data();
+            console.log("🔧 キーワードの生データ:", kwData);
+            console.log("🔧 データ型確認:", {
+                img: typeof kwData.img,
+                x: typeof kwData.x,
+                y: typeof kwData.y, 
+                widthPercent: typeof kwData.widthPercent
+            });
+        }
+        
         if (!kwSnap.exists()) {
             alert("その合言葉は存在しません");
             console.log("❌ キーワード不存在");
@@ -348,6 +360,7 @@ function clearStampsFromUI() {
 
 // スタンプを読み込んで表示
 async function loadStamps() {
+    alert("🔧 loadStamps()関数が呼び出されました"); // 確認用
     console.log("🔧 loadStamps()開始");
     if (!currentUser) {
         console.log("❌ currentUser が null");
@@ -394,12 +407,28 @@ async function loadStamps() {
                 
                 const kwData = kwSnap.data();
                 console.log(`🔧 キーワード "${key}" データ:`, kwData);
+                console.log(`🔧 生データの型:`, {
+                    img: typeof kwData.img,
+                    x: typeof kwData.x,
+                    y: typeof kwData.y,
+                    widthPercent: typeof kwData.widthPercent
+                });
                 
-                // データの安全な取得
+                // データの安全な取得と変換
                 const imgSrc = kwData.img;
-                const x = parseFloat(kwData.x);
-                const y = parseFloat(kwData.y);
-                const wPct = parseFloat(kwData.widthPercent);
+                let x = kwData.x;
+                let y = kwData.y;
+                let wPct = kwData.widthPercent;
+                
+                // 文字列の場合は数値に変換
+                if (typeof x === 'string') x = parseFloat(x);
+                if (typeof y === 'string') y = parseFloat(y);
+                if (typeof wPct === 'string') wPct = parseFloat(wPct);
+                
+                // numberでない場合はparseFloatを試す
+                if (typeof x !== 'number') x = parseFloat(x);
+                if (typeof y !== 'number') y = parseFloat(y);
+                if (typeof wPct !== 'number') wPct = parseFloat(wPct);
                 
                 console.log(`🔧 スタンプデータ解析:`, {
                     key,
@@ -470,4 +499,27 @@ async function loadStamps() {
 // 初期表示
 console.log("🔧 初期表示処理開始");
 showAuth();
+
+// *** Firestore データ修正用の一時関数 ***
+window.fixFirestoreData = async function() {
+    try {
+        console.log("🔧 Firestoreデータ修正開始...");
+        
+        // いちがつのデータを正しい形式で再保存
+        await setDoc(doc(db, "keywords", "いちがつ"), {
+            img: "images/stamp1.png",
+            widthPercent: 0.14,
+            x: 0.09,
+            y: 0.541
+        });
+        
+        console.log("✅ いちがつのデータを修正しました");
+        alert("データを修正しました。再度スタンプを試してください。");
+        
+    } catch (error) {
+        console.error("❌ データ修正エラー:", error);
+    }
+};
+
+console.log("🔧 データ修正用関数を追加しました。コンソールで fixFirestoreData() を実行してください");
 console.log("🔧 スクリプト読み込み完了 ✅");

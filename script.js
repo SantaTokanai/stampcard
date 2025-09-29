@@ -10,25 +10,10 @@ const firebaseConfig = {
     appId: "1:808808121881:web:57f6d536d40fc2d30fcc88"
 };
 
-// デバッグ用ログ
-console.log("🔧 Firebase Config:", firebaseConfig);
-console.log("🔧 Project ID:", firebaseConfig.projectId);
-
-let app, db;
-try {
-    console.log("🔧 Firebase初期化開始...");
-    app = initializeApp(firebaseConfig);
-    console.log("✅ Firebase初期化成功:", app);
-    
-    db = getFirestore(app);
-    console.log("✅ Firestore初期化成功:", db);
-} catch (error) {
-    console.error("❌ Firebase初期化エラー:", error);
-    alert("Firebase初期化エラー: " + error.message);
-}
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 // DOM要素の取得
-console.log("🔧 DOM要素取得開始...");
 const nicknameInput = document.getElementById('nickname');
 const passwordInput = document.getElementById('password');
 const signupBtn = document.getElementById('signup');
@@ -52,13 +37,6 @@ const resetNewpassInput = document.getElementById('reset-newpass');
 const showQuestionDiv = document.getElementById('show-question');
 const resetQuestionDiv = document.getElementById('reset-question');
 const errorMsg = document.getElementById('error-msg');
-
-// DOM要素チェック
-console.log("🔧 重要な要素チェック:");
-console.log("  - signupBtn:", signupBtn);
-console.log("  - loginBtn:", loginBtn);
-console.log("  - registerSecretBtn:", registerSecretBtn);
-console.log("  - stampBtn:", stampBtn);
 
 let currentUser = null;
 
@@ -103,54 +81,39 @@ function showSuccess(message) {
 
 // 新規登録ボタンクリック
 signupBtn.onclick = () => {
-    console.log("🔧 新規登録ボタンクリック");
     if (secretSection.style.display === 'none') {
         secretSection.style.display = 'block';
         showError('秘密の質問と答えを設定してください');
-        console.log("🔧 秘密の質問セクション表示");
     }
 };
 
 // 登録完了ボタンクリック
 registerSecretBtn.onclick = async () => {
-    console.log("🔧 登録完了ボタンクリック");
     const nickname = nicknameInput.value.trim();
     const password = passwordInput.value.trim();
     const secretQ = secretQInput.value.trim();
     const secretA = secretAInput.value.trim();
     
-    console.log("🔧 入力値チェック:", { nickname, password: "***", secretQ, secretA });
-    
     if (!nickname || !password || !secretQ || !secretA) {
         showError("全ての項目を入力してください");
-        console.log("❌ 入力値不足");
         return;
     }
 
     try {
-        console.log("🔧 Firebase処理開始...");
-        // ユーザーが既に存在するかチェック
         const userRef = doc(db, "users", nickname);
-        console.log("🔧 ユーザー参照作成:", userRef);
-        
         const userSnap = await getDoc(userRef);
-        console.log("🔧 ユーザー存在チェック結果:", userSnap.exists());
         
         if (userSnap.exists()) {
             showError("そのニックネームは既に使用されています");
-            console.log("❌ ユーザー重複");
             return;
         }
 
-        // 新規ユーザー登録
-        console.log("🔧 新規ユーザー登録開始...");
         await setDoc(userRef, {
             password: password,
             secretQ: secretQ,
             secretA: secretA
         });
         
-        console.log("✅ ユーザー登録完了");
         currentUser = nickname;
         showSuccess("登録が完了しました");
         setTimeout(() => {
@@ -159,49 +122,37 @@ registerSecretBtn.onclick = async () => {
         }, 1000);
         
     } catch (error) {
-        console.error("❌ Registration error:", error);
+        console.error("Registration error:", error);
         showError("登録に失敗しました: " + error.message);
     }
 };
 
 // ログインボタンクリック
 loginBtn.onclick = async () => {
-    console.log("🔧 ログインボタンクリック");
     const nickname = nicknameInput.value.trim();
     const password = passwordInput.value.trim();
     
-    console.log("🔧 ログイン入力値:", { nickname, password: "***" });
-    
     if (!nickname || !password) {
         showError("ニックネームとパスワードを入力してください");
-        console.log("❌ ログイン入力値不足");
         return;
     }
 
     try {
-        console.log("🔧 ログイン処理開始...");
         const userRef = doc(db, "users", nickname);
         const userSnap = await getDoc(userRef);
         
-        console.log("🔧 ユーザー検索結果:", userSnap.exists());
-        
         if (!userSnap.exists()) {
             showError("ユーザーが見つかりません");
-            console.log("❌ ユーザー不存在");
             return;
         }
         
         const userData = userSnap.data();
-        console.log("🔧 ユーザーデータ取得完了");
-        
         if (userData.password !== password) {
             showError("パスワードが間違っています");
-            console.log("❌ パスワード不一致");
             return;
         }
         
         currentUser = nickname;
-        console.log("✅ ログイン成功:", currentUser);
         showSuccess("ログインしました");
         setTimeout(() => {
             showMain();
@@ -209,7 +160,7 @@ loginBtn.onclick = async () => {
         }, 500);
         
     } catch (error) {
-        console.error("❌ Login error:", error);
+        console.error("Login error:", error);
         showError("ログインに失敗しました: " + error.message);
     }
 };
@@ -296,59 +247,32 @@ resetSubmitBtn.onclick = async () => {
 
 // スタンプを押すボタンクリック
 stampBtn.onclick = async () => {
-    console.log("🔧 スタンプボタンクリック");
-    if (!currentUser) {
-        console.log("❌ ユーザー未ログイン");
-        return;
-    }
+    if (!currentUser) return;
     
     const kw = keywordInput.value.trim();
-    console.log("🔧 入力キーワード:", kw);
-    
     if (!kw) {
         alert("合言葉を入力してください");
-        console.log("❌ キーワード未入力");
         return;
     }
 
     try {
-        console.log("🔧 キーワード存在チェック開始...");
-        // キーワードが存在するかチェック
         const kwSnap = await getDoc(doc(db, "keywords", kw));
-        console.log("🔧 キーワード存在:", kwSnap.exists());
-        
-        // *** デバッグ: キーワードの実際のデータを確認 ***
-        if (kwSnap.exists()) {
-            const kwData = kwSnap.data();
-            console.log("🔧 キーワードの生データ:", kwData);
-            console.log("🔧 データ型確認:", {
-                img: typeof kwData.img,
-                x: typeof kwData.x,
-                y: typeof kwData.y, 
-                widthPercent: typeof kwData.widthPercent
-            });
-        }
-        
         if (!kwSnap.exists()) {
             alert("その合言葉は存在しません");
-            console.log("❌ キーワード不存在");
             return;
         }
 
-        console.log("🔧 ユーザーデータ更新開始...");
-        // ユーザーデータを更新
         const userRef = doc(db, "users", currentUser);
         await updateDoc(userRef, {
             [kw]: true
         });
         
-        console.log("✅ スタンプ追加完了");
         keywordInput.value = '';
         alert("スタンプを押しました！");
         loadStamps();
         
     } catch (error) {
-        console.error("❌ Stamp error:", error);
+        console.error("Stamp error:", error);
         alert("スタンプの追加に失敗しました: " + error.message);
     }
 };
@@ -360,174 +284,77 @@ function clearStampsFromUI() {
 
 // スタンプを読み込んで表示
 async function loadStamps() {
-    alert("🔧 loadStamps()関数が呼び出されました"); // 確認用
-    console.log("🔧 loadStamps()開始");
-    if (!currentUser) {
-        console.log("❌ currentUser が null");
-        return;
-    }
+    if (!currentUser) return;
     
-    console.log("🔧 現在のユーザー:", currentUser);
     clearStampsFromUI();
     
     try {
-        console.log("🔧 ユーザーデータ取得開始...");
         const userSnap = await getDoc(doc(db, "users", currentUser));
-        if (!userSnap.exists()) {
-            console.log("❌ ユーザードキュメントが存在しない");
+        if (!userSnap.exists()) return;
+        
+        const userData = userSnap.data();
+        const cardWidth = cardContainer.clientWidth;
+        const cardHeight = cardContainer.clientHeight;
+        
+        // カードサイズが0の場合は少し待ってから再試行
+        if (cardWidth === 0 || cardHeight === 0) {
+            setTimeout(() => loadStamps(), 100);
             return;
         }
         
-        const userData = userSnap.data();
-        console.log("🔧 ユーザーデータ:", userData);
-        
-        const cardWidth = cardContainer.clientWidth;
-        const cardHeight = cardContainer.clientHeight;
-        console.log("🔧 カードサイズ:", { cardWidth, cardHeight });
-        
-        let stampCount = 0;
-        
-        for (const key of Object.keys(userData)) {
+        for (const [key, value] of Object.entries(userData)) {
             // システムフィールドをスキップ
-            if (['password', 'secretQ', 'secretA'].includes(key)) {
-                console.log("🔧 システムフィールドをスキップ:", key);
-                continue;
-            }
-            
-            console.log("🔧 スタンプキー処理中:", key);
+            if (['password', 'secretQ', 'secretA'].includes(key) || !value) continue;
             
             try {
                 const kwSnap = await getDoc(doc(db, 'keywords', key));
-                console.log(`🔧 キーワード "${key}" 存在:`, kwSnap.exists());
-                
-                if (!kwSnap.exists()) {
-                    console.log(`❌ キーワード "${key}" が keywords コレクションに存在しない`);
-                    continue;
-                }
+                if (!kwSnap.exists()) continue;
                 
                 const kwData = kwSnap.data();
-                console.log(`🔧 キーワード "${key}" データ:`, kwData);
-                console.log(`🔧 生データの型:`, {
-                    img: typeof kwData.img,
-                    x: typeof kwData.x,
-                    y: typeof kwData.y,
-                    widthPercent: typeof kwData.widthPercent
-                });
-                console.log(`🔧 実際の値:`, {
-                    img: kwData.img,
-                    x: kwData.x,
-                    y: kwData.y,
-                    widthPercent: kwData.widthPercent
-                });
                 
-                // データの直接取得
-                const imgSrc = kwData.img;
-                const x = kwData.x;
-                const y = kwData.y;
-                const wPct = kwData.widthPercent;
+                // Firestoreデータを安全に取得 - JSON.stringify/parseを使用して確実にアクセス
+                const dataStr = JSON.stringify(kwData);
+                const parsedData = JSON.parse(dataStr);
                 
-                console.log(`🔧 取得した値:`, {
-                    imgSrc,
-                    x,
-                    y,
-                    wPct
-                });
+                const imgSrc = parsedData.img;
+                const x = Number(parsedData.x);
+                const y = Number(parsedData.y);
+                const wPct = Number(parsedData.widthPercent);
                 
-                // 数値型チェックと変換
-                const xNum = (typeof x === 'number') ? x : parseFloat(x);
-                const yNum = (typeof y === 'number') ? y : parseFloat(y);
-                const wPctNum = (typeof wPct === 'number') ? wPct : parseFloat(wPct);
-                
-                console.log(`🔧 スタンプデータ解析:`, {
-                    key,
-                    imgSrc,
-                    x: xNum,
-                    y: yNum,
-                    wPct: wPctNum,
-                    xValid: !isNaN(xNum),
-                    yValid: !isNaN(yNum),
-                    wPctValid: !isNaN(wPctNum),
-                    imgSrcValid: !!imgSrc
-                });
-                
-                if (isNaN(xNum) || isNaN(yNum) || isNaN(wPctNum) || !imgSrc) {
-                    console.warn("❌ 無効なスタンプデータ:", key, kwData);
-                    console.warn("  - xNum:", xNum, "isNaN:", isNaN(xNum));
-                    console.warn("  - yNum:", yNum, "isNaN:", isNaN(yNum)); 
-                    console.warn("  - wPctNum:", wPctNum, "isNaN:", isNaN(wPctNum));
-                    console.warn("  - imgSrc:", imgSrc, "exists:", !!imgSrc);
+                // 値の妥当性チェック
+                if (!imgSrc || isNaN(x) || isNaN(y) || isNaN(wPct)) {
+                    console.warn("無効なスタンプデータをスキップ:", key, parsedData);
                     continue;
                 }
                 
-                // スタンプ画像を作成
-                console.log("🔧 スタンプ画像作成開始:", key);
+                // スタンプ画像要素を作成
                 const imgEl = document.createElement('img');
                 imgEl.src = imgSrc;
                 imgEl.className = 'stamp';
+                imgEl.style.position = 'absolute';
+                imgEl.style.width = `${wPct * cardWidth}px`;
+                imgEl.style.left = `${x * cardWidth}px`;
+                imgEl.style.top = `${y * cardHeight}px`;
+                imgEl.style.transform = 'translate(-50%, -50%)';
+                imgEl.style.pointerEvents = 'none';
+                imgEl.style.zIndex = '10';
                 
-                const finalWidth = wPctNum * cardWidth;
-                const finalLeft = xNum * cardWidth;
-                const finalTop = yNum * cardHeight;
-                
-                imgEl.style.width = `${finalWidth}px`;
-                imgEl.style.left = `${finalLeft}px`;
-                imgEl.style.top = `${finalTop}px`;
-                
-                console.log(`🔧 スタンプスタイル設定:`, {
-                    width: finalWidth,
-                    left: finalLeft,
-                    top: finalTop
-                });
-                
-                // 画像読み込み完了を待つ
-                imgEl.onload = () => {
-                    console.log(`✅ スタンプ画像読み込み完了: ${key}`);
-                };
-                
-                imgEl.onerror = () => {
-                    console.error(`❌ スタンプ画像読み込み失敗: ${key} (${imgSrc})`);
-                };
+                // 画像読み込み完了/エラーハンドラ
+                imgEl.onload = () => console.log(`スタンプ画像読み込み完了: ${key}`);
+                imgEl.onerror = () => console.error(`スタンプ画像読み込み失敗: ${key} (${imgSrc})`);
                 
                 cardContainer.appendChild(imgEl);
-                stampCount++;
-                console.log(`✅ スタンプ "${key}" をDOM に追加完了`);
+                console.log(`スタンプ追加: ${key} at (${x * cardWidth}, ${y * cardHeight})`);
                 
             } catch (keyError) {
-                console.error(`❌ キー "${key}" の処理でエラー:`, keyError);
+                console.error(`キー "${key}" の処理でエラー:`, keyError);
             }
         }
         
-        console.log(`✅ loadStamps()完了 - 追加されたスタンプ数: ${stampCount}`);
-        
     } catch (error) {
-        console.error("❌ loadStamps()エラー:", error);
+        console.error("loadStamps()エラー:", error);
     }
 }
 
 // 初期表示
-console.log("🔧 初期表示処理開始");
 showAuth();
-
-// *** Firestore データ修正用の一時関数 ***
-window.fixFirestoreData = async function() {
-    try {
-        console.log("🔧 Firestoreデータ修正開始...");
-        
-        // いちがつのデータを正しい形式で再保存
-        await setDoc(doc(db, "keywords", "いちがつ"), {
-            img: "images/stamp1.png",
-            widthPercent: 0.14,
-            x: 0.09,
-            y: 0.541
-        });
-        
-        console.log("✅ いちがつのデータを修正しました");
-        alert("データを修正しました。再度スタンプを試してください。");
-        
-    } catch (error) {
-        console.error("❌ データ修正エラー:", error);
-    }
-};
-
-console.log("🔧 データ修正用関数を追加しました。コンソールで fixFirestoreData() を実行してください");
-console.log("🔧 スクリプト読み込み完了 ✅");

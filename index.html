@@ -14,10 +14,37 @@
     <input type="text" id="nickname" placeholder="ニックネーム">
     <input type="password" id="password" placeholder="パスワード">
     <div id="password-msg">パスワードは6文字以上です</div>
-    <button id="signup">新規登録</button>
-    <button id="login">ログイン</button>
-    <button id="logout" style="display:none;">ログアウト</button>
+
+    <!-- 秘密の質問（最初は非表示） -->
+    <input type="text" id="secret-question" placeholder="秘密の質問（例：好きな犬の名前）" style="display:none; margin-top:8px;">
+    <input type="text" id="secret-answer" placeholder="秘密の質問の答え" style="display:none; margin-top:4px;">
+
+    <div style="margin-top:10px;">
+      <button id="signup">新規登録</button>
+      <button id="login">ログイン</button>
+      <button id="logout" style="display:none;">ログアウト</button>
+      <button id="forgot-password" type="button">パスワードを忘れた？</button>
+    </div>
+
     <div id="error-msg"></div>
+  </div>
+
+  <!-- パスワードリセット用セクション（非表示） -->
+  <div id="reset-section" style="display:none; margin-top:18px; border:1px dashed #ccc; padding:10px; max-width:500px; margin-left:auto; margin-right:auto;">
+    <h3 style="margin:6px 0;">パスワードをリセット</h3>
+    <input type="text" id="reset-nickname" placeholder="リセットするニックネーム">
+    <button id="reset-step1-btn">質問を表示</button>
+
+    <div id="reset-question" style="margin-top:10px; display:none;"></div>
+    <input type="text" id="reset-answer" placeholder="質問の答え" style="display:none; margin-top:6px;">
+    <button id="reset-verify-btn" style="display:none; margin-top:6px;">回答して次へ</button>
+
+    <input type="password" id="reset-newpass" placeholder="新しいパスワード（6文字以上）" style="display:none; margin-top:6px;">
+    <button id="reset-setpass-btn" style="display:none; margin-top:6px;">パスワードを更新</button>
+
+    <div style="margin-top:8px;">
+      <button id="reset-cancel">キャンセル</button>
+    </div>
   </div>
 
   <!-- 合言葉フォーム -->

@@ -22,3 +22,27 @@ body {
   position: absolute;
   transform: translate(-50%, -50%);
 }
+
+/* メッセージ */
+#error-msg {
+  margin-top: 8px;
+  min-height: 20px;
+  color: #a00;
+}
+#error-msg.success {
+  color: #0a0;
+}
+
+/* 小さな調整 */
+#auth-section input, #reset-section input {
+  padding: 8px;
+  font-size: 14px;
+  margin: 4px 0;
+  width: calc(100% - 20px);
+  max-width: 380px;
+  box-sizing: border-box;
+}
+#auth-section button, #reset-section button {
+  margin: 6px 4px;
+  padding: 6px 10px;
+}

@@ -1,12 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ---- Firebase設定（あなたのプロジェクト用）----
+// ---- Firebase設定（正しいprojectId反映済み）----
 const firebaseConfig = {
   apiKey: "AIzaSyBI_XbbC78cXCBmm6ue-h0HJ15dNsDAnzo",
   authDomain: "stampcard-project.firebaseapp.com",
   projectId: "stampcard-project",
-  storageBucket: "stampcard-project.appspot.com",
+  storageBucket: "stampcard-project.appspot.com", // 修正済
   messagingSenderId: "808808121881",
   appId: "1:808808121881:web:57f6d536d40fc2d30fcc88"
 };
@@ -28,32 +28,40 @@ const secretQInput = document.getElementById('secretQ');
 const secretAInput = document.getElementById('secretA');
 const cardContainer = document.getElementById('card-container');
 
+// 新規追加
+const registerSecretBtn = document.getElementById('registerSecret'); // 登録して開始ボタン
+const forgotPasswordLink = document.getElementById('forgot-password'); // パスワード忘れリンク
+const resetSection = document.getElementById('reset-section');
+const resetStartBtn = document.getElementById('reset-start');
+const resetQuestionDiv = document.getElementById('reset-question');
+const showQuestionDiv = document.getElementById('show-question');
+const resetAnswerInput = document.getElementById('reset-answer');
+const resetNewpassInput = document.getElementById('reset-newpass');
+const resetSubmitBtn = document.getElementById('reset-submit');
+
 let currentUser = null;
 
 // ---- 画面切り替え ----
 function showMain() {
   document.getElementById('auth-section').style.display = 'none';
-  document.getElementById('logout').style.display = 'block';
+  logoutBtn.style.display = 'block';
   document.getElementById('keyword-section').style.display = 'block';
 }
 
 function showAuth() {
   document.getElementById('auth-section').style.display = 'flex';
-  document.getElementById('logout').style.display = 'none';
+  logoutBtn.style.display = 'none';
   document.getElementById('keyword-section').style.display = 'none';
+  resetSection.style.display = 'none';
 }
 
 // ---- サインアップ処理 ----
 signupBtn.onclick = () => {
-  secretSection.style.display = 'flex'; // 質問欄を表示
+  secretSection.style.display = 'flex';
 };
 
-// 秘密の質問＋登録
-secretAInput.addEventListener('keypress', async (e) => {
-  if (e.key === 'Enter') await registerUser();
-});
-
 async function registerUser() {
+  console.log("registerUser() called");
   const nickname = nicknameInput.value.trim();
   const password = passwordInput.value.trim();
   const secretQ = secretQInput.value.trim();
@@ -69,6 +77,16 @@ async function registerUser() {
   showMain();
   loadStamps();
 }
+
+// 「登録して開始」ボタンにイベントを追加
+if (registerSecretBtn) {
+  registerSecretBtn.onclick = registerUser;
+}
+
+// Enter キーでも登録可能
+secretAInput.addEventListener('keypress', async (e) => {
+  if (e.key === 'Enter') await registerUser();
+});
 
 // ---- ログイン ----
 loginBtn.onclick = async () => {
@@ -155,6 +173,43 @@ async function loadStamps() {
     cardContainer.appendChild(imgEl);
   }
 }
+
+// ---- パスワードリセットリンク ----
+forgotPasswordLink.onclick = (e) => {
+  e.preventDefault();
+  console.log("forgot-password clicked");
+  document.getElementById('auth-section').style.display = 'none';
+  resetSection.style.display = 'flex';
+  resetQuestionDiv.style.display = 'none';
+};
+
+// ---- リセット処理 ----
+resetStartBtn.onclick = async () => {
+  const nickname = document.getElementById('reset-nickname').value.trim();
+  if (!nickname) return alert("ニックネームを入力してください");
+
+  const userSnap = await getDoc(doc(db, "users", nickname));
+  if (!userSnap.exists()) return alert("ユーザーが存在しません");
+
+  showQuestionDiv.textContent = userSnap.data().secretQ;
+  resetQuestionDiv.style.display = 'flex';
+};
+
+resetSubmitBtn.onclick = async () => {
+  const nickname = document.getElementById('reset-nickname').value.trim();
+  const answer = resetAnswerInput.value.trim();
+  const newPass = resetNewpassInput.value.trim();
+  if (!nickname || !answer || !newPass) return alert("全て入力してください");
+
+  const userSnap = await getDoc(doc(db, "users", nickname));
+  if (!userSnap.exists()) return alert("ユーザーが存在しません");
+
+  if (userSnap.data().secretA !== answer) return alert("答えが間違っています");
+
+  await updateDoc(doc(db, "users", nickname), { password: newPass });
+  alert("パスワードを更新しました");
+  showAuth();
+};
 
 // ---- 初期表示 ----
 showAuth();

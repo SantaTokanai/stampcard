@@ -13,348 +13,384 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// DOM要素の取得
-const nicknameInput = document.getElementById('nickname');
-const passwordInput = document.getElementById('password');
-const signupBtn = document.getElementById('signup');
-const loginBtn = document.getElementById('login');
-const logoutBtn = document.getElementById('logout');
-const keywordInput = document.getElementById('keyword');
-const stampBtn = document.getElementById('stampBtn');
-const secretSection = document.getElementById('secret-section');
-const secretQInput = document.getElementById('secretQ');
-const secretAInput = document.getElementById('secretA');
-const registerSecretBtn = document.getElementById('registerSecret');
-const cardContainer = document.getElementById('card-container');
-const forgotPasswordLink = document.getElementById('forgot-password');
-const resetSection = document.getElementById('reset-section');
-const backToLoginBtn = document.getElementById('back-to-login');
-const resetStartBtn = document.getElementById('reset-start');
-const resetSubmitBtn = document.getElementById('reset-submit');
-const resetNicknameInput = document.getElementById('reset-nickname');
-const resetAnswerInput = document.getElementById('reset-answer');
-const resetNewpassInput = document.getElementById('reset-newpass');
-const showQuestionDiv = document.getElementById('show-question');
-const resetQuestionDiv = document.getElementById('reset-question');
-const errorMsg = document.getElementById('error-msg');
-
 let currentUser = null;
 
-// 表示切り替え関数
-function showMain() {
-    document.getElementById('auth-section').classList.add('hidden');
-    document.getElementById('reset-section').classList.add('hidden');
-    document.getElementById('main-section').classList.remove('hidden');
-}
+// DOM読み込み完了後に実行
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
+});
 
-function showAuth() {
-    document.getElementById('main-section').classList.add('hidden');
-    document.getElementById('reset-section').classList.add('hidden');
-    document.getElementById('auth-section').classList.remove('hidden');
-    clearForm();
-}
+function initializeApp() {
+    // DOM要素の取得
+    const nicknameInput = document.getElementById('nickname');
+    const passwordInput = document.getElementById('password');
+    const signupBtn = document.getElementById('signup');
+    const loginBtn = document.getElementById('login');
+    const logoutBtn = document.getElementById('logout');
+    const keywordInput = document.getElementById('keyword');
+    const stampBtn = document.getElementById('stampBtn');
+    const secretSection = document.getElementById('secret-section');
+    const secretQInput = document.getElementById('secretQ');
+    const secretAInput = document.getElementById('secretA');
+    const registerSecretBtn = document.getElementById('registerSecret');
+    const cardContainer = document.getElementById('card-container');
+    const forgotPasswordLink = document.getElementById('forgot-password');
+    const resetSection = document.getElementById('reset-section');
+    const backToLoginBtn = document.getElementById('back-to-login');
+    const resetStartBtn = document.getElementById('reset-start');
+    const resetSubmitBtn = document.getElementById('reset-submit');
+    const resetNicknameInput = document.getElementById('reset-nickname');
+    const resetAnswerInput = document.getElementById('reset-answer');
+    const resetNewpassInput = document.getElementById('reset-newpass');
+    const showQuestionDiv = document.getElementById('show-question');
+    const resetQuestionDiv = document.getElementById('reset-question');
+    const errorMsg = document.getElementById('error-msg');
 
-function showReset() {
-    document.getElementById('auth-section').classList.add('hidden');
-    document.getElementById('main-section').classList.add('hidden');
-    document.getElementById('reset-section').classList.remove('hidden');
-}
-
-function clearForm() {
-    nicknameInput.value = '';
-    passwordInput.value = '';
-    secretQInput.value = '';
-    secretAInput.value = '';
-    secretSection.style.display = 'none';
-    errorMsg.textContent = '';
-}
-
-function showError(message) {
-    errorMsg.textContent = message;
-    errorMsg.className = '';
-}
-
-function showSuccess(message) {
-    errorMsg.textContent = message;
-    errorMsg.className = 'success';
-}
-
-// 新規登録ボタンクリック
-signupBtn.onclick = () => {
-    if (secretSection.style.display === 'none') {
-        secretSection.style.display = 'block';
-        showError('秘密の質問と答えを設定してください');
-    }
-};
-
-// 登録完了ボタンクリック
-registerSecretBtn.onclick = async () => {
-    const nickname = nicknameInput.value.trim();
-    const password = passwordInput.value.trim();
-    const secretQ = secretQInput.value.trim();
-    const secretA = secretAInput.value.trim();
-    
-    if (!nickname || !password || !secretQ || !secretA) {
-        showError("全ての項目を入力してください");
-        return;
+    // 表示切り替え関数
+    function showMain() {
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('reset-section').classList.add('hidden');
+        document.getElementById('main-section').classList.remove('hidden');
     }
 
-    try {
-        const userRef = doc(db, "users", nickname);
-        const userSnap = await getDoc(userRef);
+    function showAuth() {
+        document.getElementById('main-section').classList.add('hidden');
+        document.getElementById('reset-section').classList.add('hidden');
+        document.getElementById('auth-section').classList.remove('hidden');
+        clearForm();
+    }
+
+    function showReset() {
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('main-section').classList.add('hidden');
+        document.getElementById('reset-section').classList.remove('hidden');
+    }
+
+    function clearForm() {
+        nicknameInput.value = '';
+        passwordInput.value = '';
+        secretQInput.value = '';
+        secretAInput.value = '';
+        secretSection.style.display = 'none';
+        errorMsg.textContent = '';
+    }
+
+    function showError(message) {
+        errorMsg.textContent = message;
+        errorMsg.className = '';
+    }
+
+    function showSuccess(message) {
+        errorMsg.textContent = message;
+        errorMsg.className = 'success';
+    }
+
+    // 新規登録ボタンクリック
+    signupBtn.addEventListener('click', () => {
+        console.log('新規登録ボタンがクリックされました');
+        if (secretSection.style.display === 'none') {
+            secretSection.style.display = 'block';
+            showError('秘密の質問と答えを設定してください');
+        }
+    });
+
+    // 登録完了ボタンクリック
+    registerSecretBtn.addEventListener('click', async () => {
+        console.log('登録完了ボタンがクリックされました');
+        const nickname = nicknameInput.value.trim();
+        const password = passwordInput.value.trim();
+        const secretQ = secretQInput.value.trim();
+        const secretA = secretAInput.value.trim();
         
-        if (userSnap.exists()) {
-            showError("そのニックネームは既に使用されています");
+        if (!nickname || !password || !secretQ || !secretA) {
+            showError("全ての項目を入力してください");
             return;
         }
 
-        await setDoc(userRef, {
-            password: password,
-            secretQ: secretQ,
-            secretA: secretA
-        });
-        
-        currentUser = nickname;
-        showSuccess("登録が完了しました");
-        setTimeout(() => {
-            showMain();
-            loadStamps();
-        }, 1000);
-        
-    } catch (error) {
-        console.error("Registration error:", error);
-        showError("登録に失敗しました: " + error.message);
-    }
-};
-
-// ログインボタンクリック
-loginBtn.onclick = async () => {
-    const nickname = nicknameInput.value.trim();
-    const password = passwordInput.value.trim();
-    
-    if (!nickname || !password) {
-        showError("ニックネームとパスワードを入力してください");
-        return;
-    }
-
-    try {
-        const userRef = doc(db, "users", nickname);
-        const userSnap = await getDoc(userRef);
-        
-        if (!userSnap.exists()) {
-            showError("ユーザーが見つかりません");
-            return;
-        }
-        
-        const userData = userSnap.data();
-        if (userData.password !== password) {
-            showError("パスワードが間違っています");
-            return;
-        }
-        
-        currentUser = nickname;
-        showSuccess("ログインしました");
-        setTimeout(() => {
-            showMain();
-            loadStamps();
-        }, 500);
-        
-    } catch (error) {
-        console.error("Login error:", error);
-        showError("ログインに失敗しました: " + error.message);
-    }
-};
-
-// ログアウトボタンクリック
-logoutBtn.onclick = () => {
-    currentUser = null;
-    keywordInput.value = '';
-    clearStampsFromUI();
-    showAuth();
-};
-
-// パスワードリセットリンククリック
-forgotPasswordLink.onclick = (e) => {
-    e.preventDefault();
-    showReset();
-};
-
-// ログインに戻るボタンクリック
-backToLoginBtn.onclick = () => {
-    showAuth();
-};
-
-// リセット開始ボタンクリック
-resetStartBtn.onclick = async () => {
-    const nickname = resetNicknameInput.value.trim();
-    if (!nickname) {
-        alert("ニックネームを入力してください");
-        return;
-    }
-    
-    try {
-        const userRef = doc(db, "users", nickname);
-        const userSnap = await getDoc(userRef);
-        
-        if (!userSnap.exists()) {
-            alert("ユーザーが見つかりません");
-            return;
-        }
-        
-        const userData = userSnap.data();
-        showQuestionDiv.textContent = `質問: ${userData.secretQ}`;
-        resetQuestionDiv.style.display = 'block';
-        
-    } catch (error) {
-        console.error("Reset start error:", error);
-        alert("エラーが発生しました");
-    }
-};
-
-// リセット実行ボタンクリック
-resetSubmitBtn.onclick = async () => {
-    const nickname = resetNicknameInput.value.trim();
-    const answer = resetAnswerInput.value.trim();
-    const newPassword = resetNewpassInput.value.trim();
-    
-    if (!nickname || !answer || !newPassword) {
-        alert("すべての項目を入力してください");
-        return;
-    }
-    
-    try {
-        const userRef = doc(db, "users", nickname);
-        const userSnap = await getDoc(userRef);
-        const userData = userSnap.data();
-        
-        if (userData.secretA !== answer) {
-            alert("答えが間違っています");
-            return;
-        }
-        
-        await updateDoc(userRef, {
-            password: newPassword
-        });
-        
-        alert("パスワードが更新されました");
-        showAuth();
-        
-    } catch (error) {
-        console.error("Reset submit error:", error);
-        alert("更新に失敗しました");
-    }
-};
-
-// スタンプを押すボタンクリック
-stampBtn.onclick = async () => {
-    if (!currentUser) return;
-    
-    const kw = keywordInput.value.trim();
-    if (!kw) {
-        alert("合言葉を入力してください");
-        return;
-    }
-
-    try {
-        const kwSnap = await getDoc(doc(db, "keywords", kw));
-        if (!kwSnap.exists()) {
-            alert("その合言葉は存在しません");
-            return;
-        }
-
-        const userRef = doc(db, "users", currentUser);
-        await updateDoc(userRef, {
-            [kw]: true
-        });
-        
-        keywordInput.value = '';
-        alert("スタンプを押しました！");
-        loadStamps();
-        
-    } catch (error) {
-        console.error("Stamp error:", error);
-        alert("スタンプの追加に失敗しました: " + error.message);
-    }
-};
-
-// UIからスタンプをクリア
-function clearStampsFromUI() {
-    document.querySelectorAll('.stamp').forEach(el => el.remove());
-}
-
-// スタンプを読み込んで表示
-async function loadStamps() {
-    if (!currentUser) return;
-    
-    clearStampsFromUI();
-    
-    try {
-        const userSnap = await getDoc(doc(db, "users", currentUser));
-        if (!userSnap.exists()) return;
-        
-        const userData = userSnap.data();
-        const cardWidth = cardContainer.clientWidth;
-        const cardHeight = cardContainer.clientHeight;
-        
-        // カードサイズが0の場合は少し待ってから再試行
-        if (cardWidth === 0 || cardHeight === 0) {
-            setTimeout(() => loadStamps(), 100);
-            return;
-        }
-        
-        for (const [key, value] of Object.entries(userData)) {
-            // システムフィールドをスキップ
-            if (['password', 'secretQ', 'secretA'].includes(key) || !value) continue;
+        try {
+            const userRef = doc(db, "users", nickname);
+            const userSnap = await getDoc(userRef);
             
-            try {
-                const kwSnap = await getDoc(doc(db, 'keywords', key));
-                if (!kwSnap.exists()) continue;
-                
-                const kwData = kwSnap.data();
-                
-                // Firestoreデータを安全に取得 - JSON.stringify/parseを使用して確実にアクセス
-                const dataStr = JSON.stringify(kwData);
-                const parsedData = JSON.parse(dataStr);
-                
-                const imgSrc = parsedData.img;
-                const x = Number(parsedData.x);
-                const y = Number(parsedData.y);
-                const wPct = Number(parsedData.widthPercent);
-                
-                // 値の妥当性チェック
-                if (!imgSrc || isNaN(x) || isNaN(y) || isNaN(wPct)) {
-                    console.warn("無効なスタンプデータをスキップ:", key, parsedData);
-                    continue;
-                }
-                
-                // スタンプ画像要素を作成
-                const imgEl = document.createElement('img');
-                imgEl.src = imgSrc;
-                imgEl.className = 'stamp';
-                imgEl.style.position = 'absolute';
-                imgEl.style.width = `${wPct * cardWidth}px`;
-                imgEl.style.left = `${x * cardWidth}px`;
-                imgEl.style.top = `${y * cardHeight}px`;
-                imgEl.style.transform = 'translate(-50%, -50%)';
-                imgEl.style.pointerEvents = 'none';
-                imgEl.style.zIndex = '10';
-                
-                // 画像読み込み完了/エラーハンドラ
-                imgEl.onload = () => console.log(`スタンプ画像読み込み完了: ${key}`);
-                imgEl.onerror = () => console.error(`スタンプ画像読み込み失敗: ${key} (${imgSrc})`);
-                
-                cardContainer.appendChild(imgEl);
-                console.log(`スタンプ追加: ${key} at (${x * cardWidth}, ${y * cardHeight})`);
-                
-            } catch (keyError) {
-                console.error(`キー "${key}" の処理でエラー:`, keyError);
+            if (userSnap.exists()) {
+                showError("そのニックネームは既に使用されています");
+                return;
             }
+
+            await setDoc(userRef, {
+                password: password,
+                secretQ: secretQ,
+                secretA: secretA
+            });
+            
+            currentUser = nickname;
+            showSuccess("登録が完了しました");
+            setTimeout(() => {
+                showMain();
+                loadStamps();
+            }, 1000);
+            
+        } catch (error) {
+            console.error("Registration error:", error);
+            showError("登録に失敗しました: " + error.message);
+        }
+    });
+
+    // ログインボタンクリック
+    loginBtn.addEventListener('click', async () => {
+        console.log('ログインボタンがクリックされました');
+        const nickname = nicknameInput.value.trim();
+        const password = passwordInput.value.trim();
+        
+        if (!nickname || !password) {
+            showError("ニックネームとパスワードを入力してください");
+            return;
+        }
+
+        try {
+            const userRef = doc(db, "users", nickname);
+            const userSnap = await getDoc(userRef);
+            
+            if (!userSnap.exists()) {
+                showError("ユーザーが見つかりません");
+                return;
+            }
+            
+            const userData = userSnap.data();
+            if (userData.password !== password) {
+                showError("パスワードが間違っています");
+                return;
+            }
+            
+            currentUser = nickname;
+            showSuccess("ログインしました");
+            setTimeout(() => {
+                showMain();
+                loadStamps();
+            }, 500);
+            
+        } catch (error) {
+            console.error("Login error:", error);
+            showError("ログインに失敗しました: " + error.message);
+        }
+    });
+
+    // ログアウトボタンクリック
+    logoutBtn.addEventListener('click', () => {
+        console.log('ログアウトボタンがクリックされました');
+        currentUser = null;
+        keywordInput.value = '';
+        clearStampsFromUI();
+        showAuth();
+    });
+
+    // パスワードリセットリンククリック
+    forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('パスワードリセットリンクがクリックされました');
+        showReset();
+    });
+
+    // ログインに戻るボタンクリック
+    backToLoginBtn.addEventListener('click', () => {
+        console.log('ログインに戻るボタンがクリックされました');
+        showAuth();
+    });
+
+    // リセット開始ボタンクリック
+    resetStartBtn.addEventListener('click', async () => {
+        console.log('リセット開始ボタンがクリックされました');
+        const nickname = resetNicknameInput.value.trim();
+        if (!nickname) {
+            alert("ニックネームを入力してください");
+            return;
         }
         
-    } catch (error) {
-        console.error("loadStamps()エラー:", error);
-    }
-}
+        try {
+            const userRef = doc(db, "users", nickname);
+            const userSnap = await getDoc(userRef);
+            
+            if (!userSnap.exists()) {
+                alert("ユーザーが見つかりません");
+                return;
+            }
+            
+            const userData = userSnap.data();
+            showQuestionDiv.textContent = `質問: ${userData.secretQ}`;
+            resetQuestionDiv.style.display = 'block';
+            
+        } catch (error) {
+            console.error("Reset start error:", error);
+            alert("エラーが発生しました");
+        }
+    });
 
-// 初期表示
-showAuth();
+    // リセット実行ボタンクリック
+    resetSubmitBtn.addEventListener('click', async () => {
+        console.log('リセット実行ボタンがクリックされました');
+        const nickname = resetNicknameInput.value.trim();
+        const answer = resetAnswerInput.value.trim();
+        const newPassword = resetNewpassInput.value.trim();
+        
+        if (!nickname || !answer || !newPassword) {
+            alert("すべての項目を入力してください");
+            return;
+        }
+        
+        try {
+            const userRef = doc(db, "users", nickname);
+            const userSnap = await getDoc(userRef);
+            const userData = userSnap.data();
+            
+            if (userData.secretA !== answer) {
+                alert("答えが間違っています");
+                return;
+            }
+            
+            await updateDoc(userRef, {
+                password: newPassword
+            });
+            
+            alert("パスワードが更新されました");
+            showAuth();
+            
+        } catch (error) {
+            console.error("Reset submit error:", error);
+            alert("更新に失敗しました");
+        }
+    });
+
+    // スタンプを押すボタンクリック
+    stampBtn.addEventListener('click', async () => {
+        console.log('スタンプを押すボタンがクリックされました');
+        if (!currentUser) {
+            alert("ログインしてください");
+            return;
+        }
+        
+        const kw = keywordInput.value.trim();
+        if (!kw) {
+            alert("合言葉を入力してください");
+            return;
+        }
+
+        try {
+            const kwSnap = await getDoc(doc(db, "keywords", kw));
+            if (!kwSnap.exists()) {
+                alert("その合言葉は存在しません");
+                return;
+            }
+
+            const userRef = doc(db, "users", currentUser);
+            await updateDoc(userRef, {
+                [kw]: true
+            });
+            
+            keywordInput.value = '';
+            alert("スタンプを押しました!");
+            loadStamps();
+            
+        } catch (error) {
+            console.error("Stamp error:", error);
+            alert("スタンプの追加に失敗しました: " + error.message);
+        }
+    });
+
+    // UIからスタンプをクリア
+    function clearStampsFromUI() {
+        document.querySelectorAll('.stamp').forEach(el => el.remove());
+    }
+
+    // スタンプを読み込んで表示
+    async function loadStamps() {
+        console.log('loadStamps()が呼び出されました');
+        if (!currentUser) return;
+        
+        clearStampsFromUI();
+        
+        try {
+            const userSnap = await getDoc(doc(db, "users", currentUser));
+            if (!userSnap.exists()) return;
+            
+            const userData = userSnap.data();
+            const cardWidth = cardContainer.clientWidth;
+            const cardHeight = cardContainer.clientHeight;
+            
+            console.log('カードサイズ:', cardWidth, cardHeight);
+            
+            // カードサイズが0の場合は少し待ってから再試行
+            if (cardWidth === 0 || cardHeight === 0) {
+                setTimeout(() => loadStamps(), 100);
+                return;
+            }
+            
+            for (const [key, value] of Object.entries(userData)) {
+                // システムフィールドをスキップ
+                if (['password', 'secretQ', 'secretA'].includes(key) || !value) continue;
+                
+                try {
+                    const kwSnap = await getDoc(doc(db, 'keywords', key));
+                    if (!kwSnap.exists()) {
+                        console.warn(`キーワード "${key}" が見つかりません`);
+                        continue;
+                    }
+                    
+                    const kwData = kwSnap.data();
+                    console.log(`キーワード "${key}" のデータ:`, kwData);
+                    
+                    // データを取得し、数値に変換（文字列の場合も対応）
+                    const imgSrc = kwData.img;
+                    const x = parseFloat(kwData.x);
+                    const y = parseFloat(kwData.y);
+                    const wPct = parseFloat(kwData.widthPercent);
+                    
+                    console.log(`"${key}" の詳細:`, {
+                        imgSrc: imgSrc,
+                        x: x,
+                        y: y,
+                        wPct: wPct,
+                        imgSrc存在: !!imgSrc,
+                        xが数値: !isNaN(x),
+                        yが数値: !isNaN(y),
+                        wPctが数値: !isNaN(wPct)
+                    });
+                    
+                    // 値の妥当性チェック
+                    if (!imgSrc || isNaN(x) || isNaN(y) || isNaN(wPct)) {
+                        console.warn("無効なスタンプデータをスキップ:", key, kwData);
+                        console.error(`具体的な問題: imgSrc=${imgSrc}, x=${x}, y=${y}, wPct=${wPct}`);
+                        continue;
+                    }
+                    
+                    // スタンプ画像要素を作成
+                    const imgEl = document.createElement('img');
+                    imgEl.src = imgSrc;
+                    imgEl.className = 'stamp';
+                    imgEl.style.position = 'absolute';
+                    imgEl.style.width = `${wPct * cardWidth}px`;
+                    imgEl.style.left = `${x * cardWidth}px`;
+                    imgEl.style.top = `${y * cardHeight}px`;
+                    imgEl.style.transform = 'translate(-50%, -50%)';
+                    imgEl.style.pointerEvents = 'none';
+                    imgEl.style.zIndex = '10';
+                    
+                    // 画像読み込み完了/エラーハンドラ
+                    imgEl.onload = () => console.log(`スタンプ画像読み込み完了: ${key}`);
+                    imgEl.onerror = () => console.error(`スタンプ画像読み込み失敗: ${key} (${imgSrc})`);
+                    
+                    cardContainer.appendChild(imgEl);
+                    console.log(`スタンプ追加成功: ${key} at (${x * cardWidth}, ${y * cardHeight})`);
+                    
+                } catch (keyError) {
+                    console.error(`キー "${key}" の処理でエラー:`, keyError);
+                }
+            }
+            
+        } catch (error) {
+            console.error("loadStamps()エラー:", error);
+        }
+    }
+
+    // 初期表示
+    showAuth();
+    console.log('アプリケーション初期化完了');
+}

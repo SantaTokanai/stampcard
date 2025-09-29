@@ -1,62 +1,59 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>スタンプカード</title>
-<link rel="stylesheet" href="style.css">
-<!-- SHA-256 (グローバルに sha256() が入ります) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スタンプカード</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
 </head>
 <body>
-  <h1 class="cute-title">スタンプカード</h1>
-
-  <!-- 認証エリア -->
-  <div id="auth-section">
-    <input type="text" id="nickname" placeholder="ニックネーム">
-    <input type="password" id="password" placeholder="パスワード">
-    <div id="secret-section" style="display:none;">
-      <input type="text" id="secretQ" placeholder="秘密の質問">
-      <input type="text" id="secretA" placeholder="質問の答え">
-      <button id="registerSecret">登録して開始</button>
+    <h1 class="cute-title">スタンプカード</h1>
+    
+    <!-- 認証エリア -->
+    <div id="auth-section">
+        <input type="text" id="nickname" placeholder="ニックネーム">
+        <input type="password" id="password" placeholder="パスワード">
+        <div id="secret-section" style="display:none;">
+            <input type="text" id="secretQ" placeholder="秘密の質問">
+            <input type="text" id="secretA" placeholder="質問の答え">
+            <button id="registerSecret">登録完了</button>
+        </div>
+        <button id="signup">新規登録</button>
+        <button id="login">ログイン</button>
+        <a href="#" id="forgot-password">パスワードを忘れた場合</a>
+        <div id="error-msg"></div>
     </div>
 
-    <button id="signup">新規登録</button>
-    <button id="login">ログイン</button>
-    <a href="#" id="forgot-password">パスワードを忘れた場合</a>
-    <div id="error-msg" role="status" aria-live="polite"></div>
-  </div>
-
-  <!-- パスワードリセット -->
-  <div id="reset-section" style="display:none;">
-    <input type="text" id="reset-nickname" placeholder="ニックネーム">
-    <button id="reset-start">質問を表示</button>
-
-    <div id="reset-question" style="display:none;">
-      <div id="show-question" class="question-text"></div>
-      <input type="text" id="reset-answer" placeholder="答え">
-      <input type="password" id="reset-newpass" placeholder="新パスワード">
-      <button id="reset-submit">更新</button>
-    </div>
-  </div>
-
-  <!-- main-section: ログイン後に表示 -->
-  <div id="main-section" style="display:none;">
-    <!-- 合言葉入力 -->
-    <div id="keyword-section" style="display:block;">
-      <input type="text" id="keyword" placeholder="合言葉">
-      <button id="stampBtn">スタンプを押す</button>
+    <!-- メインセクション -->
+    <div id="main-section" class="hidden">
+        <button id="logout">ログアウト</button>
+        
+        <!-- 合言葉入力 -->
+        <div id="keyword-section">
+            <input type="text" id="keyword" placeholder="合言葉">
+            <button id="stampBtn">スタンプを押す</button>
+        </div>
+        
+        <!-- カード -->
+        <div id="card-container">
+            <img id="card-bg" src="images/card_background.png" class="card-bg" alt="スタンプカード">
+        </div>
     </div>
 
-    <!-- カード -->
-    <div id="card-container">
-      <img id="card-bg" src="images/card_background.png" class="card-bg" alt="スタンプカード">
+    <!-- パスワードリセット -->
+    <div id="reset-section" class="hidden">
+        <input type="text" id="reset-nickname" placeholder="ニックネーム">
+        <button id="reset-start">質問を表示</button>
+        <div id="reset-question" style="display:none;">
+            <div id="show-question"></div>
+            <input type="text" id="reset-answer" placeholder="答え">
+            <input type="password" id="reset-newpass" placeholder="新パスワード">
+            <button id="reset-submit">更新</button>
+        </div>
+        <button id="back-to-login">ログインに戻る</button>
     </div>
 
-    <button id="logout" style="display:block; margin: 10px auto;">ログアウト</button>
-  </div>
-
-  <!-- メインスクリプト (ES Module) -->
-  <script type="module" src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>

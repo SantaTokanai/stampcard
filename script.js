@@ -2,14 +2,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  const firebaseConfig = {
-  apiKey: "AIzaSyBI_XbbC78cXCBmm6ue-h0HJ15dNsDAnzo",
-  authDomain: "stampcard-project.firebaseapp.com",
-  projectId: "stampcard-project",
-  storageBucket: "stampcard-project.firebasestorage.app",
-  messagingSenderId: "808808121881",
-  appId: "1:808808121881:web:57f6d536d40fc2d30fcc88"
-};
+    apiKey: "AIzaSyBI_XbbC78cXCBmm6ue-h0HJ15dNsDAnzo",
+    authDomain: "stampcard-project.firebaseapp.com",
+    projectId: "stampcard-project",
+    storageBucket: "stampcard-project.firebasestorage.app",
+    messagingSenderId: "808808121881",
+    appId: "1:808808121881:web:57f6d536d40fc2d30fcc88"
 };
 
 const app = initializeApp(firebaseConfig);

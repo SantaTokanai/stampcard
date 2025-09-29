@@ -10,10 +10,25 @@ const firebaseConfig = {
     appId: "1:808808121881:web:57f6d536d40fc2d30fcc88"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// デバッグ用ログ
+console.log("🔧 Firebase Config:", firebaseConfig);
+console.log("🔧 Project ID:", firebaseConfig.projectId);
+
+let app, db;
+try {
+    console.log("🔧 Firebase初期化開始...");
+    app = initializeApp(firebaseConfig);
+    console.log("✅ Firebase初期化成功:", app);
+    
+    db = getFirestore(app);
+    console.log("✅ Firestore初期化成功:", db);
+} catch (error) {
+    console.error("❌ Firebase初期化エラー:", error);
+    alert("Firebase初期化エラー: " + error.message);
+}
 
 // DOM要素の取得
+console.log("🔧 DOM要素取得開始...");
 const nicknameInput = document.getElementById('nickname');
 const passwordInput = document.getElementById('password');
 const signupBtn = document.getElementById('signup');
@@ -37,6 +52,13 @@ const resetNewpassInput = document.getElementById('reset-newpass');
 const showQuestionDiv = document.getElementById('show-question');
 const resetQuestionDiv = document.getElementById('reset-question');
 const errorMsg = document.getElementById('error-msg');
+
+// DOM要素チェック
+console.log("🔧 重要な要素チェック:");
+console.log("  - signupBtn:", signupBtn);
+console.log("  - loginBtn:", loginBtn);
+console.log("  - registerSecretBtn:", registerSecretBtn);
+console.log("  - stampBtn:", stampBtn);
 
 let currentUser = null;
 
@@ -81,41 +103,54 @@ function showSuccess(message) {
 
 // 新規登録ボタンクリック
 signupBtn.onclick = () => {
+    console.log("🔧 新規登録ボタンクリック");
     if (secretSection.style.display === 'none') {
         secretSection.style.display = 'block';
         showError('秘密の質問と答えを設定してください');
+        console.log("🔧 秘密の質問セクション表示");
     }
 };
 
 // 登録完了ボタンクリック
 registerSecretBtn.onclick = async () => {
+    console.log("🔧 登録完了ボタンクリック");
     const nickname = nicknameInput.value.trim();
     const password = passwordInput.value.trim();
     const secretQ = secretQInput.value.trim();
     const secretA = secretAInput.value.trim();
     
+    console.log("🔧 入力値チェック:", { nickname, password: "***", secretQ, secretA });
+    
     if (!nickname || !password || !secretQ || !secretA) {
         showError("全ての項目を入力してください");
+        console.log("❌ 入力値不足");
         return;
     }
 
     try {
+        console.log("🔧 Firebase処理開始...");
         // ユーザーが既に存在するかチェック
         const userRef = doc(db, "users", nickname);
+        console.log("🔧 ユーザー参照作成:", userRef);
+        
         const userSnap = await getDoc(userRef);
+        console.log("🔧 ユーザー存在チェック結果:", userSnap.exists());
         
         if (userSnap.exists()) {
             showError("そのニックネームは既に使用されています");
+            console.log("❌ ユーザー重複");
             return;
         }
 
         // 新規ユーザー登録
+        console.log("🔧 新規ユーザー登録開始...");
         await setDoc(userRef, {
             password: password,
             secretQ: secretQ,
             secretA: secretA
         });
         
+        console.log("✅ ユーザー登録完了");
         currentUser = nickname;
         showSuccess("登録が完了しました");
         setTimeout(() => {
@@ -124,37 +159,49 @@ registerSecretBtn.onclick = async () => {
         }, 1000);
         
     } catch (error) {
-        console.error("Registration error:", error);
-        showError("登録に失敗しました");
+        console.error("❌ Registration error:", error);
+        showError("登録に失敗しました: " + error.message);
     }
 };
 
 // ログインボタンクリック
 loginBtn.onclick = async () => {
+    console.log("🔧 ログインボタンクリック");
     const nickname = nicknameInput.value.trim();
     const password = passwordInput.value.trim();
     
+    console.log("🔧 ログイン入力値:", { nickname, password: "***" });
+    
     if (!nickname || !password) {
         showError("ニックネームとパスワードを入力してください");
+        console.log("❌ ログイン入力値不足");
         return;
     }
 
     try {
+        console.log("🔧 ログイン処理開始...");
         const userRef = doc(db, "users", nickname);
         const userSnap = await getDoc(userRef);
         
+        console.log("🔧 ユーザー検索結果:", userSnap.exists());
+        
         if (!userSnap.exists()) {
             showError("ユーザーが見つかりません");
+            console.log("❌ ユーザー不存在");
             return;
         }
         
         const userData = userSnap.data();
+        console.log("🔧 ユーザーデータ取得完了");
+        
         if (userData.password !== password) {
             showError("パスワードが間違っています");
+            console.log("❌ パスワード不一致");
             return;
         }
         
         currentUser = nickname;
+        console.log("✅ ログイン成功:", currentUser);
         showSuccess("ログインしました");
         setTimeout(() => {
             showMain();
@@ -162,8 +209,8 @@ loginBtn.onclick = async () => {
         }, 500);
         
     } catch (error) {
-        console.error("Login error:", error);
-        showError("ログインに失敗しました");
+        console.error("❌ Login error:", error);
+        showError("ログインに失敗しました: " + error.message);
     }
 };
 
@@ -249,35 +296,48 @@ resetSubmitBtn.onclick = async () => {
 
 // スタンプを押すボタンクリック
 stampBtn.onclick = async () => {
-    if (!currentUser) return;
+    console.log("🔧 スタンプボタンクリック");
+    if (!currentUser) {
+        console.log("❌ ユーザー未ログイン");
+        return;
+    }
     
     const kw = keywordInput.value.trim();
+    console.log("🔧 入力キーワード:", kw);
+    
     if (!kw) {
         alert("合言葉を入力してください");
+        console.log("❌ キーワード未入力");
         return;
     }
 
     try {
+        console.log("🔧 キーワード存在チェック開始...");
         // キーワードが存在するかチェック
         const kwSnap = await getDoc(doc(db, "keywords", kw));
+        console.log("🔧 キーワード存在:", kwSnap.exists());
+        
         if (!kwSnap.exists()) {
             alert("その合言葉は存在しません");
+            console.log("❌ キーワード不存在");
             return;
         }
 
+        console.log("🔧 ユーザーデータ更新開始...");
         // ユーザーデータを更新
         const userRef = doc(db, "users", currentUser);
         await updateDoc(userRef, {
             [kw]: true
         });
         
+        console.log("✅ スタンプ追加完了");
         keywordInput.value = '';
         alert("スタンプを押しました！");
         loadStamps();
         
     } catch (error) {
-        console.error("Stamp error:", error);
-        alert("スタンプの追加に失敗しました");
+        console.error("❌ Stamp error:", error);
+        alert("スタンプの追加に失敗しました: " + error.message);
     }
 };
 
@@ -337,4 +397,6 @@ async function loadStamps() {
 }
 
 // 初期表示
+console.log("🔧 初期表示処理開始");
 showAuth();
+console.log("🔧 スクリプト読み込み完了 ✅");

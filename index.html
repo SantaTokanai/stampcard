@@ -1,59 +1,36 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スタンプカード</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スタンプカード</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1 class="cute-title">スタンプカード</h1>
-    
-    <!-- 認証エリア -->
-    <div id="auth-section">
-        <input type="text" id="nickname" placeholder="ニックネーム">
-        <input type="password" id="password" placeholder="パスワード">
-        <div id="secret-section" style="display:none;">
-            <input type="text" id="secretQ" placeholder="秘密の質問">
-            <input type="text" id="secretA" placeholder="質問の答え">
-            <button id="registerSecret">登録完了</button>
-        </div>
-        <button id="signup">新規登録</button>
-        <button id="login">ログイン</button>
-        <a href="#" id="forgot-password">パスワードを忘れた場合</a>
-        <div id="error-msg"></div>
-    </div>
+  <h1 class="cute-title">スタンプカード</h1>
 
-    <!-- メインセクション -->
-    <div id="main-section" class="hidden">
-        <button id="logout">ログアウト</button>
-        
-        <!-- 合言葉入力 -->
-        <div id="keyword-section">
-            <input type="text" id="keyword" placeholder="合言葉">
-            <button id="stampBtn">スタンプを押す</button>
-        </div>
-        
-        <!-- カード -->
-        <div id="card-container">
-            <img id="card-bg" src="images/card_background.png" class="card-bg" alt="スタンプカード">
-        </div>
-    </div>
+  <!-- 認証フォーム -->
+  <div id="auth-section">
+    <input type="text" id="nickname" placeholder="ニックネーム">
+    <input type="password" id="password" placeholder="パスワード">
+    <div id="password-msg">パスワードは6文字以上です</div>
+    <button id="signup">新規登録</button>
+    <button id="login">ログイン</button>
+    <button id="logout" style="display:none;">ログアウト</button>
+    <div id="error-msg"></div>
+  </div>
 
-    <!-- パスワードリセット -->
-    <div id="reset-section" class="hidden">
-        <input type="text" id="reset-nickname" placeholder="ニックネーム">
-        <button id="reset-start">質問を表示</button>
-        <div id="reset-question" style="display:none;">
-            <div id="show-question"></div>
-            <input type="text" id="reset-answer" placeholder="答え">
-            <input type="password" id="reset-newpass" placeholder="新パスワード">
-            <button id="reset-submit">更新</button>
-        </div>
-        <button id="back-to-login">ログインに戻る</button>
-    </div>
+  <!-- 合言葉フォーム -->
+  <div id="keyword-section" style="display:none; margin-top:20px;">
+    <input type="text" id="keyword" placeholder="合言葉を入力">
+    <button id="stampBtn">スタンプを押す</button>
+  </div>
 
-    <script type="module" src="script.js"></script>
+  <!-- スタンプカード -->
+  <div id="card-container" style="margin-top:30px; position:relative; width:100%; max-width:500px;">
+    <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
+  </div>
+
+  <script type="module" src="script.js"></script>
 </body>
 </html>

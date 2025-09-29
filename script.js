@@ -413,40 +413,48 @@ async function loadStamps() {
                     y: typeof kwData.y,
                     widthPercent: typeof kwData.widthPercent
                 });
+                console.log(`🔧 実際の値:`, {
+                    img: kwData.img,
+                    x: kwData.x,
+                    y: kwData.y,
+                    widthPercent: kwData.widthPercent
+                });
                 
-                // データの安全な取得と変換
+                // データの直接取得
                 const imgSrc = kwData.img;
-                let x = kwData.x;
-                let y = kwData.y;
-                let wPct = kwData.widthPercent;
+                const x = kwData.x;
+                const y = kwData.y;
+                const wPct = kwData.widthPercent;
                 
-                // 文字列の場合は数値に変換
-                if (typeof x === 'string') x = parseFloat(x);
-                if (typeof y === 'string') y = parseFloat(y);
-                if (typeof wPct === 'string') wPct = parseFloat(wPct);
+                console.log(`🔧 取得した値:`, {
+                    imgSrc,
+                    x,
+                    y,
+                    wPct
+                });
                 
-                // numberでない場合はparseFloatを試す
-                if (typeof x !== 'number') x = parseFloat(x);
-                if (typeof y !== 'number') y = parseFloat(y);
-                if (typeof wPct !== 'number') wPct = parseFloat(wPct);
+                // 数値型チェックと変換
+                const xNum = (typeof x === 'number') ? x : parseFloat(x);
+                const yNum = (typeof y === 'number') ? y : parseFloat(y);
+                const wPctNum = (typeof wPct === 'number') ? wPct : parseFloat(wPct);
                 
                 console.log(`🔧 スタンプデータ解析:`, {
                     key,
                     imgSrc,
-                    x,
-                    y,
-                    wPct,
-                    xValid: !isNaN(x),
-                    yValid: !isNaN(y),
-                    wPctValid: !isNaN(wPct),
+                    x: xNum,
+                    y: yNum,
+                    wPct: wPctNum,
+                    xValid: !isNaN(xNum),
+                    yValid: !isNaN(yNum),
+                    wPctValid: !isNaN(wPctNum),
                     imgSrcValid: !!imgSrc
                 });
                 
-                if (isNaN(x) || isNaN(y) || isNaN(wPct) || !imgSrc) {
+                if (isNaN(xNum) || isNaN(yNum) || isNaN(wPctNum) || !imgSrc) {
                     console.warn("❌ 無効なスタンプデータ:", key, kwData);
-                    console.warn("  - x:", x, "isNaN:", isNaN(x));
-                    console.warn("  - y:", y, "isNaN:", isNaN(y)); 
-                    console.warn("  - wPct:", wPct, "isNaN:", isNaN(wPct));
+                    console.warn("  - xNum:", xNum, "isNaN:", isNaN(xNum));
+                    console.warn("  - yNum:", yNum, "isNaN:", isNaN(yNum)); 
+                    console.warn("  - wPctNum:", wPctNum, "isNaN:", isNaN(wPctNum));
                     console.warn("  - imgSrc:", imgSrc, "exists:", !!imgSrc);
                     continue;
                 }
@@ -457,9 +465,9 @@ async function loadStamps() {
                 imgEl.src = imgSrc;
                 imgEl.className = 'stamp';
                 
-                const finalWidth = wPct * cardWidth;
-                const finalLeft = x * cardWidth;
-                const finalTop = y * cardHeight;
+                const finalWidth = wPctNum * cardWidth;
+                const finalLeft = xNum * cardWidth;
+                const finalTop = yNum * cardHeight;
                 
                 imgEl.style.width = `${finalWidth}px`;
                 imgEl.style.left = `${finalLeft}px`;

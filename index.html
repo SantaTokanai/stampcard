@@ -57,8 +57,23 @@
   </div>
 
   <!-- スタンプカード -->
-  <div id="card-container" style="margin-top:30px; position:relative; width:100%; max-width:500px;">
-    <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
+  <div id="card-wrapper">
+    <!-- ニックネーム表示（上部） -->
+    <div id="card-nickname"></div>
+
+    <div id="card-container">
+      <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
+    </div>
+
+    <!-- ポイント表示（下部） -->
+    <div id="card-points">
+      <div class="point-item">
+        合計ポイント：<span id="total-point">0</span>
+      </div>
+      <div class="point-item">
+        カラーシングポイント：<span id="colorsing-point">0</span>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="script.js"></script>

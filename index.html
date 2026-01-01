@@ -9,15 +9,20 @@
 <body>
   <h1 class="cute-title">スタンプカード</h1>
 
+  <!-- 認証フォーム -->
   <div id="auth-section">
     <input type="text" id="nickname" placeholder="カラシンかポケの名前">
     <input type="password" id="password" placeholder="パスワード">
     <div id="password-msg">パスワードは3文字以上です</div>
+    <div id="password-note" style="font-size: 0.7em; color: #555;">
+  パスワードや秘密の質問の答えは「ハッシュ化」という仕組みで変換して保存しているので、管理者側でも内容を見ることはできません
+</div>
 
-    <input type="text" id="secret-question" placeholder="秘密の質問" style="display:none;">
-    <input type="text" id="secret-answer" placeholder="秘密の質問の答え" style="display:none;">
+    <!-- 秘密の質問（最初は非表示） -->
+    <input type="text" id="secret-question" placeholder="秘密の質問（例：好きな飲み物）" style="display:none; margin-top:8px;">
+    <input type="text" id="secret-answer" placeholder="秘密の質問の答え（例：タコハイ）" style="display:none; margin-top:4px;">
 
-    <div>
+    <div style="margin-top:10px;">
       <button id="signup">新規登録</button>
       <button id="login">ログイン</button>
       <button id="logout" style="display:none;">ログアウト</button>
@@ -27,31 +32,33 @@
     <div id="error-msg"></div>
   </div>
 
-  <div id="reset-section" style="display:none;">
-    <input type="text" id="reset-nickname" placeholder="ニックネーム">
+  <!-- パスワードリセット用セクション（非表示） -->
+  <div id="reset-section" style="display:none; margin-top:18px; border:1px dashed #ccc; padding:10px; max-width:500px; margin-left:auto; margin-right:auto;">
+    <h3 style="margin:6px 0;">パスワードをリセット</h3>
+    <input type="text" id="reset-nickname" placeholder="リセットするニックネーム">
     <button id="reset-step1-btn">質問を表示</button>
-    <div id="reset-question" style="display:none;"></div>
-    <input type="text" id="reset-answer" style="display:none;">
-    <button id="reset-verify-btn" style="display:none;">確認</button>
-    <input type="password" id="reset-newpass" style="display:none;">
-    <button id="reset-setpass-btn" style="display:none;">更新</button>
-    <button id="reset-cancel">キャンセル</button>
+
+    <div id="reset-question" style="margin-top:10px; display:none;"></div>
+    <input type="text" id="reset-answer" placeholder="質問の答え" style="display:none; margin-top:6px;">
+    <button id="reset-verify-btn" style="display:none; margin-top:6px;">回答して次へ</button>
+
+    <input type="password" id="reset-newpass" placeholder="新しいパスワード（3文字以上）" style="display:none; margin-top:6px;">
+    <button id="reset-setpass-btn" style="display:none; margin-top:6px;">パスワードを更新</button>
+
+    <div style="margin-top:8px;">
+      <button id="reset-cancel">キャンセル</button>
+    </div>
   </div>
 
-  <div id="keyword-section" style="display:none;">
-    <input type="text" id="keyword" placeholder="合言葉">
+  <!-- 合言葉フォーム -->
+  <div id="keyword-section" style="display:none; margin-top:20px;">
+    <input type="text" id="keyword" placeholder="合言葉を入力">
     <button id="stampBtn">スタンプを押す</button>
   </div>
 
-  <div id="card-container">
-    <img src="images/card_background.png" class="card-bg">
-
-    <!-- 文字表示レイヤー（新規追加） -->
-    <div id="card-text-layer">
-      <div id="display-nickname"></div>
-      <div id="display-colorsing"></div>
-      <div id="display-total"></div>
-    </div>
+  <!-- スタンプカード -->
+  <div id="card-container" style="margin-top:30px; position:relative; width:100%; max-width:500px;">
+    <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
   </div>
 
   <script type="module" src="script.js"></script>

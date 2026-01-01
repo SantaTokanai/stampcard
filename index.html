@@ -10,38 +10,41 @@
 
 <h1 class="cute-title">スタンプカード</h1>
 
-<div id="auth-section">
-  <input type="text" id="nickname" placeholder="ニックネーム">
+<!-- ログイン -->
+<div id="login-panel">
+  <input type="text" id="email" placeholder="メールアドレス">
   <input type="password" id="password" placeholder="パスワード">
-  <div id="password-msg">パスワードは3文字以上です</div>
-
-  <input type="text" id="secret-question" placeholder="秘密の質問" style="display:none;">
-  <input type="text" id="secret-answer" placeholder="秘密の質問の答え" style="display:none;">
-
   <div>
-    <button id="signup">新規登録</button>
     <button id="login">ログイン</button>
-    <button id="logout" style="display:none;">ログアウト</button>
-    <button id="forgot-password">パスワードを忘れた？</button>
   </div>
-
-  <div id="error-msg"></div>
 </div>
 
-<div id="keyword-section" style="display:none;">
-  <input type="text" id="keyword" placeholder="合言葉">
-  <button id="stampBtn">スタンプを押す</button>
-</div>
+<!-- カード表示 -->
+<div id="card-area" style="display:none;">
 
-<!-- スタンプカード -->
-<div id="card-container">
-  <div id="nickname-display"></div>
+  <button id="logout">ログアウト</button>
 
-  <img src="images/card_background.png" class="card-bg" id="card-bg">
+  <div id="card-container">
 
-  <div id="point-display">
-    <div>合計ポイント：<span id="total-point">0</span></div>
-    <div>カラーシングポイント：<span id="color-point">0</span></div>
+    <!-- ニックネーム -->
+    <div id="nickname"
+         style="position:absolute; left:50%; transform:translateX(-50%); font-weight:bold;">
+    </div>
+
+    <!-- 背景 -->
+    <img src="images/card_background.png"
+         class="card-bg"
+         id="card-bg">
+
+    <!-- ポイント -->
+    <div id="point2"
+         style="position:absolute; left:12px;">
+    </div>
+
+    <div id="point1"
+         style="position:absolute; right:12px;">
+    </div>
+
   </div>
 </div>
 

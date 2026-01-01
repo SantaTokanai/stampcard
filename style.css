@@ -1,141 +1,17 @@
-:root{
-  --max-form-width: 420px;
-  --input-padding-vert: 10px;
-  --input-padding-horz: 12px;
-  --input-font-size: 16px;
-  --input-radius: 10px;
-  --button-height: 40px;
-  --accent: #6b8cff;
-  --muted: #888;
-}
-
-/* --- レイアウト基礎 --- */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Roboto, "Yu Gothic", "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif;
+  font-family: sans-serif;
   text-align: center;
-  background: linear-gradient(180deg,#fbfbff, #ffffff);
-  color: #222;
-  padding: 18px 12px 48px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-/* タイトル少し上品に */
-.cute-title {
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  margin-bottom: 12px;
-  font-size: 1.6rem;
-}
-
-/* --- フォーム幅を統一して中央寄せ --- */
-#auth-section,
-#reset-section,
-#keyword-section {
-  max-width: var(--max-form-width);
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing: border-box;
-  padding: 6px;
-}
-
-/* --- 入力欄（すべて統一）--- */
-#auth-section input,
-#reset-section input,
-#keyword-section input {
-  display: block;
-  width: 100%;
-  max-width: 380px;
-  margin: 8px auto;
-  box-sizing: border-box;
-  padding: var(--input-padding-vert) var(--input-padding-horz);
-  font-size: var(--input-font-size);
-  height: 44px;
-  border-radius: var(--input-radius);
-  border: 1px solid #e6e9f2;
-  background: linear-gradient(180deg,#fff,#fbfdff);
-  outline: none;
-  transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
-  -webkit-appearance: none;
-}
-
-/* focus の視認性 */
-#auth-section input:focus,
-#reset-section input:focus,
-#keyword-section input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 6px 18px rgba(107,140,255,0.08);
-  transform: translateY(-1px);
-}
-
-/* プレースホルダをやや薄めに */
-#auth-section input::placeholder,
-#reset-section input::placeholder,
-#keyword-section input::placeholder {
-  color: #b8bccf;
-}
-
-/* --- ボタン類 --- */
-#auth-section button,
-#reset-section button,
-#keyword-section button {
-  display: inline-block;
-  height: var(--button-height);
-  line-height: var(--button-height);
-  padding: 0 14px;
-  margin: 6px 6px;
-  font-size: 14px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  background: linear-gradient(180deg, var(--accent), #4f6ff0);
-  color: #fff;
-  box-shadow: 0 6px 18px rgba(79,111,240,0.12);
-  transition: transform .08s ease, box-shadow .12s ease, opacity .12s ease;
-}
-
-/* 小型のボタン（キャンセル等）は控えめに） */
-#reset-section button#reset-cancel,
-#auth-section button#forgot-password {
-  background: transparent;
-  color: var(--muted);
-  box-shadow: none;
-  border: 1px solid #eee;
-}
-
-/* ボタン押下感 */
-#auth-section button:active,
-#reset-section button:active,
-#keyword-section button:active {
-  transform: translateY(1px) scale(.998);
-  opacity: .96;
-}
-
-/* --- メッセージ --- */
-#error-msg {
-  margin-top: 8px;
-  min-height: 20px;
-  color: #a00;
-  font-size: 14px;
-}
-#error-msg.success { color: #0a0; }
-
-/* --- カード領域は既存の見た目を崩さない --- */
 #card-container {
   position: relative;
-  width: 100%;
   max-width: 500px;
-  margin: 20px auto 0;
+  margin: 20px auto;
 }
 
 .card-bg {
   width: 100%;
-  height: auto;
   display: block;
-  max-width: 500px;
-  margin: 0 auto;
-  border-radius: 8px;
-  box-shadow: 0 8px 22px rgba(27,40,70,0.06);
 }
 
 .stamp {
@@ -143,42 +19,32 @@ body {
   transform: translate(-50%, -50%);
 }
 
-/* --- 追加の調整（小さい表示のときにすっきり見せる）--- */
-@media (max-width: 480px) {
-  :root {
-    --input-font-size: 14px;
-    --input-radius: 8px;
-    --button-height: 36px;
-  }
-
-  #auth-section input,
-  #reset-section input,
-  #keyword-section input {
-    height: 40px;
-    font-size: 14px;
-    max-width: 320px;
-    padding: 8px 10px;
-    border-radius: 8px;
-  }
-
-  #auth-section button,
-  #reset-section button,
-  #keyword-section button {
-    height: var(--button-height);
-    font-size: 13px;
-    padding: 0 12px;
-    border-radius: 8px;
-  }
-
-  .cute-title { font-size: 1.3rem; margin-bottom: 8px; }
-  body { padding: 14px 10px 36px; }
-  #card-container { margin-top: 14px; }
+/* === 文字表示専用レイヤー === */
+#card-text-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: #222;
+  font-weight: bold;
 }
 
-/* --- 視覚的な微調整（任意）--- */
-#auth-section input[style*="display:none"],
-#reset-section input[style*="display:none"] {
-  /* inline style の display:none を尊重（何もしない） */
+#display-nickname {
+  position: absolute;
+  top: 10%;
+  left: 5%;
+  font-size: 16px;
 }
 
-/* 既存 CSS と干渉しないための最小限のセレクタ指定を心掛けています */
+#display-colorsing {
+  position: absolute;
+  top: 80%;
+  left: 5%;
+  font-size: 14px;
+}
+
+#display-total {
+  position: absolute;
+  top: 85%;
+  left: 5%;
+  font-size: 14px;
+}

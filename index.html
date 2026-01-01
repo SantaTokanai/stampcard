@@ -7,47 +7,60 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<h1 class="cute-title">スタンプカード</h1>
-
-<!-- ログイン -->
-<div id="login-panel">
-  <input type="text" id="email" placeholder="メールアドレス">
-  <input type="password" id="password" placeholder="パスワード">
-  <div>
-    <button id="login">ログイン</button>
-  </div>
+  <h1 class="cute-title">スタンプカード</h1>
+  <!-- 認証フォーム -->
+  <div id="auth-section">
+    <input type="text" id="nickname" placeholder="カラシンかポケの名前">
+    <input type="password" id="password" placeholder="パスワード">
+    <div id="password-msg">パスワードは3文字以上です</div>
+    <div id="password-note" style="font-size: 0.7em; color: #555;">
+  パスワードや秘密の質問の答えは「ハッシュ化」という仕組みで変換して保存しているので、管理者側でも内容を見ることはできません
 </div>
-
-<!-- カード表示 -->
-<div id="card-area" style="display:none;">
-
-  <button id="logout">ログアウト</button>
-
-  <div id="card-container">
-
-    <!-- ニックネーム -->
-    <div id="nickname"
-         style="position:absolute; left:50%; transform:translateX(-50%); font-weight:bold;">
+    <!-- 秘密の質問（最初は非表示） -->
+    <input type="text" id="secret-question" placeholder="秘密の質問（例:好きな飲み物）" style="display:none; margin-top:8px;">
+    <input type="text" id="secret-answer" placeholder="秘密の質問の答え(例:タコハイ）" style="display:none; margin-top:4px;">
+    <div style="margin-top:10px;">
+      <button id="signup">新規登録</button>
+      <button id="login">ログイン</button>
+      <button id="logout" style="display:none;">ログアウト</button>
+      <button id="forgot-password" type="button">パスワードを忘れた？</button>
     </div>
-
-    <!-- 背景 -->
-    <img src="images/card_background.png"
-         class="card-bg"
-         id="card-bg">
-
-    <!-- ポイント -->
-    <div id="point2"
-         style="position:absolute; left:12px;">
-    </div>
-
-    <div id="point1"
-         style="position:absolute; right:12px;">
-    </div>
-
+    <div id="error-msg"></div>
   </div>
-</div>
-
-<script type="module" src="script.js"></script>
+  <!-- パスワードリセット用セクション（非表示） -->
+  <div id="reset-section" style="display:none; margin-top:18px; border:1px dashed #ccc; padding:10px; max-width:500px; margin-left:auto; margin-right:auto;">
+    <h3 style="margin:6px 0;">パスワードをリセット</h3>
+    <input type="text" id="reset-nickname" placeholder="リセットするニックネーム">
+    <button id="reset-step1-btn">質問を表示</button>
+    <div id="reset-question" style="margin-top:10px; display:none;"></div>
+    <input type="text" id="reset-answer" placeholder="質問の答え" style="display:none; margin-top:6px;">
+    <button id="reset-verify-btn" style="display:none; margin-top:6px;">回答して次へ</button>
+    <input type="password" id="reset-newpass" placeholder="新しいパスワード（3文字以上）" style="display:none; margin-top:6px;">
+    <button id="reset-setpass-btn" style="display:none; margin-top:6px;">パスワードを更新</button>
+    <div style="margin-top:8px;">
+      <button id="reset-cancel">キャンセル</button>
+    </div>
+  </div>
+  <!-- 合言葉フォーム -->
+  <div id="keyword-section" style="display:none; margin-top:20px;">
+    <input type="text" id="keyword" placeholder="合言葉を入力">
+    <button id="stampBtn">スタンプを押す</button>
+  </div>
+  
+  <!-- ニックネーム表示エリア（新規追加） -->
+  <div id="nickname-display" style="display:none; margin-top:20px; font-size:1.2em; font-weight:bold; color:#333;"></div>
+  
+  <!-- スタンプカード -->
+  <div id="card-container" style="margin-top:30px; position:relative; width:100%; max-width:500px;">
+    <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
+  </div>
+  
+  <!-- ポイント表示エリア（新規追加） -->
+  <div id="points-display" style="display:none; margin-top:15px; font-size:1em; color:#555;">
+    <div id="total-point-display"></div>
+    <div id="colorsing-point-display"></div>
+  </div>
+  
+  <script type="module" src="script.js"></script>
 </body>
 </html>

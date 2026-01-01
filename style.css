@@ -9,19 +9,21 @@ body {
   margin-bottom: 10px;
 }
 
+/* カード全体 */
 #card-container {
   position: relative;
   max-width: 500px;
   margin: 20px auto;
 }
 
+/* 背景画像 */
 .card-bg {
   width: 100%;
   display: block;
 }
 
 /* ニックネーム（画像上部） */
-#nickname-display {
+#nickname {
   position: absolute;
   top: -36px;
   width: 100%;
@@ -30,17 +32,25 @@ body {
   font-weight: bold;
 }
 
-/* ポイント表示（画像下部） */
-#point-display {
+/* ポイント（下部 左右） */
+#point1,
+#point2 {
   position: absolute;
   bottom: -48px;
-  width: 100%;
   font-size: 0.95rem;
-  display: flex;
-  justify-content: space-around;
 }
 
+#point1 {
+  right: 12px;
+}
+
+#point2 {
+  left: 12px;
+}
+
+/* スタンプ */
 .stamp {
   position: absolute;
   transform: translate(-50%, -50%);
+  pointer-events: none;
 }

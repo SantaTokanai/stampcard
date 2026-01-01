@@ -1,11 +1,11 @@
 :root{
   --nickname-size:1.1rem;
-  --point-size:0.95rem;
+  --point-size:1rem;
 }
 
 body{
-  font-family:sans-serif;
   text-align:center;
+  font-family:sans-serif;
 }
 
 #card-wrapper{
@@ -14,8 +14,8 @@ body{
 }
 
 #card-nickname{
-  font-weight:bold;
   font-size:var(--nickname-size);
+  font-weight:bold;
   margin-bottom:6px;
 }
 
@@ -25,7 +25,6 @@ body{
 
 .card-bg{
   width:100%;
-  border-radius:8px;
 }
 
 .stamp{
@@ -37,6 +36,7 @@ body{
   margin-top:8px;
   display:flex;
   justify-content:center;
-  gap:12px;
+  gap:20px;
   font-size:var(--point-size);
+  font-weight:bold;
 }

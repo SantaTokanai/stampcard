@@ -20,98 +20,104 @@ const loginBtn = document.getElementById('login');
 const signupBtn = document.getElementById('signup');
 const logoutBtn = document.getElementById('logout');
 const errorMsg = document.getElementById('error-msg');
-const passwordMsg = document.getElementById('password-msg');
+
 const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
-const cardContainer = document.getElementById('card-container');
 
+const cardContainer = document.getElementById('card-container');
 const cardNickname = document.getElementById('card-nickname');
 const totalPointEl = document.getElementById('total-point');
 const colorsingPointEl = document.getElementById('colorsing-point');
 
 /* util */
 async function hashPassword(str){
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  const buf = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(str)
+  );
+  return [...new Uint8Array(buf)]
+    .map(b=>b.toString(16).padStart(2,'0'))
+    .join('');
 }
 
-function showMessage(msg){
-  errorMsg.textContent = msg || '';
-}
+function msg(t){ errorMsg.textContent = t || ''; }
 
 /* signup / login */
 signupBtn.onclick = async ()=>{
-  const nick = nicknameInput.value.trim();
-  const pw = passInput.value;
-  if(!nick || pw.length < 3){ showMessage('入力エラー'); return; }
-  const snap = await getDoc(doc(db,'users',nick));
-  if(snap.exists()){ showMessage('既に存在します'); return; }
-  await setDoc(doc(db,'users',nick),{ password: await hashPassword(pw) });
-  await login(nick,pw);
+  const n = nicknameInput.value.trim();
+  const p = passInput.value;
+  if(!n || p.length < 3){ msg('入力エラー'); return; }
+
+  const ref = doc(db,'users',n);
+  if((await getDoc(ref)).exists()){ msg('既に存在します'); return; }
+
+  await setDoc(ref,{ password: await hashPassword(p) });
+  login(n,p);
 };
 
 loginBtn.onclick = ()=> login(nicknameInput.value.trim(), passInput.value);
 
-async function login(nick,pw){
-  const snap = await getDoc(doc(db,'users',nick));
-  if(!snap.exists()){ showMessage('ユーザーなし'); return; }
-  if(await hashPassword(pw) !== snap.data().password){ showMessage('違います'); return; }
+async function login(n,p){
+  const snap = await getDoc(doc(db,'users',n));
+  if(!snap.exists()){ msg('ユーザーなし'); return; }
+  if(await hashPassword(p) !== snap.data().password){ msg('違います'); return; }
 
   nicknameInput.style.display='none';
   passInput.style.display='none';
   loginBtn.style.display='none';
   signupBtn.style.display='none';
   logoutBtn.style.display='inline-block';
-  passwordMsg.style.display='none';
   keywordSec.style.display='block';
 
-  loadStamps(nick);
+  loadCard(n);
 }
 
-logoutBtn.onclick = ()=>{
-  location.reload();
-};
+logoutBtn.onclick = ()=> location.reload();
 
 /* stamp */
 stampBtn.onclick = async ()=>{
-  const nick = nicknameInput.value.trim();
-  const kw = keywordInput.value.trim();
-  if(!kw) return;
-  const kSnap = await getDoc(doc(db,'keywords',kw));
+  const n = nicknameInput.value.trim();
+  const k = keywordInput.value.trim();
+  if(!k) return;
+
+  const kSnap = await getDoc(doc(db,'keywords',k));
   if(!kSnap.exists()) return;
-  await setDoc(doc(db,'users',nick),{[kw]:true},{merge:true});
-  loadStamps(nick);
+
+  await setDoc(doc(db,'users',n),{ [k]: true },{ merge:true });
+  loadCard(n);
 };
 
-function extractImg(d){
-  return d.img || "";
-}
-
-async function loadStamps(uid){
+async function loadCard(uid){
   document.querySelectorAll('.stamp').forEach(e=>e.remove());
+
   const snap = await getDoc(doc(db,'users',uid));
   if(!snap.exists()) return;
   const d = snap.data();
 
   cardNickname.textContent = uid;
-  totalPointEl.textContent = typeof d.totalPoint === 'number' ? d.totalPoint : 0;
-  colorsingPointEl.textContent = typeof d.colorsingPoint === 'number' ? d.colorsingPoint : 0;
+  totalPointEl.textContent = d.totalPoint ?? 0;
+  colorsingPointEl.textContent = d.colorsingPoint ?? 0;
 
   const w = cardContainer.clientWidth;
   const h = cardContainer.clientHeight;
 
   for(const key of Object.keys(d)){
     if(['password','totalPoint','colorsingPoint'].includes(key)) continue;
-    const kSnap = await getDoc(doc(db,'keywords',key));
-    if(!kSnap.exists()) continue;
-    const kd = kSnap.data();
-    const img = new Image();
-    img.className='stamp';
-    img.style.left = (kd.x*w)+'px';
-    img.style.top = (kd.y*h)+'px';
-    img.style.width = (kd.widthPercent*w)+'px';
-    img.src = extractImg(kd);
+
+    const ks = await getDoc(doc(db,'keywords',key));
+    if(!ks.exists()) continue;
+    const kd = ks.data();
+
+    if(!kd.img) continue;
+
+    const img = document.createElement('img');
+    img.className = 'stamp';
+    img.src = kd.img;
+    img.style.left = (kd.x * w) + 'px';
+    img.style.top = (kd.y * h) + 'px';
+    img.style.width = (kd.widthPercent * w) + 'px';
+
     cardContainer.appendChild(img);
   }
 }

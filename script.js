@@ -1,7 +1,26 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+// script.js (module / 完全版)
 
-/* Firebase */
+// ================================
+// Firebase SDK
+// ================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+// ================================
+// Firebase config（そのまま）
+// ================================
 const firebaseConfig = {
   apiKey: "AIzaSyBI_XbbC78cXCBmm6ue-h0HJ15dNsDAnzo",
   authDomain: "stampcard-project.firebaseapp.com",
@@ -11,89 +30,150 @@ const firebaseConfig = {
   appId: "1:808808121881:web:57f6d536d40fc2d30fcc88"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
 
-/* DOM */
-const nicknameInput = document.getElementById('nickname');
-const passInput = document.getElementById('password');
-const loginBtn = document.getElementById('login');
-const signupBtn = document.getElementById('signup');
-const logoutBtn = document.getElementById('logout');
-const keywordSec = document.getElementById('keyword-section');
-const stampBtn = document.getElementById('stampBtn');
-const keywordInput = document.getElementById('keyword');
-const errorMsg = document.getElementById('error-msg');
+// ================================
+// 表示調整用定数（後で変更可能）
+// ================================
+const NICKNAME_TOP_PX = 16;
+const NICKNAME_FONT_SIZE = "20px";
 
-const cardContainer = document.getElementById('card-container');
-const cardBg = document.getElementById('card-bg');
+const POINT_BOTTOM_PX = 16;
+const POINT_FONT_SIZE = "16px";
 
-const nicknameDisplay = document.getElementById('nickname-display');
-const totalPointEl = document.getElementById('total-point');
-const colorPointEl = document.getElementById('color-point');
+// ================================
+// DOM
+// ================================
+const $ = (id) => document.getElementById(id);
 
-/* ログイン */
-loginBtn.onclick = async () => {
-  const nick = nicknameInput.value.trim();
-  const pass = passInput.value;
-  const snap = await getDoc(doc(db, 'users', nick));
-  if (!snap.exists()) return errorMsg.textContent = 'ユーザーが存在しません';
+const loginPanel   = $("login-panel");
+const cardArea     = $("card-area");
+const cardContainer= $("card-container");
 
-  const d = snap.data();
-  if (!d.password) return;
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
-  const hex = Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  if (hex !== d.password) return errorMsg.textContent = 'パスワードが違います';
+const emailInput   = $("email");
+const passwordInput= $("password");
+const loginBtn     = $("login");
+const logoutBtn    = $("logout");
 
-  nicknameInput.style.display = 'none';
-  passInput.style.display = 'none';
-  loginBtn.style.display = 'none';
-  signupBtn.style.display = 'none';
-  logoutBtn.style.display = 'inline-block';
-  keywordSec.style.display = 'block';
+const nicknameEl   = $("nickname");
+const point1El     = $("point1");
+const point2El     = $("point2");
 
-  nicknameDisplay.textContent = nick;
-  totalPointEl.textContent = d.totalPoint ?? 0;
-  colorPointEl.textContent = d.colorsingPoint ?? 0;
+// ================================
+// 初期化
+// ================================
+window.addEventListener("DOMContentLoaded", () => {
+  loginBtn?.addEventListener("click", onLogin);
+  logoutBtn?.addEventListener("click", onLogout);
 
-  await loadStamps(nick);
-};
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      showLoginUI();
+      return;
+    }
 
-/* スタンプ描画（最重要） */
-async function loadStamps(nick) {
-  clearStamps();
+    hideLoginUI();
 
-  const userSnap = await getDoc(doc(db, 'users', nick));
-  if (!userSnap.exists()) return;
-  const userData = userSnap.data();
+    // ※ users のドキュメントIDは nickname（例: yu）
+    // Firebase Auth の uid は使っていない前提
+    const nickname = user.email?.split("@")[0] || "yu";
 
-  // 背景画像の読み込み完了を待つ
-  if (!cardBg.complete) {
-    await new Promise(resolve => cardBg.onload = resolve);
-  }
+    await loadUserAndRender(nickname);
+  });
+});
 
-  const w = cardBg.offsetWidth;
-  const h = cardBg.offsetHeight;
+// ================================
+// UI制御
+// ================================
+function showLoginUI() {
+  loginPanel.style.display = "block";
+  cardArea.style.display = "none";
+}
 
-  for (const key of Object.keys(userData)) {
-    if (userData[key] !== true) continue;
-
-    const kwSnap = await getDoc(doc(db, 'keywords', key));
-    if (!kwSnap.exists()) continue;
-
-    const k = kwSnap.data();
-    const img = new Image();
-    img.className = 'stamp';
-    img.src = k.img;
-
-    img.style.left = (k.x * w) + 'px';
-    img.style.top = (k.y * h) + 'px';
-    img.style.width = (k.widthPercent * w) + 'px';
-
-    cardContainer.appendChild(img);
-  }
+function hideLoginUI() {
+  loginPanel.style.display = "none";
+  cardArea.style.display = "block";
 }
 
 function clearStamps() {
-  cardContainer.querySelectorAll('.stamp').forEach(e => e.remove());
+  cardContainer.querySelectorAll(".stamp").forEach(e => e.remove());
+}
+
+// ================================
+// 認証
+// ================================
+async function onLogin() {
+  const email = emailInput.value.trim();
+  const pw    = passwordInput.value;
+
+  if (!email || !pw) return;
+
+  await signInWithEmailAndPassword(auth, email, pw);
+}
+
+async function onLogout() {
+  await signOut(auth);
+}
+
+// ================================
+// メイン処理（最重要）
+// ================================
+async function loadUserAndRender(userDocId) {
+  clearStamps();
+
+  // ---------- users ----------
+  const userRef = doc(db, "users", userDocId);
+  const userSnap = await getDoc(userRef);
+  if (!userSnap.exists()) return;
+
+  const userData = userSnap.data();
+
+  // ---------- 表示 ----------
+  nicknameEl.textContent = userDocId;
+  nicknameEl.style.top = NICKNAME_TOP_PX + "px";
+  nicknameEl.style.fontSize = NICKNAME_FONT_SIZE;
+
+  point1El.textContent = `colorsingPoint: ${userData.coloringPoint ?? userData.colorsingPoint ?? 0}`;
+  point2El.textContent = `totalPoint: ${userData.totalPoint ?? 0}`;
+
+  point1El.style.bottom = POINT_BOTTOM_PX + "px";
+  point2El.style.bottom = (POINT_BOTTOM_PX + 20) + "px";
+  point1El.style.fontSize = POINT_FONT_SIZE;
+  point2El.style.fontSize = POINT_FONT_SIZE;
+
+  // ---------- keywords ----------
+  const kwSnap = await getDocs(collection(db, "keywords"));
+
+  kwSnap.forEach((kwDoc) => {
+    const key = kwDoc.id;
+
+    // users 側が true のものだけ描画
+    if (userData[key] !== true) return;
+
+    const { img, x, y, widthPercent } = kwDoc.data();
+    if (!img || x == null || y == null || widthPercent == null) return;
+
+    renderStamp(img, x, y, widthPercent);
+  });
+}
+
+// ================================
+// スタンプ描画（ここが核心）
+// ================================
+function renderStamp(imgPath, x, y, widthPercent) {
+  const img = document.createElement("img");
+  img.className = "stamp";
+  img.src = imgPath;
+
+  const w = cardContainer.clientWidth;
+  const h = cardContainer.clientHeight;
+
+  img.style.position = "absolute";
+  img.style.width = (w * widthPercent) + "px";
+  img.style.left  = (w * x) + "px";
+  img.style.top   = (h * y) + "px";
+
+  cardContainer.appendChild(img);
 }

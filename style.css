@@ -94,7 +94,7 @@ body {
   transition: transform .08s ease, box-shadow .12s ease, opacity .12s ease;
 }
 
-/* 小型のボタン（キャンセル等）は控えめに） */
+/* 小型のボタン（キャンセル等）は控えめに */
 #reset-section button#reset-cancel,
 #auth-section button#forgot-password {
   background: transparent;
@@ -158,4 +158,57 @@ body {
   letter-spacing: 0.05em;
 }
 
-/* 総合計ptのみ太字
+/* 総合計ptのみ太字 */
+.point-item.total-point {
+  font-weight: 700;
+  font-size: 1.2em;
+  color: #222;
+}
+
+/* --- 追加の調整（小さい表示のときにすっきり見せる）--- */
+@media (max-width: 480px) {
+  :root {
+    --input-font-size: 14px;
+    --input-radius: 8px;
+    --button-height: 36px;
+  }
+
+  #auth-section input,
+  #reset-section input,
+  #keyword-section input {
+    height: 40px;
+    font-size: 14px;
+    max-width: 320px;
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+
+  #auth-section button,
+  #reset-section button,
+  #keyword-section button {
+    height: var(--button-height);
+    font-size: 13px;
+    padding: 0 12px;
+    border-radius: 8px;
+  }
+
+  .cute-title { font-size: 1.3rem; margin-bottom: 8px; }
+  body { padding: 14px 10px 36px; }
+  #card-container { margin-top: 14px; }
+  
+  /* ポイント表示のレスポンシブ調整 */
+  .point-item {
+    font-size: 1em;
+  }
+  .point-item.total-point {
+    font-size: 1.1em;
+  }
+}
+
+/* --- 視覚的な微調整（任意）--- */
+#auth-section input[style*="display:none"],
+#reset-section input[style*="display:none"] {
+  /* inline style の display:none を尊重（何もしない） */
+}
+
+/* 既存 CSS と干渉しないための最小限のセレクタ指定を心掛けています */

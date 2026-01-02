@@ -143,6 +143,12 @@ body {
   transform: translate(-50%, -50%);
 }
 
+/* --- ニックネーム表示のスタイル（新規追加） --- */
+#nickname-display {
+  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.05em;
+}
+
 /* --- ポイント表示のスタイル（新規追加・おしゃれなフォント） --- */
 #points-display {
   max-width: 500px;

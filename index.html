@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>スタンプカード</title>
 <link rel="stylesheet" href="style.css">
+<!-- Google Fonts追加 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <h1 class="cute-title">スタンプカード</h1>
@@ -18,7 +22,7 @@
 </div>
     <!-- 秘密の質問（最初は非表示） -->
     <input type="text" id="secret-question" placeholder="秘密の質問（例:好きな飲み物）" style="display:none; margin-top:8px;">
-    <input type="text" id="secret-answer" placeholder="秘密の質問の答え(例:タコハイ）" style="display:none; margin-top:4px;">
+    <input type="text" id="secret-answer" placeholder="秘密の質問の答え（例:タコハイ）" style="display:none; margin-top:4px;">
     <div style="margin-top:10px;">
       <button id="signup">新規登録</button>
       <button id="login">ログイン</button>
@@ -47,7 +51,7 @@
     <button id="stampBtn">スタンプを押す</button>
   </div>
   
-  <!-- ニックネーム表示エリア（新規追加） -->
+  <!-- ニックネーム表示エリア -->
   <div id="nickname-display" style="display:none; margin-top:20px; font-size:1.2em; font-weight:bold; color:#333;"></div>
   
   <!-- スタンプカード -->
@@ -55,10 +59,11 @@
     <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
   </div>
   
-  <!-- ポイント表示エリア（新規追加） -->
-  <div id="points-display" style="display:none; margin-top:15px; font-size:1em; color:#555;">
-    <div id="total-point-display"></div>
-    <div id="colorsing-point-display"></div>
+  <!-- ポイント表示エリア（3つに変更） -->
+  <div id="points-display" style="display:none; margin-top:15px;">
+    <div id="stamp-point-display" class="point-item"></div>
+    <div id="colorsing-point-display" class="point-item"></div>
+    <div id="total-point-display" class="point-item total-point"></div>
   </div>
   
   <script type="module" src="script.js"></script>

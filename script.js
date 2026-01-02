@@ -215,9 +215,9 @@ function displayUserInfo(nickname, userData){
   nicknameDisplay.style.display = 'block';
 
   // ポイント表示（3つ・順番指定）
-  const stampPoint = userData.stampPoint || 0;
-  const colorsingPoint = userData.colorsingPoint || 0;
-  const totalPoint = userData.totalPoint || 0;
+  const stampPoint = (userData.stampPoint || 0).toLocaleString();
+  const colorsingPoint = (userData.colorsingPoint || 0).toLocaleString();
+  const totalPoint = (userData.totalPoint || 0).toLocaleString();
   
   stampPointDisplay.textContent = `スタンプpt: ${stampPoint}`;
   colorsingPointDisplay.textContent = `カラシン推しpt: ${colorsingPoint}`;

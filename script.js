@@ -42,11 +42,12 @@ const resetNewPass = document.getElementById('reset-newpass');
 const resetSetPassBtn = document.getElementById('reset-setpass-btn');
 const resetCancelBtn = document.getElementById('reset-cancel');
 
-// 新規追加：ニックネームとポイント表示用のDOM要素
+// ニックネームとポイント表示用のDOM要素
 const nicknameDisplay = document.getElementById('nickname-display');
 const pointsDisplay = document.getElementById('points-display');
-const totalPointDisplay = document.getElementById('total-point-display');
+const stampPointDisplay = document.getElementById('stamp-point-display');
 const colorsingPointDisplay = document.getElementById('colorsing-point-display');
+const totalPointDisplay = document.getElementById('total-point-display');
 
 // メッセージ表示
 function showMessage(msg, type='error'){
@@ -194,7 +195,7 @@ async function loginUser(nickname, password){
     // 隠れているリセットセクションがあれば閉じる
     resetSection.style.display = 'none';
 
-    // 新規追加：ニックネームとポイントを表示
+    // ニックネームとポイントを表示
     displayUserInfo(nickname, userData);
 
     // スタンプを読み込む
@@ -206,32 +207,35 @@ async function loginUser(nickname, password){
 }
 
 // --------------------------------------------
-// 新規追加：ユーザー情報（ニックネーム・ポイント）を表示
+// ユーザー情報（ニックネーム・ポイント）を表示（3つに変更）
 // --------------------------------------------
 function displayUserInfo(nickname, userData){
   // ニックネーム表示
   nicknameDisplay.textContent = `ニックネーム: ${nickname}`;
   nicknameDisplay.style.display = 'block';
 
-  // ポイント表示
-  const totalPoint = userData.totalPoint || 0;
+  // ポイント表示（3つ・順番指定）
+  const stampPoint = userData.stampPoint || 0;
   const colorsingPoint = userData.colorsingPoint || 0;
+  const totalPoint = userData.totalPoint || 0;
   
-  totalPointDisplay.textContent = `totalPoint: ${totalPoint}`;
-  colorsingPointDisplay.textContent = `colorsingPoint: ${colorsingPoint}`;
+  stampPointDisplay.textContent = `スタンプpt: ${stampPoint}`;
+  colorsingPointDisplay.textContent = `カラシン推しpt: ${colorsingPoint}`;
+  totalPointDisplay.textContent = `総合計pt: ${totalPoint}`;
   pointsDisplay.style.display = 'block';
 
-  console.debug('displayUserInfo:', { nickname, totalPoint, colorsingPoint });
+  console.debug('displayUserInfo:', { nickname, stampPoint, colorsingPoint, totalPoint });
 }
 
 // --------------------------------------------
-// 新規追加：ユーザー情報表示をクリア
+// ユーザー情報表示をクリア
 // --------------------------------------------
 function clearUserInfo(){
   nicknameDisplay.textContent = '';
   nicknameDisplay.style.display = 'none';
-  totalPointDisplay.textContent = '';
+  stampPointDisplay.textContent = '';
   colorsingPointDisplay.textContent = '';
+  totalPointDisplay.textContent = '';
   pointsDisplay.style.display = 'none';
 }
 
@@ -247,7 +251,7 @@ logoutBtn.addEventListener('click', () => {
   passwordMsg.style.display = 'block';
   keywordSec.style.display = 'none';
   clearStampsFromUI();
-  clearUserInfo(); // 新規追加：ユーザー情報をクリア
+  clearUserInfo();
   showMessage('');
   // reset signup state & hide secret inputs
   signupState = 'start';
@@ -281,7 +285,7 @@ stampBtn.addEventListener('click', async () => {
 });
 
 // --------------------------------------------
-// スタンプ描画（既存コードそのまま）
+// スタンプ描画（ポイントフィールドを3つにスキップ対象追加）
 // --------------------------------------------
 async function loadStamps(uid){
   clearStampsFromUI();
@@ -293,7 +297,10 @@ async function loadStamps(uid){
   const h = cardContainer.clientHeight;
 
   const promises = Object.keys(userData).map(async keyword=>{
-    if(keyword === 'password' || keyword === 'secretQuestion' || keyword === 'secretAnswerHash' || keyword === 'totalPoint' || keyword === 'colorsingPoint') return; // password等とポイントはスキップ
+    // スキップ対象：認証情報とポイント3種
+    if(keyword === 'password' || keyword === 'secretQuestion' || keyword === 'secretAnswerHash' || 
+       keyword === 'stampPoint' || keyword === 'colorsingPoint' || keyword === 'totalPoint') return;
+    
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;
     const d = kwSnap.data();

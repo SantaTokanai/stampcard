@@ -209,7 +209,7 @@ async function loginUser(nickname, password){
     // ニックネームとポイントを表示
     displayUserInfo(nickname, userData);
 
-    // ギャラリー画像を読み込む（userDataを再利用）
+    // ギャラリー画像を読み込む（awaitを削除）
     loadUserGallery(userData);
 
     // スタンプを読み込む
@@ -254,7 +254,7 @@ function clearUserInfo(){
 }
 
 // --------------------------------------------
-// ギャラリー画像を読み込んで表示（修正版・usersコレクションから取得）
+// ギャラリー画像を読み込んで表示（通常の関数・asyncでない）
 // --------------------------------------------
 function loadUserGallery(userData){
   try {
@@ -499,69 +499,3 @@ resetCancelBtn.addEventListener('click', () => {
   resetNewPass.value = '';
   showMessage('');
 });
-```
-
----
-
-## **主な変更点**
-
-1. **`loadUserGallery`関数**
-   - `userGallery`コレクションではなく、既に取得済みの`userData`から`images`配列を取得
-   - Firestoreへの追加アクセスが不要になり、より効率的
-
-2. **`loadStamps`関数**
-   - スキップ対象に`images`を追加（スタンプとして描画されないように）
-
-3. **`loginUser`関数**
-   - `userData`を`loadUserGallery`に渡すように変更
-
----
-
-## **Firebaseでの設定手順（詳細）**
-
-### **ステップ1：Firestoreコンソールにアクセス**
-1. ブラウザで https://console.firebase.google.com/ を開く
-2. `stampcard-project`をクリック
-3. 左メニューから **「Firestore Database」** をクリック
-
-### **ステップ2：`users`コレクションの`yu`ドキュメントを開く**
-1. `users`コレクションをクリック
-2. `yu`ドキュメントをクリック
-
-### **ステップ3：`images`フィールドを追加**
-1. **「フィールドを追加」** ボタンをクリック
-2. 以下のように入力：
-   - **フィールド**: `images`
-   - **タイプ**: ドロップダウンから **`array`** を選択
-   - **値**: （配列の中身を追加していきます）
-
-### **ステップ4：配列に画像URLを追加**
-1. 配列の右側にある **「＋」ボタン** をクリック
-2. **タイプ**: `string`（デフォルトのまま）
-3. **値**: `images/gallery1.png` と入力
-4. さらに画像を追加する場合：
-   - もう一度 **「＋」ボタン** をクリック
-   - **値**: `images/gallery2.png` と入力
-   - 繰り返す
-
-### **ステップ5：保存**
-- 右上の **「更新」** ボタンをクリック
-
----
-
-## **完成イメージ（Firestore構造）**
-```
-users (コレクション)
-  └─ yu (ドキュメント)
-       ├─ 10my: true
-       ├─ 1my: true
-       ├─ 3my: true
-       ├─ colorsingPoint: 0
-       ├─ images: ["images/gallery1.png", "images/gallery2.png"]  ← 新規追加
-       ├─ mm1: true
-       ├─ password: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
-       ├─ secretAnswerHash: "979d721bde0562115c0b5dee457e73f8b33607faca0e7ab5aa4f6d7fd91b1195"
-       ├─ secretQuestion: "好きな食べ物"
-       ├─ souki_01: true
-       ├─ stampPoint: 3000
-       └─ totalPoint: 3000

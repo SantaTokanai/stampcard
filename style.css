@@ -82,139 +82,151 @@ body {
   display: inline-block;
   height: var(--button-height);
   line-height: var(--button-height);
-  padding: 0 14px;
-  margin: 6px 6px;
-  font-size: 14px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  background: linear-gradient(180deg, var(--accent), #4f6ff0);
-  color: #fff;
-  box-shadow: 0 6px 18px rgba(79,111,240,0.12);
-  transition: transform .08s ease, box-shadow .12s ease, opacity .12s ease;
+padding: 0 14px;
+margin: 6px 6px;
+font-size: 14px;
+border-radius: 10px;
+border: none;
+cursor: pointer;
+background: linear-gradient(180deg, var(--accent), #4f6ff0);
+color: #fff;
+box-shadow: 0 6px 18px rgba(79,111,240,0.12);
+transition: transform .08s ease, box-shadow .12s ease, opacity .12s ease;
 }
-
 /* 小型のボタン（キャンセル等）は控えめに */
 #reset-section button#reset-cancel,
 #auth-section button#forgot-password {
-  background: transparent;
-  color: var(--muted);
-  box-shadow: none;
-  border: 1px solid #eee;
+background: transparent;
+color: var(--muted);
+box-shadow: none;
+border: 1px solid #eee;
 }
-
 /* ボタン押下感 */
 #auth-section button:active,
 #reset-section button:active,
 #keyword-section button:active {
-  transform: translateY(1px) scale(.998);
-  opacity: .96;
+transform: translateY(1px) scale(.998);
+opacity: .96;
 }
-
 /* --- メッセージ --- */
 #error-msg {
-  margin-top: 8px;
-  min-height: 20px;
-  color: #a00;
-  font-size: 14px;
+margin-top: 8px;
+min-height: 20px;
+color: #a00;
+font-size: 14px;
 }
 #error-msg.success { color: #0a0; }
-
 /* --- カード領域は既存の見た目を崩さない --- */
 #card-container {
-  position: relative;
-  width: 100%;
-  max-width: 500px;
-  margin: 20px auto 0;
+position: relative;
+width: 100%;
+max-width: 500px;
+margin: 20px auto 0;
 }
-
 .card-bg {
-  width: 100%;
-  height: auto;
-  display: block;
-  max-width: 500px;
-  margin: 0 auto;
-  border-radius: 8px;
-  box-shadow: 0 8px 22px rgba(27,40,70,0.06);
+width: 100%;
+height: auto;
+display: block;
+max-width: 500px;
+margin: 0 auto;
+border-radius: 8px;
+box-shadow: 0 8px 22px rgba(27,40,70,0.06);
 }
-
 .stamp {
-  position: absolute;
-  transform: translate(-50%, -50%);
+position: absolute;
+transform: translate(-50%, -50%);
 }
-
-/* --- ニックネーム表示のスタイル（新規追加） --- */
+/* --- ニックネーム表示のスタイル --- */
 #nickname-display {
-  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
-  letter-spacing: 0.05em;
+font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+letter-spacing: 0.05em;
 }
-
-/* --- ポイント表示のスタイル（新規追加・おしゃれなフォント） --- */
+/* --- ポイント表示のスタイル --- */
 #points-display {
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
+max-width: 500px;
+margin-left: auto;
+margin-right: auto;
 }
-
 .point-item {
-  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
-  font-size: 1.1em;
-  color: #444;
-  margin: 6px 0;
-  letter-spacing: 0.05em;
+font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+font-size: 1.1em;
+color: #444;
+margin: 6px 0;
+letter-spacing: 0.05em;
 }
-
 /* 総合計ptのみ太字 */
 .point-item.total-point {
-  font-weight: 700;
-  font-size: 1.2em;
-  color: #222;
+font-weight: 700;
+font-size: 1.2em;
+color: #222;
 }
-
+/* --- ギャラリー表示のスタイル（新規追加） --- */
+.gallery-divider {
+border: none;
+border-top: 2px solid #e6e9f2;
+margin: 20px auto;
+max-width: 400px;
+}
+#gallery-images {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 15px;
+padding: 10px 0;
+}
+.gallery-image {
+width: 100%;
+max-width: 450px;
+height: auto;
+border-radius: 8px;
+box-shadow: 0 4px 12px rgba(27,40,70,0.08);
+/* 長押しで保存可能にするため、デフォルトの動作を許可 /
+-webkit-user-select: none;
+user-select: none;
+-webkit-touch-callout: default; / iOS Safariで長押しメニューを有効化 */
+}
 /* --- 追加の調整（小さい表示のときにすっきり見せる）--- */
 @media (max-width: 480px) {
-  :root {
-    --input-font-size: 14px;
-    --input-radius: 8px;
-    --button-height: 36px;
-  }
-
-  #auth-section input,
-  #reset-section input,
-  #keyword-section input {
-    height: 40px;
-    font-size: 14px;
-    max-width: 320px;
-    padding: 8px 10px;
-    border-radius: 8px;
-  }
-
-  #auth-section button,
-  #reset-section button,
-  #keyword-section button {
-    height: var(--button-height);
-    font-size: 13px;
-    padding: 0 12px;
-    border-radius: 8px;
-  }
-
-  .cute-title { font-size: 1.3rem; margin-bottom: 8px; }
-  body { padding: 14px 10px 36px; }
-  #card-container { margin-top: 14px; }
-  
-  /* ポイント表示のレスポンシブ調整 */
-  .point-item {
-    font-size: 1em;
-  }
-  .point-item.total-point {
-    font-size: 1.1em;
-  }
+:root {
+--input-font-size: 14px;
+--input-radius: 8px;
+--button-height: 36px;
 }
-
-/* --- 視覚的な微調整（任意）--- */
-#auth-section input[style*="display:none"],
+#auth-section input,
+#reset-section input,
+#keyword-section input {
+height: 40px;
+font-size: 14px;
+max-width: 320px;
+padding: 8px 10px;
+border-radius: 8px;
+}
+#auth-section button,
+#reset-section button,
+#keyword-section button {
+height: var(--button-height);
+font-size: 13px;
+padding: 0 12px;
+border-radius: 8px;
+}
+.cute-title { font-size: 1.3rem; margin-bottom: 8px; }
+body { padding: 14px 10px 36px; }
+#card-container { margin-top: 14px; }
+/* ポイント表示のレスポンシブ調整 */
+.point-item {
+font-size: 1em;
+}
+.point-item.total-point {
+font-size: 1.1em;
+}
+/* ギャラリー画像のレスポンシブ調整 */
+.gallery-image {
+max-width: 95%;
+}
+}
+/* --- 視覚的な微調整（任意）--- /
+#auth-section input[style="display:none"],
 #reset-section input[style*="display:none"] {
-  /* inline style の display:none を尊重（何もしない） */
+/* inline style の display:none を尊重（何もしない） */
 }
-
 /* 既存 CSS と干渉しないための最小限のセレクタ指定を心掛けています */

@@ -49,6 +49,10 @@ const stampPointDisplay = document.getElementById('stamp-point-display');
 const colorsingPointDisplay = document.getElementById('colorsing-point-display');
 const totalPointDisplay = document.getElementById('total-point-display');
 
+// ギャラリー表示用のDOM要素
+const galleryContainer = document.getElementById('gallery-container');
+const galleryImages = document.getElementById('gallery-images');
+
 // メッセージ表示
 function showMessage(msg, type='error'){
   errorMsg.textContent = msg;
@@ -88,6 +92,13 @@ function extractImgField(docData){
     if(typeof v==="string" && v.includes("images/")) return cleanString(v);
   }
   return "";
+}
+
+// --------------------------------------------
+// 数値をカンマ区切りにフォーマット
+// --------------------------------------------
+function formatNumber(num){
+  return num.toLocaleString('ja-JP');
 }
 
 // --------------------------------------------
@@ -198,6 +209,9 @@ async function loginUser(nickname, password){
     // ニックネームとポイントを表示
     displayUserInfo(nickname, userData);
 
+    // ギャラリー画像を読み込む（userDataを再利用）
+    loadUserGallery(userData);
+
     // スタンプを読み込む
     await loadStamps(nickname);
   } catch(err){
@@ -207,21 +221,21 @@ async function loginUser(nickname, password){
 }
 
 // --------------------------------------------
-// ユーザー情報（ニックネーム・ポイント）を表示（3つに変更）
+// ユーザー情報（ニックネーム・ポイント）を表示
 // --------------------------------------------
 function displayUserInfo(nickname, userData){
   // ニックネーム表示
   nicknameDisplay.textContent = `ニックネーム: ${nickname}`;
   nicknameDisplay.style.display = 'block';
 
-  // ポイント表示（3つ・順番指定）
-  const stampPoint = (userData.stampPoint || 0).toLocaleString();
-  const colorsingPoint = (userData.colorsingPoint || 0).toLocaleString();
-  const totalPoint = (userData.totalPoint || 0).toLocaleString();
+  // ポイント表示（カンマ区切り）
+  const stampPoint = userData.stampPoint || 0;
+  const colorsingPoint = userData.colorsingPoint || 0;
+  const totalPoint = userData.totalPoint || 0;
   
-  stampPointDisplay.textContent = `スタンプpt: ${stampPoint}`;
-  colorsingPointDisplay.textContent = `カラシン推しpt: ${colorsingPoint}`;
-  totalPointDisplay.textContent = `総合計pt: ${totalPoint}`;
+  stampPointDisplay.textContent = `スタンプpt: ${formatNumber(stampPoint)}`;
+  colorsingPointDisplay.textContent = `カラシン推しpt: ${formatNumber(colorsingPoint)}`;
+  totalPointDisplay.textContent = `総合計pt: ${formatNumber(totalPoint)}`;
   pointsDisplay.style.display = 'block';
 
   console.debug('displayUserInfo:', { nickname, stampPoint, colorsingPoint, totalPoint });
@@ -240,6 +254,58 @@ function clearUserInfo(){
 }
 
 // --------------------------------------------
+// ギャラリー画像を読み込んで表示（修正版・usersコレクションから取得）
+// --------------------------------------------
+function loadUserGallery(userData){
+  try {
+    console.debug('loadUserGallery start');
+    
+    // ギャラリーをクリア
+    galleryImages.innerHTML = '';
+    galleryContainer.style.display = 'none';
+    
+    // userDataからimages配列を取得
+    const images = userData.images || [];
+    
+    if(images.length === 0){
+      console.debug('no images in gallery');
+      return;
+    }
+    
+    // 画像を縦に並べて表示
+    images.forEach((imageUrl, index) => {
+      const img = document.createElement('img');
+      img.src = imageUrl;
+      img.className = 'gallery-image';
+      img.alt = `ギャラリー画像 ${index + 1}`;
+      
+      // 画像読み込みエラー時のハンドリング
+      img.onerror = () => {
+        console.warn(`ギャラリー画像が見つかりません: ${imageUrl}`);
+      };
+      
+      galleryImages.appendChild(img);
+    });
+    
+    // ギャラリーコンテナを表示
+    galleryContainer.style.display = 'block';
+    console.debug('loadUserGallery: loaded', images.length, 'images');
+    
+  } catch(err){
+    console.error('ギャラリー読み込みエラー:', err);
+    // エラーが出ても他の機能に影響しないようにする
+  }
+}
+
+// --------------------------------------------
+// ギャラリー画像をクリア
+// --------------------------------------------
+function clearUserGallery(){
+  galleryImages.innerHTML = '';
+  galleryContainer.style.display = 'none';
+}
+
+// --------------------------------------------
 // ログアウト処理
 // --------------------------------------------
 logoutBtn.addEventListener('click', () => {
@@ -252,6 +318,7 @@ logoutBtn.addEventListener('click', () => {
   keywordSec.style.display = 'none';
   clearStampsFromUI();
   clearUserInfo();
+  clearUserGallery();
   showMessage('');
   // reset signup state & hide secret inputs
   signupState = 'start';
@@ -285,7 +352,7 @@ stampBtn.addEventListener('click', async () => {
 });
 
 // --------------------------------------------
-// スタンプ描画（ポイントフィールドを3つにスキップ対象追加）
+// スタンプ描画
 // --------------------------------------------
 async function loadStamps(uid){
   clearStampsFromUI();
@@ -297,9 +364,9 @@ async function loadStamps(uid){
   const h = cardContainer.clientHeight;
 
   const promises = Object.keys(userData).map(async keyword=>{
-    // スキップ対象：認証情報とポイント3種
+    // スキップ対象：認証情報、ポイント3種、images配列
     if(keyword === 'password' || keyword === 'secretQuestion' || keyword === 'secretAnswerHash' || 
-       keyword === 'stampPoint' || keyword === 'colorsingPoint' || keyword === 'totalPoint') return;
+       keyword === 'stampPoint' || keyword === 'colorsingPoint' || keyword === 'totalPoint' || keyword === 'images') return;
     
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;
@@ -432,3 +499,69 @@ resetCancelBtn.addEventListener('click', () => {
   resetNewPass.value = '';
   showMessage('');
 });
+```
+
+---
+
+## **主な変更点**
+
+1. **`loadUserGallery`関数**
+   - `userGallery`コレクションではなく、既に取得済みの`userData`から`images`配列を取得
+   - Firestoreへの追加アクセスが不要になり、より効率的
+
+2. **`loadStamps`関数**
+   - スキップ対象に`images`を追加（スタンプとして描画されないように）
+
+3. **`loginUser`関数**
+   - `userData`を`loadUserGallery`に渡すように変更
+
+---
+
+## **Firebaseでの設定手順（詳細）**
+
+### **ステップ1：Firestoreコンソールにアクセス**
+1. ブラウザで https://console.firebase.google.com/ を開く
+2. `stampcard-project`をクリック
+3. 左メニューから **「Firestore Database」** をクリック
+
+### **ステップ2：`users`コレクションの`yu`ドキュメントを開く**
+1. `users`コレクションをクリック
+2. `yu`ドキュメントをクリック
+
+### **ステップ3：`images`フィールドを追加**
+1. **「フィールドを追加」** ボタンをクリック
+2. 以下のように入力：
+   - **フィールド**: `images`
+   - **タイプ**: ドロップダウンから **`array`** を選択
+   - **値**: （配列の中身を追加していきます）
+
+### **ステップ4：配列に画像URLを追加**
+1. 配列の右側にある **「＋」ボタン** をクリック
+2. **タイプ**: `string`（デフォルトのまま）
+3. **値**: `images/gallery1.png` と入力
+4. さらに画像を追加する場合：
+   - もう一度 **「＋」ボタン** をクリック
+   - **値**: `images/gallery2.png` と入力
+   - 繰り返す
+
+### **ステップ5：保存**
+- 右上の **「更新」** ボタンをクリック
+
+---
+
+## **完成イメージ（Firestore構造）**
+```
+users (コレクション)
+  └─ yu (ドキュメント)
+       ├─ 10my: true
+       ├─ 1my: true
+       ├─ 3my: true
+       ├─ colorsingPoint: 0
+       ├─ images: ["images/gallery1.png", "images/gallery2.png"]  ← 新規追加
+       ├─ mm1: true
+       ├─ password: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
+       ├─ secretAnswerHash: "979d721bde0562115c0b5dee457e73f8b33607faca0e7ab5aa4f6d7fd91b1195"
+       ├─ secretQuestion: "好きな食べ物"
+       ├─ souki_01: true
+       ├─ stampPoint: 3000
+       └─ totalPoint: 3000

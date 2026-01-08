@@ -28,7 +28,7 @@ const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
 const cardContainer = document.getElementById('card-container');
 const cardBg = document.querySelector('.card-bg');
-const pageTitle = document.getElementById('page-title'); // 新規追加
+const pageTitle = document.getElementById('page-title');
 
 const secretQuestion = document.getElementById('secret-question');
 const secretAnswer = document.getElementById('secret-answer');
@@ -100,6 +100,48 @@ function extractImgField(docData){
 // --------------------------------------------
 function formatNumber(num){
   return num.toLocaleString('ja-JP');
+}
+
+// --------------------------------------------
+// スタンプからポイントを自動計算（新規追加）
+// --------------------------------------------
+function calculatePoints(userData){
+  let soukiCount = 0;
+  let matsuriCount = 0;
+  
+  // すべてのフィールドをチェック
+  Object.keys(userData).forEach(key => {
+    // 認証情報とポイントフィールドはスキップ
+    if(key === 'password' || key === 'secretQuestion' || key === 'secretAnswerHash' || 
+       key === 'stampPoint' || key === 'colorsingPoint' || key === 'totalPoint' || key === 'images') {
+      return;
+    }
+    
+    // trueのスタンプのみカウント
+    if(userData[key] === true){
+      // soukiで始まるスタンプ
+      if(key.toLowerCase().startsWith('souki')){
+        soukiCount++;
+      }
+      // matsuriで始まるスタンプ
+      else if(key.toLowerCase().startsWith('matsuri')){
+        matsuriCount++;
+      }
+    }
+  });
+  
+  // ポイント計算
+  const soukiPoints = soukiCount * 1000;
+  const matsuriPoints = matsuriCount * 250;
+  const totalPoints = soukiPoints + matsuriPoints;
+  
+  console.debug('calculatePoints:', { soukiCount, matsuriCount, soukiPoints, matsuriPoints, totalPoints });
+  
+  return {
+    stampPoint: soukiPoints + matsuriPoints, // スタンプptは合計
+    colorsingPoint: userData.colorsingPoint || 0, // カラシン推しptは既存の値
+    totalPoint: totalPoints + (userData.colorsingPoint || 0) // 総合計ptはスタンプpt + カラシン推しpt
+  };
 }
 
 // --------------------------------------------
@@ -197,7 +239,7 @@ async function loginUser(nickname, password){
     // 成功時：UI切替
     showMessage('ログインしました', 'success');
     
-    // ページタイトルを変更（新規追加）
+    // ページタイトルを変更
     pageTitle.textContent = `${nickname}さんのマイページ`;
     
     nicknameInput.style.display = 'none';
@@ -212,7 +254,7 @@ async function loginUser(nickname, password){
     // 隠れているリセットセクションがあれば閉じる
     resetSection.style.display = 'none';
 
-    // ポイントを表示（ニックネーム表示は削除）
+    // ポイントを表示（自動計算）
     displayUserInfo(nickname, userData);
 
     // ギャラリー画像を読み込む
@@ -227,20 +269,18 @@ async function loginUser(nickname, password){
 }
 
 // --------------------------------------------
-// ユーザー情報（ポイント）を表示（ニックネーム表示を削除）
+// ユーザー情報（ポイント）を表示（自動計算版）
 // --------------------------------------------
 function displayUserInfo(nickname, userData){
-  // ポイント表示（カンマ区切り）
-  const stampPoint = userData.stampPoint || 0;
-  const colorsingPoint = userData.colorsingPoint || 0;
-  const totalPoint = userData.totalPoint || 0;
+  // スタンプから自動計算
+  const points = calculatePoints(userData);
   
-  stampPointDisplay.textContent = `スタンプpt: ${formatNumber(stampPoint)}`;
-  colorsingPointDisplay.textContent = `カラシン推しpt: ${formatNumber(colorsingPoint)}`;
-  totalPointDisplay.textContent = `総合計pt: ${formatNumber(totalPoint)}`;
+  stampPointDisplay.textContent = `スタンプpt: ${formatNumber(points.stampPoint)}`;
+  colorsingPointDisplay.textContent = `カラシン推しpt: ${formatNumber(points.colorsingPoint)}`;
+  totalPointDisplay.textContent = `総合計pt: ${formatNumber(points.totalPoint)}`;
   pointsDisplay.style.display = 'block';
 
-  console.debug('displayUserInfo:', { nickname, stampPoint, colorsingPoint, totalPoint });
+  console.debug('displayUserInfo:', { nickname, ...points });
 }
 
 // --------------------------------------------
@@ -309,7 +349,7 @@ function clearUserGallery(){
 // ログアウト処理
 // --------------------------------------------
 logoutBtn.addEventListener('click', () => {
-  // ページタイトルを戻す（新規追加）
+  // ページタイトルを戻す
   pageTitle.textContent = 'マイページ';
   
   nicknameInput.style.display = 'inline-block';
@@ -331,7 +371,7 @@ logoutBtn.addEventListener('click', () => {
 });
 
 // --------------------------------------------
-// スタンプ処理
+// スタンプ処理（自動再計算を追加）
 // --------------------------------------------
 stampBtn.addEventListener('click', async () => {
   const nickname = nicknameInput.value.trim();
@@ -348,7 +388,15 @@ stampBtn.addEventListener('click', async () => {
     const userDocRef = doc(db,'users',nickname);
     await setDoc(userDocRef,{[keyword]:true},{merge:true});
     showMessage('スタンプを押しました', 'success');
-    loadStamps(nickname);
+    
+    // スタンプとポイントを再読み込み
+    await loadStamps(nickname);
+    
+    // ポイント表示を更新（新規追加）
+    const updatedUserSnap = await getDoc(userDocRef);
+    if(updatedUserSnap.exists()){
+      displayUserInfo(nickname, updatedUserSnap.data());
+    }
   } catch(err){
     console.error(err);
     showMessage('スタンプ押下に失敗しました：' + (err.message || err));

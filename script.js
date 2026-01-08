@@ -22,12 +22,13 @@ const signupBtn = document.getElementById('signup');
 const logoutBtn = document.getElementById('logout');
 const errorMsg = document.getElementById('error-msg');
 const passwordMsg = document.getElementById('password-msg');
-const passwordNote = document.getElementById('password-note'); // 新規追加
+const passwordNote = document.getElementById('password-note');
 const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
 const cardContainer = document.getElementById('card-container');
 const cardBg = document.querySelector('.card-bg');
+const pageTitle = document.getElementById('page-title'); // 新規追加
 
 const secretQuestion = document.getElementById('secret-question');
 const secretAnswer = document.getElementById('secret-answer');
@@ -43,8 +44,7 @@ const resetNewPass = document.getElementById('reset-newpass');
 const resetSetPassBtn = document.getElementById('reset-setpass-btn');
 const resetCancelBtn = document.getElementById('reset-cancel');
 
-// ニックネームとポイント表示用のDOM要素
-const nicknameDisplay = document.getElementById('nickname-display');
+// ポイント表示用のDOM要素
 const pointsDisplay = document.getElementById('points-display');
 const stampPointDisplay = document.getElementById('stamp-point-display');
 const colorsingPointDisplay = document.getElementById('colorsing-point-display');
@@ -196,19 +196,23 @@ async function loginUser(nickname, password){
 
     // 成功時：UI切替
     showMessage('ログインしました', 'success');
+    
+    // ページタイトルを変更（新規追加）
+    pageTitle.textContent = `${nickname}さんのマイページ`;
+    
     nicknameInput.style.display = 'none';
     passInput.style.display = 'none';
     loginBtn.style.display = 'none';
     signupBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
     passwordMsg.style.display = 'none';
-    passwordNote.style.display = 'none'; // 新規追加：ハッシュ化メッセージを非表示
+    passwordNote.style.display = 'none';
     keywordSec.style.display = 'block';
 
     // 隠れているリセットセクションがあれば閉じる
     resetSection.style.display = 'none';
 
-    // ニックネームとポイントを表示
+    // ポイントを表示（ニックネーム表示は削除）
     displayUserInfo(nickname, userData);
 
     // ギャラリー画像を読み込む
@@ -223,13 +227,9 @@ async function loginUser(nickname, password){
 }
 
 // --------------------------------------------
-// ユーザー情報（ニックネーム・ポイント）を表示
+// ユーザー情報（ポイント）を表示（ニックネーム表示を削除）
 // --------------------------------------------
 function displayUserInfo(nickname, userData){
-  // ニックネーム表示
-  nicknameDisplay.textContent = `ニックネーム: ${nickname}`;
-  nicknameDisplay.style.display = 'block';
-
   // ポイント表示（カンマ区切り）
   const stampPoint = userData.stampPoint || 0;
   const colorsingPoint = userData.colorsingPoint || 0;
@@ -247,8 +247,6 @@ function displayUserInfo(nickname, userData){
 // ユーザー情報表示をクリア
 // --------------------------------------------
 function clearUserInfo(){
-  nicknameDisplay.textContent = '';
-  nicknameDisplay.style.display = 'none';
   stampPointDisplay.textContent = '';
   colorsingPointDisplay.textContent = '';
   totalPointDisplay.textContent = '';
@@ -311,13 +309,16 @@ function clearUserGallery(){
 // ログアウト処理
 // --------------------------------------------
 logoutBtn.addEventListener('click', () => {
+  // ページタイトルを戻す（新規追加）
+  pageTitle.textContent = 'マイページ';
+  
   nicknameInput.style.display = 'inline-block';
   passInput.style.display = 'inline-block';
   loginBtn.style.display = 'inline-block';
   signupBtn.style.display = 'inline-block';
   logoutBtn.style.display = 'none';
   passwordMsg.style.display = 'block';
-  passwordNote.style.display = 'block'; // 新規追加：ハッシュ化メッセージを再表示
+  passwordNote.style.display = 'block';
   keywordSec.style.display = 'none';
   clearStampsFromUI();
   clearUserInfo();

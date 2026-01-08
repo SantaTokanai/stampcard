@@ -22,6 +22,7 @@ const signupBtn = document.getElementById('signup');
 const logoutBtn = document.getElementById('logout');
 const errorMsg = document.getElementById('error-msg');
 const passwordMsg = document.getElementById('password-msg');
+const passwordNote = document.getElementById('password-note'); // 新規追加
 const keywordSec = document.getElementById('keyword-section');
 const keywordInput = document.getElementById('keyword');
 const stampBtn = document.getElementById('stampBtn');
@@ -201,6 +202,7 @@ async function loginUser(nickname, password){
     signupBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
     passwordMsg.style.display = 'none';
+    passwordNote.style.display = 'none'; // 新規追加：ハッシュ化メッセージを非表示
     keywordSec.style.display = 'block';
 
     // 隠れているリセットセクションがあれば閉じる
@@ -209,7 +211,7 @@ async function loginUser(nickname, password){
     // ニックネームとポイントを表示
     displayUserInfo(nickname, userData);
 
-    // ギャラリー画像を読み込む（awaitを削除）
+    // ギャラリー画像を読み込む
     loadUserGallery(userData);
 
     // スタンプを読み込む
@@ -254,7 +256,7 @@ function clearUserInfo(){
 }
 
 // --------------------------------------------
-// ギャラリー画像を読み込んで表示（通常の関数・asyncでない）
+// ギャラリー画像を読み込んで表示
 // --------------------------------------------
 function loadUserGallery(userData){
   try {
@@ -315,6 +317,7 @@ logoutBtn.addEventListener('click', () => {
   signupBtn.style.display = 'inline-block';
   logoutBtn.style.display = 'none';
   passwordMsg.style.display = 'block';
+  passwordNote.style.display = 'block'; // 新規追加：ハッシュ化メッセージを再表示
   keywordSec.style.display = 'none';
   clearStampsFromUI();
   clearUserInfo();

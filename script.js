@@ -46,6 +46,7 @@ const resetCancelBtn = document.getElementById('reset-cancel');
 
 // ポイント表示用のDOM要素
 const pointsDisplay = document.getElementById('points-display');
+const membershipPointDisplay = document.getElementById('membership-point-display'); // 新規追加
 const stampPointDisplay = document.getElementById('stamp-point-display');
 const colorsingPointDisplay = document.getElementById('colorsing-point-display');
 const totalPointDisplay = document.getElementById('total-point-display');
@@ -103,7 +104,7 @@ function formatNumber(num){
 }
 
 // --------------------------------------------
-// スタンプからポイントを自動計算（新規追加）
+// スタンプからポイントを自動計算（membershipPoint追加）
 // --------------------------------------------
 function calculatePoints(userData){
   let soukiCount = 0;
@@ -113,7 +114,7 @@ function calculatePoints(userData){
   Object.keys(userData).forEach(key => {
     // 認証情報とポイントフィールドはスキップ
     if(key === 'password' || key === 'secretQuestion' || key === 'secretAnswerHash' || 
-       key === 'stampPoint' || key === 'colorsingPoint' || key === 'totalPoint' || key === 'images') {
+       key === 'membershipPoint' || key === 'stampPoint' || key === 'colorsingPoint' || key === 'totalPoint' || key === 'images') {
       return;
     }
     
@@ -131,16 +132,25 @@ function calculatePoints(userData){
   });
   
   // ポイント計算
-  const soukiPoints = soukiCount * 1000;
-  const matsuriPoints = matsuriCount * 250;
-  const totalPoints = soukiPoints + matsuriPoints;
+  const stampPoints = soukiCount * 1000 + matsuriCount * 250;
+  const membershipPoint = userData.membershipPoint || 0; // 新規追加
+  const colorsingPoint = userData.colorsingPoint || 0;
+  const totalPoints = membershipPoint + stampPoints + colorsingPoint; // 新規：3つの合計
   
-  console.debug('calculatePoints:', { soukiCount, matsuriCount, soukiPoints, matsuriPoints, totalPoints });
+  console.debug('calculatePoints:', { 
+    soukiCount, 
+    matsuriCount, 
+    membershipPoint,
+    stampPoints, 
+    colorsingPoint, 
+    totalPoints 
+  });
   
   return {
-    stampPoint: soukiPoints + matsuriPoints, // スタンプptは合計
-    colorsingPoint: userData.colorsingPoint || 0, // カラシン推しptは既存の値
-    totalPoint: totalPoints + (userData.colorsingPoint || 0) // 総合計ptはスタンプpt + カラシン推しpt
+    membershipPoint: membershipPoint,  // 新規追加
+    stampPoint: stampPoints,
+    colorsingPoint: colorsingPoint,
+    totalPoint: totalPoints
   };
 }
 
@@ -269,12 +279,13 @@ async function loginUser(nickname, password){
 }
 
 // --------------------------------------------
-// ユーザー情報（ポイント）を表示（自動計算版）
+// ユーザー情報（ポイント）を表示（membershipPoint追加）
 // --------------------------------------------
 function displayUserInfo(nickname, userData){
   // スタンプから自動計算
   const points = calculatePoints(userData);
   
+  membershipPointDisplay.textContent = `メンバーシップpt: ${formatNumber(points.membershipPoint)}`; // 新規追加
   stampPointDisplay.textContent = `スタンプpt: ${formatNumber(points.stampPoint)}`;
   colorsingPointDisplay.textContent = `カラシン推しpt: ${formatNumber(points.colorsingPoint)}`;
   totalPointDisplay.textContent = `総合計pt: ${formatNumber(points.totalPoint)}`;
@@ -287,6 +298,7 @@ function displayUserInfo(nickname, userData){
 // ユーザー情報表示をクリア
 // --------------------------------------------
 function clearUserInfo(){
+  membershipPointDisplay.textContent = ''; // 新規追加
   stampPointDisplay.textContent = '';
   colorsingPointDisplay.textContent = '';
   totalPointDisplay.textContent = '';
@@ -392,7 +404,7 @@ stampBtn.addEventListener('click', async () => {
     // スタンプとポイントを再読み込み
     await loadStamps(nickname);
     
-    // ポイント表示を更新（新規追加）
+    // ポイント表示を更新
     const updatedUserSnap = await getDoc(userDocRef);
     if(updatedUserSnap.exists()){
       displayUserInfo(nickname, updatedUserSnap.data());
@@ -416,9 +428,9 @@ async function loadStamps(uid){
   const h = cardContainer.clientHeight;
 
   const promises = Object.keys(userData).map(async keyword=>{
-    // スキップ対象：認証情報、ポイント3種、images配列
+    // スキップ対象：認証情報、ポイント4種、images配列
     if(keyword === 'password' || keyword === 'secretQuestion' || keyword === 'secretAnswerHash' || 
-       keyword === 'stampPoint' || keyword === 'colorsingPoint' || keyword === 'totalPoint' || keyword === 'images') return;
+       keyword === 'membershipPoint' || keyword === 'stampPoint' || keyword === 'colorsingPoint' || keyword === 'totalPoint' || keyword === 'images') return;
     
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;

@@ -39,6 +39,15 @@ body {
   padding: 6px;
 }
 
+/* --- 合言葉セクションのグループ化（新規追加） --- */
+#keyword-section {
+  border: 1px solid #d0d5e0;
+  background-color: #f8f9fb;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
 /* --- 入力欄（すべて統一）--- */
 #auth-section input,
 #reset-section input,
@@ -179,7 +188,7 @@ body {
   max-width: 400px;
 }
 
-/* アイコン置き場タイトル（新規追加） */
+/* アイコン置き場タイトル */
 .gallery-title {
   font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
   font-weight: 700;
@@ -256,6 +265,11 @@ body {
   /* ギャラリー画像のレスポンシブ調整 */
   .gallery-image {
     max-width: 95%;
+  }
+  
+  /* 合言葉セクションのレスポンシブ調整（新規追加） */
+  #keyword-section {
+    padding: 12px;
   }
 }
 

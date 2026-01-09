@@ -56,19 +56,17 @@
     <input type="text" id="keyword" placeholder="合言葉を入力">
     <button id="stampBtn">スタンプを押す</button>
   </div>
-  
   <!-- スタンプカード -->
   <div id="card-container" style="margin-top:30px; position:relative; width:100%; max-width:500px;">
     <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
   </div>
-  
-  <!-- ポイント表示エリア -->
+  <!-- ポイント表示エリア（membershipPoint追加） -->
   <div id="points-display" style="display:none; margin-top:15px;">
+    <div id="membership-point-display" class="point-item"></div>
     <div id="stamp-point-display" class="point-item"></div>
     <div id="colorsing-point-display" class="point-item"></div>
     <div id="total-point-display" class="point-item total-point"></div>
   </div>
-  
   <!-- ギャラリー画像表示エリア -->
   <div id="gallery-container" style="display:none; margin-top:20px; max-width:500px; margin-left:auto; margin-right:auto;">
     <hr class="gallery-divider">
@@ -76,7 +74,6 @@
     <div id="gallery-title" class="gallery-title">アイコン置き場</div>
     <div id="gallery-images"></div>
   </div>
-  
   <script type="module" src="script.js"></script>
 </body>
 </html>

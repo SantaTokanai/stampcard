@@ -32,19 +32,21 @@ const pageTitle = document.getElementById('page-title');
 
 const secretQuestion = document.getElementById('secret-question');
 const secretAnswer = document.getElementById('secret-answer');
-const secretHint = document.getElementById('secret-hint');
 
 const forgotBtn = document.getElementById('forgot-password');
-const resetRequestSection = document.getElementById('reset-request-section');
-const requestNickname = document.getElementById('request-nickname');
-const requestMessage = document.getElementById('request-message');
-const requestSubmitBtn = document.getElementById('request-submit-btn');
-const requestCancelBtn = document.getElementById('request-cancel-btn');
-const requestMsg = document.getElementById('request-msg');
+const resetSection = document.getElementById('reset-section');
+const resetNickname = document.getElementById('reset-nickname');
+const resetStep1Btn = document.getElementById('reset-step1-btn');
+const resetQuestionDiv = document.getElementById('reset-question');
+const resetAnswer = document.getElementById('reset-answer');
+const resetVerifyBtn = document.getElementById('reset-verify-btn');
+const resetNewPass = document.getElementById('reset-newpass');
+const resetSetPassBtn = document.getElementById('reset-setpass-btn');
+const resetCancelBtn = document.getElementById('reset-cancel');
 
 // ポイント表示用のDOM要素
 const pointsDisplay = document.getElementById('points-display');
-const membershipPointDisplay = document.getElementById('membership-point-display');
+const membershipPointDisplay = document.getElementById('membership-point-display'); // 新規追加
 const stampPointDisplay = document.getElementById('stamp-point-display');
 const colorsingPointDisplay = document.getElementById('colorsing-point-display');
 const totalPointDisplay = document.getElementById('total-point-display');
@@ -102,31 +104,38 @@ function formatNumber(num){
 }
 
 // --------------------------------------------
-// スタンプからポイントを自動計算
+// スタンプからポイントを自動計算（membershipPoint追加）
 // --------------------------------------------
 function calculatePoints(userData){
   let soukiCount = 0;
   let matsuriCount = 0;
   
+  // すべてのフィールドをチェック
   Object.keys(userData).forEach(key => {
-    if(key === 'membershipPoint' || key === 'stampPoint' || key === 'colorsingPoint' || key === 'totalPoint' || key === 'images') {
+    // 認証情報とポイントフィールドはスキップ
+    if(key === 'password' || key === 'secretQuestion' || key === 'secretAnswerHash' || 
+       key === 'membershipPoint' || key === 'stampPoint' || key === 'colorsingPoint' || key === 'totalPoint' || key === 'images') {
       return;
     }
     
+    // trueのスタンプのみカウント
     if(userData[key] === true){
+      // soukiで始まるスタンプ
       if(key.toLowerCase().startsWith('souki')){
         soukiCount++;
       }
+      // matsuriで始まるスタンプ
       else if(key.toLowerCase().startsWith('matsuri')){
         matsuriCount++;
       }
     }
   });
   
+  // ポイント計算
   const stampPoints = soukiCount * 1000 + matsuriCount * 250;
-  const membershipPoint = userData.membershipPoint || 0;
+  const membershipPoint = userData.membershipPoint || 0; // 新規追加
   const colorsingPoint = userData.colorsingPoint || 0;
-  const totalPoints = membershipPoint + stampPoints + colorsingPoint;
+  const totalPoints = membershipPoint + stampPoints + colorsingPoint; // 新規：3つの合計
   
   console.debug('calculatePoints:', { 
     soukiCount, 
@@ -138,7 +147,7 @@ function calculatePoints(userData){
   });
   
   return {
-    membershipPoint: membershipPoint,
+    membershipPoint: membershipPoint,  // 新規追加
     stampPoint: stampPoints,
     colorsingPoint: colorsingPoint,
     totalPoint: totalPoints
@@ -148,10 +157,10 @@ function calculatePoints(userData){
 // --------------------------------------------
 // 状態（signup の段階管理）
 // --------------------------------------------
-let signupState = 'start';
+let signupState = 'start'; // 'start' -> 初回押下で秘密欄を表示 -> 'secret' -> もう一度押すと登録実行
 
 // --------------------------------------------
-// サインアップ処理（2段階・public/private分離版）
+// サインアップ処理（2段階）
 // --------------------------------------------
 signupBtn.addEventListener('click', async () => {
   try {
@@ -160,24 +169,12 @@ signupBtn.addEventListener('click', async () => {
     const password = passInput.value;
 
     if(!nickname){ showMessage('ニックネームを入力してください'); return; }
-    
-    // パスワード強度チェック
-    if(password.length < 4){ 
-      showMessage('パスワードは4文字以上にしてください'); 
-      return; 
-    }
-    
-    const hasLetter = /[a-zA-Z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    if(!hasLetter || !hasNumber){
-      showMessage('パスワードは英字と数字を両方含めてください');
-      return;
-    }
+    if(password.length < 3){ showMessage('パスワードは3文字以上です'); return; }
 
     if(signupState === 'start'){
+      // 秘密欄を表示して2段階目へ
       secretQuestion.style.display = 'block';
       secretAnswer.style.display = 'block';
-      secretHint.style.display = 'block';
       signupState = 'secret';
       showMessage('秘密の質問と答えを入力して、もう一度「新規登録」を押してください。','success');
       console.debug('signup: revealed secret inputs');
@@ -187,60 +184,33 @@ signupBtn.addEventListener('click', async () => {
     // signupState === 'secret' -> 実際の登録処理
     const question = secretQuestion.value.trim();
     const answer = secretAnswer.value.trim();
-    
-    if(!question || !answer){ 
-      showMessage('秘密の質問と答えを入力してください'); 
-      return; 
-    }
-    
-    // 秘密の質問の長さチェック
-    if(question.length < 5){
-      showMessage('秘密の質問は55文字以上にしてください');
-      return;
-    }
-    
-    // 秘密の答えの長さチェック
-    if(answer.length < 3){
-      showMessage('秘密の質問の答えは3文字以上にしてください');
-      return;
-    }
+    if(!question || !answer){ showMessage('秘密の質問と答えを入力してください'); return; }
 
-    // 既存ユーザーチェック（users_publicで確認）
-    const publicDocRef = doc(db,'users_public',nickname);
-    const publicSnap = await getDoc(publicDocRef);
+    const userDocRef = doc(db,'users',nickname);
+    const userSnap = await getDoc(userDocRef);
 
-    if(publicSnap.exists()){ 
-      showMessage('そのニックネームは既に使用されています'); 
-      return; 
-    }
+    if(userSnap.exists()){ showMessage('そのニックネームは既に使用されています'); return; }
 
     const passwordHash = await hashPassword(password);
     const answerHash = await hashPassword(answer);
-    
-    // users_privateに秘密情報を保存
-    await setDoc(doc(db,'users_private',nickname), {
+    // 保存（password + secretQuestion + secretAnswerHash）
+    await setDoc(userDocRef, {
       password: passwordHash,
       secretQuestion: question,
       secretAnswerHash: answerHash
-    });
-    
-    // users_publicに公開情報を保存（初期状態は空）
-    await setDoc(doc(db,'users_public',nickname), {
-      membershipPoint: 0,
-      colorsingPoint: 0
-    });
+    }, { merge: true });
 
-    console.debug('signup: user created', { nickname, passwordHashSnippet: passwordHash.slice(0,8) });
+    console.debug('signup: user created', { nickname, passwordHashSnippet: passwordHash.slice(0,8), answerHashSnippet: answerHash.slice(0,8) });
     showMessage('新規登録しました。自動でログインします', 'success');
 
     // 初期状態に戻す（UI）
     secretQuestion.style.display = 'none';
     secretAnswer.style.display = 'none';
-    secretHint.style.display = 'none';
     secretQuestion.value = '';
     secretAnswer.value = '';
     signupState = 'start';
 
+    // 自動ログイン（パラメータに平文パスワードを渡す）
     await loginUser(nickname, password);
   } catch(err){
     console.error(err);
@@ -251,7 +221,7 @@ signupBtn.addEventListener('click', async () => {
 });
 
 // --------------------------------------------
-// ログイン処理（public/private分離版）
+// ログイン処理
 // --------------------------------------------
 loginBtn.addEventListener('click', async () => {
   const nickname = nicknameInput.value.trim();
@@ -265,42 +235,21 @@ loginBtn.addEventListener('click', async () => {
 async function loginUser(nickname, password){
   try {
     console.debug('loginUser start', nickname);
-    
-    // users_privateからパスワードを取得
-    const privateDocRef = doc(db,'users_private',nickname);
-    const privateSnap = await getDoc(privateDocRef);
+    const userDocRef = doc(db,'users',nickname);
+    const userSnap = await getDoc(userDocRef);
 
-    if(!privateSnap.exists()){ 
-      showMessage('ユーザーが存在しません'); 
-      return; 
-    }
+    if(!userSnap.exists()){ showMessage('ユーザーが存在しません'); return; }
 
-    const privateData = privateSnap.data();
-    if(!privateData.password){ 
-      showMessage('パスワードが設定されていません'); 
-      return; 
-    }
+    const userData = userSnap.data();
+    if(!userData.password){ showMessage('パスワードが設定されていません'); return; }
 
     const inputHash = await hashPassword(password);
-    if(inputHash !== privateData.password){ 
-      showMessage('パスワードが違います'); 
-      return; 
-    }
-
-    // users_publicから公開情報を取得
-    const publicDocRef = doc(db,'users_public',nickname);
-    const publicSnap = await getDoc(publicDocRef);
-    
-    if(!publicSnap.exists()){
-      showMessage('ユーザーデータが見つかりません');
-      return;
-    }
-    
-    const publicData = publicSnap.data();
+    if(inputHash !== userData.password){ showMessage('パスワードが違います'); return; }
 
     // 成功時：UI切替
     showMessage('ログインしました', 'success');
     
+    // ページタイトルを変更
     pageTitle.textContent = `${nickname}さんのマイページ`;
     
     nicknameInput.style.display = 'none';
@@ -312,23 +261,31 @@ async function loginUser(nickname, password){
     passwordNote.style.display = 'none';
     keywordSec.style.display = 'block';
 
-    resetRequestSection.style.display = 'none';
+    // 隠れているリセットセクションがあれば閉じる
+    resetSection.style.display = 'none';
 
-    displayUserInfo(nickname, publicData);
-    loadUserGallery(publicData);
-    await loadStamps(nickname, publicData);
+    // ポイントを表示（自動計算）
+    displayUserInfo(nickname, userData);
+
+    // ギャラリー画像を読み込む
+    loadUserGallery(userData);
+
+    // スタンプを読み込む
+    await loadStamps(nickname);
   } catch(err){
     console.error(err);
     showMessage('ログイン処理でエラーが発生しました：' + (err.message || err));
   }
 }
+
 // --------------------------------------------
-// ユーザー情報（ポイント）を表示
+// ユーザー情報（ポイント）を表示（membershipPoint追加）
 // --------------------------------------------
 function displayUserInfo(nickname, userData){
+  // スタンプから自動計算
   const points = calculatePoints(userData);
   
-  membershipPointDisplay.textContent = `メンバーシップpt: ${formatNumber(points.membershipPoint)}`;
+  membershipPointDisplay.textContent = `メンバーシップpt: ${formatNumber(points.membershipPoint)}`; // 新規追加
   stampPointDisplay.textContent = `スタンプpt: ${formatNumber(points.stampPoint)}`;
   colorsingPointDisplay.textContent = `カラシン推しpt: ${formatNumber(points.colorsingPoint)}`;
   totalPointDisplay.textContent = `総合計pt: ${formatNumber(points.totalPoint)}`;
@@ -341,7 +298,7 @@ function displayUserInfo(nickname, userData){
 // ユーザー情報表示をクリア
 // --------------------------------------------
 function clearUserInfo(){
-  membershipPointDisplay.textContent = '';
+  membershipPointDisplay.textContent = ''; // 新規追加
   stampPointDisplay.textContent = '';
   colorsingPointDisplay.textContent = '';
   totalPointDisplay.textContent = '';
@@ -355,9 +312,11 @@ function loadUserGallery(userData){
   try {
     console.debug('loadUserGallery start');
     
+    // ギャラリーをクリア
     galleryImages.innerHTML = '';
     galleryContainer.style.display = 'none';
     
+    // userDataからimages配列を取得
     const images = userData.images || [];
     
     if(images.length === 0){
@@ -365,12 +324,14 @@ function loadUserGallery(userData){
       return;
     }
     
+    // 画像を縦に並べて表示
     images.forEach((imageUrl, index) => {
       const img = document.createElement('img');
       img.src = imageUrl;
       img.className = 'gallery-image';
       img.alt = `ギャラリー画像 ${index + 1}`;
       
+      // 画像読み込みエラー時のハンドリング
       img.onerror = () => {
         console.warn(`ギャラリー画像が見つかりません: ${imageUrl}`);
       };
@@ -378,11 +339,13 @@ function loadUserGallery(userData){
       galleryImages.appendChild(img);
     });
     
+    // ギャラリーコンテナを表示
     galleryContainer.style.display = 'block';
     console.debug('loadUserGallery: loaded', images.length, 'images');
     
   } catch(err){
     console.error('ギャラリー読み込みエラー:', err);
+    // エラーが出ても他の機能に影響しないようにする
   }
 }
 
@@ -398,6 +361,7 @@ function clearUserGallery(){
 // ログアウト処理
 // --------------------------------------------
 logoutBtn.addEventListener('click', () => {
+  // ページタイトルを戻す
   pageTitle.textContent = 'マイページ';
   
   nicknameInput.style.display = 'inline-block';
@@ -412,14 +376,14 @@ logoutBtn.addEventListener('click', () => {
   clearUserInfo();
   clearUserGallery();
   showMessage('');
+  // reset signup state & hide secret inputs
   signupState = 'start';
   secretQuestion.style.display = 'none';
   secretAnswer.style.display = 'none';
-  secretHint.style.display = 'none';
 });
 
 // --------------------------------------------
-// スタンプ処理（public/private分離版）
+// スタンプ処理（自動再計算を追加）
 // --------------------------------------------
 stampBtn.addEventListener('click', async () => {
   const nickname = nicknameInput.value.trim();
@@ -431,18 +395,19 @@ stampBtn.addEventListener('click', async () => {
   try{
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()){ showMessage('その合言葉は存在しません'); return; }
+    const data = kwSnap.data();
 
-    // users_publicにスタンプを追加
-    const publicDocRef = doc(db,'users_public',nickname);
-    await setDoc(publicDocRef,{[keyword]:true},{merge:true});
+    const userDocRef = doc(db,'users',nickname);
+    await setDoc(userDocRef,{[keyword]:true},{merge:true});
     showMessage('スタンプを押しました', 'success');
     
-    // 更新されたデータを取得
-    const updatedPublicSnap = await getDoc(publicDocRef);
-    if(updatedPublicSnap.exists()){
-      const updatedData = updatedPublicSnap.data();
-      await loadStamps(nickname, updatedData);
-      displayUserInfo(nickname, updatedData);
+    // スタンプとポイントを再読み込み
+    await loadStamps(nickname);
+    
+    // ポイント表示を更新
+    const updatedUserSnap = await getDoc(userDocRef);
+    if(updatedUserSnap.exists()){
+      displayUserInfo(nickname, updatedUserSnap.data());
     }
   } catch(err){
     console.error(err);
@@ -451,17 +416,21 @@ stampBtn.addEventListener('click', async () => {
 });
 
 // --------------------------------------------
-// スタンプ描画（publicDataを受け取る版）
+// スタンプ描画
 // --------------------------------------------
-async function loadStamps(nickname, publicData){
+async function loadStamps(uid){
   clearStampsFromUI();
+  const userSnap = await getDoc(doc(db,'users',uid));
+  if(!userSnap.exists()) return;
+  const userData = userSnap.data();
 
   const w = cardContainer.clientWidth;
   const h = cardContainer.clientHeight;
 
-  const promises = Object.keys(publicData).map(async keyword=>{
-    // スキップ対象：ポイント4種、images配列
-    if(keyword === 'membershipPoint' || keyword === 'stampPoint' || keyword === 'colorsingPoint' || keyword === 'totalPoint' || keyword === 'images') return;
+  const promises = Object.keys(userData).map(async keyword=>{
+    // スキップ対象：認証情報、ポイント4種、images配列
+    if(keyword === 'password' || keyword === 'secretQuestion' || keyword === 'secretAnswerHash' || 
+       keyword === 'membershipPoint' || keyword === 'stampPoint' || keyword === 'colorsingPoint' || keyword === 'totalPoint' || keyword === 'images') return;
     
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()) return;
@@ -500,56 +469,97 @@ function clearStampsFromUI(){
 }
 
 // --------------------------------------------
-// パスワードリセット依頼機能
+// パスワードリセット機能（秘密の質問で認証 → 新パスワード設定）
 // --------------------------------------------
 forgotBtn.addEventListener('click', () => {
-  resetRequestSection.style.display = resetRequestSection.style.display === 'none' ? 'block' : 'none';
+  // トグル表示（簡易）
+  resetSection.style.display = resetSection.style.display === 'none' ? 'block' : 'none';
   showMessage('');
-  requestNickname.value = '';
-  requestMessage.value = '';
-  requestMsg.textContent = '';
+  // reset the reset UI
+  resetQuestionDiv.style.display = 'none';
+  resetQuestionDiv.textContent = '';
+  resetAnswer.style.display = 'none';
+  resetAnswer.value = '';
+  resetVerifyBtn.style.display = 'none';
+  resetNewPass.style.display = 'none';
+  resetNewPass.value = '';
+  resetSetPassBtn.style.display = 'none';
 });
 
-requestSubmitBtn.addEventListener('click', async () => {
-  const nickname = requestNickname.value.trim();
-  const message = requestMessage.value.trim();
-  
-  if(!nickname){
-    requestMsg.textContent = 'ニックネームを入力してください';
-    requestMsg.className = 'error';
-    return;
-  }
-  
+resetStep1Btn.addEventListener('click', async () => {
+  const nick = resetNickname.value.trim();
+  if(!nick){ showMessage('リセットするニックネームを入力してください'); return; }
   try {
-    // Firestoreに依頼を保存
-    const requestId = `request_${Date.now()}`;
-    await setDoc(doc(db, 'password_reset_requests', requestId), {
-      nickname: nickname,
-      message: message || '（メッセージなし）',
-      timestamp: Date.now(),
-      status: 'pending'
-    });
-    
-    requestMsg.textContent = '✅ 依頼を送信しました。管理者が確認次第、対応いたします。';
-    requestMsg.style.color = '#0a0';
-    
-    // フォームをクリア
-    requestNickname.value = '';
-    requestMessage.value = '';
-    
-    console.debug('password reset request sent:', { nickname, requestId });
-    
+    const userSnap = await getDoc(doc(db,'users',nick));
+    if(!userSnap.exists()){ showMessage('そのニックネームは存在しません'); return; }
+    const d = userSnap.data();
+    if(!d.secretQuestion){ showMessage('このアカウントは秘密の質問が設定されていません'); return; }
+    resetQuestionDiv.textContent = '秘密の質問：' + d.secretQuestion;
+    resetQuestionDiv.style.display = 'block';
+    resetAnswer.style.display = 'block';
+    resetVerifyBtn.style.display = 'inline-block';
+    showMessage('秘密の質問が表示されました。答えを入力してください。','success');
+    console.debug('reset: showed question for', nick);
   } catch(err){
     console.error(err);
-    requestMsg.textContent = '送信に失敗しました。もう一度お試しください。';
-    requestMsg.style.color = '#a00';
+    showMessage('処理中にエラーが発生しました：' + (err.message || err));
   }
 });
 
-requestCancelBtn.addEventListener('click', () => {
-  resetRequestSection.style.display = 'none';
-  requestNickname.value = '';
-  requestMessage.value = '';
-  requestMsg.textContent = '';
+resetVerifyBtn.addEventListener('click', async () => {
+  const nick = resetNickname.value.trim();
+  const answer = resetAnswer.value.trim();
+  if(!nick || !answer){ showMessage('ニックネームと答えを入力してください'); return; }
+  try {
+    const userDocRef = doc(db,'users',nick);
+    const userSnap = await getDoc(userDocRef);
+    if(!userSnap.exists()){ showMessage('そのニックネームは存在しません'); return; }
+    const d = userSnap.data();
+    if(!d.secretAnswerHash){ showMessage('秘密の質問の答えが設定されていません'); return; }
+
+    const answerHash = await hashPassword(answer);
+    if(answerHash !== d.secretAnswerHash){ showMessage('秘密の質問の答えが違います'); return; }
+
+    // 正解 -> 新パスワード入力を表示
+    resetNewPass.style.display = 'block';
+    resetSetPassBtn.style.display = 'inline-block';
+    showMessage('認証成功。新しいパスワードを入力してください。','success');
+    console.debug('reset: answer correct for', nick);
+  } catch(err){
+    console.error(err);
+    showMessage('処理中にエラーが発生しました：' + (err.message || err));
+  }
+});
+
+resetSetPassBtn.addEventListener('click', async () => {
+  const nick = resetNickname.value.trim();
+  const newPass = resetNewPass.value;
+  if(!newPass || newPass.length < 3){ showMessage('新しいパスワードは3文字以上にしてください'); return; }
+  try {
+    const newHash = await hashPassword(newPass);
+    await setDoc(doc(db,'users',nick), { password: newHash }, { merge: true });
+    showMessage('パスワードを更新しました。自動でログインします', 'success');
+    console.debug('reset: password updated for', nick, 'hashSnippet:', newHash.slice(0,8));
+    // 自動ログイン
+    await loginUser(nick, newPass);
+
+    // クリーンアップ UI
+    resetSection.style.display = 'none';
+    resetNickname.value = '';
+    resetQuestionDiv.textContent = '';
+    resetAnswer.value = '';
+    resetNewPass.value = '';
+  } catch(err){
+    console.error(err);
+    showMessage('パスワード更新でエラーが発生しました：' + (err.message || err));
+  }
+});
+
+resetCancelBtn.addEventListener('click', () => {
+  resetSection.style.display = 'none';
+  resetNickname.value = '';
+  resetQuestionDiv.textContent = '';
+  resetAnswer.value = '';
+  resetNewPass.value = '';
   showMessage('');
 });

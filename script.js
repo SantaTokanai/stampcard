@@ -194,14 +194,14 @@ signupBtn.addEventListener('click', async () => {
     }
     
     // 秘密の質問の長さチェック
-    if(question.length < 15){
-      showMessage('秘密の質問は15文字以上にしてください');
+    if(question.length < 5){
+      showMessage('秘密の質問は55文字以上にしてください');
       return;
     }
     
     // 秘密の答えの長さチェック
-    if(answer.length < 5){
-      showMessage('秘密の質問の答えは5文字以上にしてください');
+    if(answer.length < 3){
+      showMessage('秘密の質問の答えは3文字以上にしてください');
       return;
     }
 

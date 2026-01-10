@@ -169,7 +169,7 @@ signupBtn.addEventListener('click', async () => {
     const password = passInput.value;
 
     if(!nickname){ showMessage('ニックネームを入力してください'); return; }
-    if(password.length < 3){ showMessage('パスワードは3文字以上です'); return; }
+    if(password.length < 6){ showMessage('パスワードは6文字以上です'); return; }
 
     if(signupState === 'start'){
       // 秘密欄を表示して2段階目へ

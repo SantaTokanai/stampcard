@@ -162,8 +162,8 @@ signupBtn.addEventListener('click', async () => {
     if(!nickname){ showMessage('ニックネームを入力してください'); return; }
     
     // パスワード強度チェック
-    if(password.length < 8){ 
-      showMessage('パスワードは8文字以上にしてください'); 
+    if(password.length < 4){ 
+      showMessage('パスワードは4文字以上にしてください'); 
       return; 
     }
     

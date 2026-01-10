@@ -534,7 +534,7 @@ resetVerifyBtn.addEventListener('click', async () => {
 resetSetPassBtn.addEventListener('click', async () => {
   const nick = resetNickname.value.trim();
   const newPass = resetNewPass.value;
-  if(!newPass || newPass.length < 3){ showMessage('新しいパスワードは3文字以上にしてください'); return; }
+  if(!newPass || newPass.length < 3){ showMessage('新しいパスワードは6文字以上にしてください'); return; }
   try {
     const newHash = await hashPassword(newPass);
     await setDoc(doc(db,'users',nick), { password: newHash }, { merge: true });

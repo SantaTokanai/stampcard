@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
 // Firebase 設定 (編集しないでください)
 const firebaseConfig = {
@@ -13,6 +13,82 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// ============================================
+// 🆕 セッション管理クラス（新機能）
+// ============================================
+class SessionManager {
+  constructor() {
+    this.storageKey = 'stampcard_session';
+  }
+  
+  // ログイン時にセッション保存
+  saveSession(nickname, passwordHash) {
+    const sessionData = {
+      nickname: nickname,
+      passwordHash: passwordHash,
+      timestamp: Date.now()
+    };
+    sessionStorage.setItem(this.storageKey, JSON.stringify(sessionData));
+    console.debug('Session saved for', nickname);
+  }
+  
+  // セッション取得
+  getSession() {
+    const data = sessionStorage.getItem(this.storageKey);
+    if (!data) return null;
+    
+    try {
+      const session = JSON.parse(data);
+      // 24時間以上経過していたら無効
+      if (Date.now() - session.timestamp > 24 * 60 * 60 * 1000) {
+        this.clearSession();
+        return null;
+      }
+      return session;
+    } catch(e) {
+      console.error('Failed to parse session:', e);
+      this.clearSession();
+      return null;
+    }
+  }
+  
+  // セッションクリア
+  clearSession() {
+    sessionStorage.removeItem(this.storageKey);
+    console.debug('Session cleared');
+  }
+}
+
+const sessionManager = new SessionManager();
+
+// ============================================
+// 🆕 キーワードキャッシュ（高速化）
+// ============================================
+let cachedKeywords = null;
+
+async function loadAllKeywords() {
+  if (cachedKeywords) {
+    console.debug('Using cached keywords');
+    return cachedKeywords;
+  }
+  
+  try {
+    const keywordsRef = collection(db, 'keywords');
+    const snapshot = await getDocs(keywordsRef);
+    
+    cachedKeywords = {};
+    snapshot.forEach(doc => {
+      cachedKeywords[doc.id] = doc.data();
+    });
+    
+    console.debug('Loaded', Object.keys(cachedKeywords).length, 'keywords into cache');
+    return cachedKeywords;
+  } catch(err) {
+    console.error('Failed to load keywords:', err);
+    return {};
+  }
+}
 
 // DOM
 const nicknameInput = document.getElementById('nickname');
@@ -46,7 +122,7 @@ const resetCancelBtn = document.getElementById('reset-cancel');
 
 // ポイント表示用のDOM要素
 const pointsDisplay = document.getElementById('points-display');
-const membershipPointDisplay = document.getElementById('membership-point-display'); // 新規追加
+const membershipPointDisplay = document.getElementById('membership-point-display');
 const stampPointDisplay = document.getElementById('stamp-point-display');
 const colorsingPointDisplay = document.getElementById('colorsing-point-display');
 const totalPointDisplay = document.getElementById('total-point-display');
@@ -104,7 +180,7 @@ function formatNumber(num){
 }
 
 // --------------------------------------------
-// スタンプからポイントを自動計算（membershipPoint追加）
+// スタンプからポイントを自動計算
 // --------------------------------------------
 function calculatePoints(userData){
   let soukiCount = 0;
@@ -133,9 +209,9 @@ function calculatePoints(userData){
   
   // ポイント計算
   const stampPoints = soukiCount * 1000 + matsuriCount * 250;
-  const membershipPoint = userData.membershipPoint || 0; // 新規追加
+  const membershipPoint = userData.membershipPoint || 0;
   const colorsingPoint = userData.colorsingPoint || 0;
-  const totalPoints = membershipPoint + stampPoints + colorsingPoint; // 新規：3つの合計
+  const totalPoints = membershipPoint + stampPoints + colorsingPoint;
   
   console.debug('calculatePoints:', { 
     soukiCount, 
@@ -147,7 +223,7 @@ function calculatePoints(userData){
   });
   
   return {
-    membershipPoint: membershipPoint,  // 新規追加
+    membershipPoint: membershipPoint,
     stampPoint: stampPoints,
     colorsingPoint: colorsingPoint,
     totalPoint: totalPoints
@@ -157,7 +233,7 @@ function calculatePoints(userData){
 // --------------------------------------------
 // 状態（signup の段階管理）
 // --------------------------------------------
-let signupState = 'start'; // 'start' -> 初回押下で秘密欄を表示 -> 'secret' -> もう一度押すと登録実行
+let signupState = 'start';
 
 // --------------------------------------------
 // サインアップ処理（2段階）
@@ -169,7 +245,7 @@ signupBtn.addEventListener('click', async () => {
     const password = passInput.value;
 
     if(!nickname){ showMessage('ニックネームを入力してください'); return; }
-    if(password.length < 6){ showMessage('パスワードは6文字以上です'); return; }
+    if(password.length < 3){ showMessage('パスワードは3文字以上です'); return; }
 
     if(signupState === 'start'){
       // 秘密欄を表示して2段階目へ
@@ -193,7 +269,7 @@ signupBtn.addEventListener('click', async () => {
 
     const passwordHash = await hashPassword(password);
     const answerHash = await hashPassword(answer);
-    // 保存（password + secretQuestion + secretAnswerHash）
+    
     await setDoc(userDocRef, {
       password: passwordHash,
       secretQuestion: question,
@@ -210,7 +286,7 @@ signupBtn.addEventListener('click', async () => {
     secretAnswer.value = '';
     signupState = 'start';
 
-    // 自動ログイン（パラメータに平文パスワードを渡す）
+    // 自動ログイン
     await loginUser(nickname, password);
   } catch(err){
     console.error(err);
@@ -246,46 +322,48 @@ async function loginUser(nickname, password){
     const inputHash = await hashPassword(password);
     if(inputHash !== userData.password){ showMessage('パスワードが違います'); return; }
 
+    // 🆕 セッション保存
+    sessionManager.saveSession(nickname, inputHash);
+
     // 成功時：UI切替
     showMessage('ログインしました', 'success');
     
-    // ページタイトルを変更
-    pageTitle.textContent = `${nickname}さんのマイページ`;
+    // UI更新を共通関数に移動
+    updateUIAfterLogin(nickname, userData);
     
-    nicknameInput.style.display = 'none';
-    passInput.style.display = 'none';
-    loginBtn.style.display = 'none';
-    signupBtn.style.display = 'none';
-    logoutBtn.style.display = 'inline-block';
-    passwordMsg.style.display = 'none';
-    passwordNote.style.display = 'none';
-    keywordSec.style.display = 'block';
-
-    // 隠れているリセットセクションがあれば閉じる
-    resetSection.style.display = 'none';
-
-    // ポイントを表示（自動計算）
-    displayUserInfo(nickname, userData);
-
-    // ギャラリー画像を読み込む
-    loadUserGallery(userData);
-
-    // スタンプを読み込む
-    await loadStamps(nickname);
   } catch(err){
     console.error(err);
     showMessage('ログイン処理でエラーが発生しました：' + (err.message || err));
   }
 }
 
+// 🆕 ログイン後のUI更新を共通化
+async function updateUIAfterLogin(nickname, userData) {
+  pageTitle.textContent = `${nickname}さんのマイページ`;
+  
+  nicknameInput.style.display = 'none';
+  passInput.style.display = 'none';
+  loginBtn.style.display = 'none';
+  signupBtn.style.display = 'none';
+  logoutBtn.style.display = 'inline-block';
+  passwordMsg.style.display = 'none';
+  passwordNote.style.display = 'none';
+  keywordSec.style.display = 'block';
+
+  resetSection.style.display = 'none';
+
+  displayUserInfo(nickname, userData);
+  loadUserGallery(userData);
+  await loadStamps(nickname);
+}
+
 // --------------------------------------------
-// ユーザー情報（ポイント）を表示（membershipPoint追加）
+// ユーザー情報（ポイント）を表示
 // --------------------------------------------
 function displayUserInfo(nickname, userData){
-  // スタンプから自動計算
   const points = calculatePoints(userData);
   
-  membershipPointDisplay.textContent = `メンバーシップpt: ${formatNumber(points.membershipPoint)}`; // 新規追加
+  membershipPointDisplay.textContent = `メンバーシップpt: ${formatNumber(points.membershipPoint)}`;
   stampPointDisplay.textContent = `スタンプpt: ${formatNumber(points.stampPoint)}`;
   colorsingPointDisplay.textContent = `カラシン推しpt: ${formatNumber(points.colorsingPoint)}`;
   totalPointDisplay.textContent = `総合計pt: ${formatNumber(points.totalPoint)}`;
@@ -298,7 +376,7 @@ function displayUserInfo(nickname, userData){
 // ユーザー情報表示をクリア
 // --------------------------------------------
 function clearUserInfo(){
-  membershipPointDisplay.textContent = ''; // 新規追加
+  membershipPointDisplay.textContent = '';
   stampPointDisplay.textContent = '';
   colorsingPointDisplay.textContent = '';
   totalPointDisplay.textContent = '';
@@ -312,11 +390,9 @@ function loadUserGallery(userData){
   try {
     console.debug('loadUserGallery start');
     
-    // ギャラリーをクリア
     galleryImages.innerHTML = '';
     galleryContainer.style.display = 'none';
     
-    // userDataからimages配列を取得
     const images = userData.images || [];
     
     if(images.length === 0){
@@ -324,14 +400,12 @@ function loadUserGallery(userData){
       return;
     }
     
-    // 画像を縦に並べて表示
     images.forEach((imageUrl, index) => {
       const img = document.createElement('img');
       img.src = imageUrl;
       img.className = 'gallery-image';
       img.alt = `ギャラリー画像 ${index + 1}`;
       
-      // 画像読み込みエラー時のハンドリング
       img.onerror = () => {
         console.warn(`ギャラリー画像が見つかりません: ${imageUrl}`);
       };
@@ -339,13 +413,11 @@ function loadUserGallery(userData){
       galleryImages.appendChild(img);
     });
     
-    // ギャラリーコンテナを表示
     galleryContainer.style.display = 'block';
     console.debug('loadUserGallery: loaded', images.length, 'images');
     
   } catch(err){
     console.error('ギャラリー読み込みエラー:', err);
-    // エラーが出ても他の機能に影響しないようにする
   }
 }
 
@@ -361,7 +433,9 @@ function clearUserGallery(){
 // ログアウト処理
 // --------------------------------------------
 logoutBtn.addEventListener('click', () => {
-  // ページタイトルを戻す
+  // 🆕 セッションクリア
+  sessionManager.clearSession();
+  
   pageTitle.textContent = 'マイページ';
   
   nicknameInput.style.display = 'inline-block';
@@ -376,14 +450,19 @@ logoutBtn.addEventListener('click', () => {
   clearUserInfo();
   clearUserGallery();
   showMessage('');
-  // reset signup state & hide secret inputs
+  
   signupState = 'start';
   secretQuestion.style.display = 'none';
   secretAnswer.style.display = 'none';
+  
+  // 🆕 入力欄もクリア
+  nicknameInput.value = '';
+  passInput.value = '';
+  keywordInput.value = '';
 });
 
 // --------------------------------------------
-// スタンプ処理（自動再計算を追加）
+// スタンプ処理
 // --------------------------------------------
 stampBtn.addEventListener('click', async () => {
   const nickname = nicknameInput.value.trim();
@@ -395,16 +474,16 @@ stampBtn.addEventListener('click', async () => {
   try{
     const kwSnap = await getDoc(doc(db,'keywords',keyword));
     if(!kwSnap.exists()){ showMessage('その合言葉は存在しません'); return; }
-    const data = kwSnap.data();
 
     const userDocRef = doc(db,'users',nickname);
     await setDoc(userDocRef,{[keyword]:true},{merge:true});
     showMessage('スタンプを押しました', 'success');
     
-    // スタンプとポイントを再読み込み
+    // 🆕 キャッシュをクリア（新しいスタンプが追加されたため）
+    cachedKeywords = null;
+    
     await loadStamps(nickname);
     
-    // ポイント表示を更新
     const updatedUserSnap = await getDoc(userDocRef);
     if(updatedUserSnap.exists()){
       displayUserInfo(nickname, updatedUserSnap.data());
@@ -416,7 +495,7 @@ stampBtn.addEventListener('click', async () => {
 });
 
 // --------------------------------------------
-// スタンプ描画
+// 🆕 スタンプ描画（高速化版）
 // --------------------------------------------
 async function loadStamps(uid){
   clearStampsFromUI();
@@ -424,17 +503,20 @@ async function loadStamps(uid){
   if(!userSnap.exists()) return;
   const userData = userSnap.data();
 
+  // 🆕 全キーワードを一度に取得（キャッシュ使用）
+  const keywordCache = await loadAllKeywords();
+
   const w = cardContainer.clientWidth;
   const h = cardContainer.clientHeight;
 
-  const promises = Object.keys(userData).map(async keyword=>{
-    // スキップ対象：認証情報、ポイント4種、images配列
+  Object.keys(userData).forEach(keyword => {
+    // スキップ対象
     if(keyword === 'password' || keyword === 'secretQuestion' || keyword === 'secretAnswerHash' || 
-       keyword === 'membershipPoint' || keyword === 'stampPoint' || keyword === 'colorsingPoint' || keyword === 'totalPoint' || keyword === 'images') return;
+       keyword === 'membershipPoint' || keyword === 'stampPoint' || keyword === 'colorsingPoint' || 
+       keyword === 'totalPoint' || keyword === 'images') return;
     
-    const kwSnap = await getDoc(doc(db,'keywords',keyword));
-    if(!kwSnap.exists()) return;
-    const d = kwSnap.data();
+    const d = keywordCache[keyword];
+    if(!d) return;
 
     const norm = {};
     for(const k of Object.keys(d)){
@@ -460,8 +542,6 @@ async function loadStamps(uid){
     img.onerror = ()=> console.warn(`画像が見つかりません: ${img.src}`);
     img.src = src;
   });
-
-  await Promise.all(promises);
 }
 
 function clearStampsFromUI(){
@@ -469,13 +549,11 @@ function clearStampsFromUI(){
 }
 
 // --------------------------------------------
-// パスワードリセット機能（秘密の質問で認証 → 新パスワード設定）
+// パスワードリセット機能
 // --------------------------------------------
 forgotBtn.addEventListener('click', () => {
-  // トグル表示（簡易）
   resetSection.style.display = resetSection.style.display === 'none' ? 'block' : 'none';
   showMessage('');
-  // reset the reset UI
   resetQuestionDiv.style.display = 'none';
   resetQuestionDiv.textContent = '';
   resetAnswer.style.display = 'none';
@@ -520,7 +598,6 @@ resetVerifyBtn.addEventListener('click', async () => {
     const answerHash = await hashPassword(answer);
     if(answerHash !== d.secretAnswerHash){ showMessage('秘密の質問の答えが違います'); return; }
 
-    // 正解 -> 新パスワード入力を表示
     resetNewPass.style.display = 'block';
     resetSetPassBtn.style.display = 'inline-block';
     showMessage('認証成功。新しいパスワードを入力してください。','success');
@@ -534,16 +611,15 @@ resetVerifyBtn.addEventListener('click', async () => {
 resetSetPassBtn.addEventListener('click', async () => {
   const nick = resetNickname.value.trim();
   const newPass = resetNewPass.value;
-  if(!newPass || newPass.length < 3){ showMessage('新しいパスワードは6文字以上にしてください'); return; }
+  if(!newPass || newPass.length < 3){ showMessage('新しいパスワードは3文字以上にしてください'); return; }
   try {
     const newHash = await hashPassword(newPass);
     await setDoc(doc(db,'users',nick), { password: newHash }, { merge: true });
     showMessage('パスワードを更新しました。自動でログインします', 'success');
     console.debug('reset: password updated for', nick, 'hashSnippet:', newHash.slice(0,8));
-    // 自動ログイン
+    
     await loginUser(nick, newPass);
 
-    // クリーンアップ UI
     resetSection.style.display = 'none';
     resetNickname.value = '';
     resetQuestionDiv.textContent = '';
@@ -562,4 +638,48 @@ resetCancelBtn.addEventListener('click', () => {
   resetAnswer.value = '';
   resetNewPass.value = '';
   showMessage('');
+});
+
+// ============================================
+// 🆕 ページ読み込み時にセッション復元（新機能）
+// ============================================
+window.addEventListener('DOMContentLoaded', async () => {
+  const session = sessionManager.getSession();
+  if (!session) {
+    console.debug('No active session - showing login screen');
+    return;
+  }
+  
+  try {
+    console.debug('Restoring session for', session.nickname);
+    const userDocRef = doc(db, 'users', session.nickname);
+    const userSnap = await getDoc(userDocRef);
+    
+    if (!userSnap.exists()) {
+      console.warn('User not found, clearing session');
+      sessionManager.clearSession();
+      return;
+    }
+    
+    const userData = userSnap.data();
+    
+    // パスワードハッシュが一致するか確認
+    if (session.passwordHash !== userData.password) {
+      console.warn('Session password mismatch, clearing session');
+      sessionManager.clearSession();
+      showMessage('セッションが無効です。再ログインしてください。');
+      return;
+    }
+    
+    // UI復元
+    nicknameInput.value = session.nickname;
+    await updateUIAfterLogin(session.nickname, userData);
+    
+    console.log('前回のセッションを復元しました');
+    
+  } catch (err) {
+    console.error('Session restoration failed:', err);
+    sessionManager.clearSession();
+    showMessage('セッションの復元に失敗しました。再ログインしてください。');
+  }
 });

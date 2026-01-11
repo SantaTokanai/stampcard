@@ -5,75 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>スタンプカード</title>
 <link rel="stylesheet" href="style.css">
-<!-- Google Fonts追加 -->
+<!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+<!-- reCAPTCHA -->
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
-  <!-- ページタイトル（動的に変更） -->
   <h1 class="cute-title" id="page-title">マイページ</h1>
   
   <!-- 認証フォーム -->
   <div id="auth-section">
     <input type="text" id="nickname" placeholder="カラシンかポケの名前">
     <input type="password" id="password" placeholder="パスワード">
-    <div id="password-msg">パスワードは6文字以上です</div>
+    <div id="password-msg">パスワードは3文字以上です</div>
     <div id="password-note" style="font-size: 0.7em; color: #555;">
-  パスワードや秘密の質問の答えは、管理者側でも内容を見ることはできません
-</div>
+      パスワードや秘密の質問の答えは、管理者側でも内容を見ることはできません
+    </div>
+    
     <!-- 秘密の質問（最初は非表示） -->
     <input type="text" id="secret-question" placeholder="秘密の質問（例:好きな飲み物）" style="display:none; margin-top:8px;">
     <input type="text" id="secret-answer" placeholder="秘密の質問の答え（例:タコハイ）" style="display:none; margin-top:4px;">
+    
+    <!-- reCAPTCHA（新規登録時のみ表示） -->
+    <div id="recaptcha-container" style="display:none; margin-top:10px; text-align:center;">
+      <div class="g-recaptcha" data-sitekey="6Lc4A0csAAAAABP7IFJGOdlmZhs1msTKOMxfDEJ1" style="display:inline-block;"></div>
+    </div>
+    
     <div style="margin-top:10px;">
       <button id="signup">新規登録</button>
       <button id="login">ログイン</button>
       <button id="logout" style="display:none;">ログアウト</button>
       <button id="forgot-password" type="button">パスワードを忘れた？</button>
     </div>
-<div id="error-msg"></div>
+    <div id="error-msg"></div>
   </div>
-  <!-- パスワードリセット用セクション（非表示） -->
+  
+  <!-- パスワードリセット用セクション -->
   <div id="reset-section" style="display:none; margin-top:18px; border:1px dashed #ccc; padding:10px; max-width:500px; margin-left:auto; margin-right:auto;">
     <h3 style="margin:6px 0;">パスワードをリセット</h3>
     <input type="text" id="reset-nickname" placeholder="リセットするニックネーム">
     <button id="reset-step1-btn">質問を表示</button>
     <div id="reset-question" style="margin-top:10px; display:none;"></div>
     <input type="text" id="reset-answer" placeholder="質問の答え" style="display:none; margin-top:6px;">
-    <button id="reset-verify-btn" style="display:none; margin-top:6px;">回答して次へ</button>
-    <input type="password" id="reset-newpass" placeholder="新しいパスワード（6文字以上）" style="display:none; margin-top:6px;">
+    <input type="password" id="reset-newpass" placeholder="新しいパスワード（3文字以上）" style="display:none; margin-top:6px;">
+    
+    <!-- リセット用reCAPTCHA -->
+    <div id="reset-recaptcha-container" style="display:none; margin-top:10px; text-align:center;">
+      <div class="g-recaptcha" data-sitekey="6Lc4A0csAAAAABP7IFJGOdlmZhs1msTKOMxfDEJ1" id="reset-recaptcha" style="display:inline-block;"></div>
+    </div>
+    
     <button id="reset-setpass-btn" style="display:none; margin-top:6px;">パスワードを更新</button>
     <div style="margin-top:8px;">
       <button id="reset-cancel">キャンセル</button>
     </div>
   </div>
+  
   <!-- 合言葉フォーム -->
   <div id="keyword-section" style="display:none; margin-top:20px;">
-    <!-- 合言葉説明メッセージ -->
     <div id="keyword-note" style="font-size: 0.7em; color: #555; margin-bottom: 8px;">
       月に一度の "テーマ祭り" の配信時に、背景に書かれた合言葉を入力すると参加証明としてスタンプが押されます
     </div>
     <input type="text" id="keyword" placeholder="合言葉を入力">
     <button id="stampBtn">スタンプを押す</button>
   </div>
+  
   <!-- スタンプカード -->
   <div id="card-container" style="margin-top:30px; position:relative; width:100%; max-width:500px;">
     <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
   </div>
-  <!-- ポイント表示エリア（membershipPoint追加） -->
+  
+  <!-- ポイント表示エリア -->
   <div id="points-display" style="display:none; margin-top:15px;">
     <div id="membership-point-display" class="point-item"></div>
     <div id="stamp-point-display" class="point-item"></div>
     <div id="colorsing-point-display" class="point-item"></div>
     <div id="total-point-display" class="point-item total-point"></div>
   </div>
+  
   <!-- ギャラリー画像表示エリア -->
   <div id="gallery-container" style="display:none; margin-top:20px; max-width:500px; margin-left:auto; margin-right:auto;">
     <hr class="gallery-divider">
-    <!-- アイコン置き場タイトル -->
     <div id="gallery-title" class="gallery-title">アイコン置き場</div>
     <div id="gallery-images"></div>
   </div>
-  <script type="module" src="script.js"></script>
+  
+  <script type="module" src="script-new.js"></script>
 </body>
 </html>

@@ -19,7 +19,7 @@
   <div id="auth-section">
     <input type="text" id="nickname" placeholder="カラシンかポケの名前">
     <input type="password" id="password" placeholder="パスワード">
-    <div id="password-msg">パスワードは4文字以上です</div>
+    <div id="password-msg">パスワードは3文字以上です</div>
     <div id="password-note" style="font-size: 0.7em; color: #555;">
       パスワードや秘密の質問の答えは、管理者側でも内容を見ることはできません
     </div>
@@ -49,7 +49,7 @@
     <button id="reset-step1-btn">質問を表示</button>
     <div id="reset-question" style="margin-top:10px; display:none;"></div>
     <input type="text" id="reset-answer" placeholder="質問の答え" style="display:none; margin-top:6px;">
-    <input type="password" id="reset-newpass" placeholder="新しいパスワード（4文字以上）" style="display:none; margin-top:6px;">
+    <input type="password" id="reset-newpass" placeholder="新しいパスワード（3文字以上）" style="display:none; margin-top:6px;">
     
     <!-- リセット用reCAPTCHA -->
     <div id="reset-recaptcha-container" style="display:none; margin-top:10px; text-align:center;">
@@ -90,7 +90,80 @@
     <div id="gallery-title" class="gallery-title">アイコン置き場</div>
     <div id="gallery-images"></div>
   </div>
+
+<!-- ギャラリーコンテナの閉じタグの後に追加 -->
+
+<!-- 曲リクエストセクション -->
+<div id="request-section" style="display:none; margin-top:30px; max-width:500px; margin-left:auto; margin-right:auto;">
+  <hr class="gallery-divider">
+  <div class="request-title" style="font-size:1.2em; font-weight:bold; margin-bottom:10px; text-align:center;">
+    🎵 曲のリクエスト
+  </div>
   
+  <div class="request-note" style="font-size:0.85em; color:#555; margin-bottom:15px; line-height:1.6; background:#fff9e6; padding:12px; border-radius:8px; border-left:4px solid #ffd700;">
+    <p style="margin:0 0 8px 0;">
+      リクエストはカラシンに登録してあるレパートリーから選んでください(♡ᴗ͈ˬᴗ͈)⁾⁾⁾<br>
+      レパートリーにない曲は歌うことができません😭
+    </p>
+    <p style="margin:0; font-size:0.9em; color:#666;">
+      ⚠️ 1曲ずつリクエストできます。前回のリクエストが承認されるまで次のリクエストはできません。
+    </p>
+  </div>
+  
+  <!-- リクエスト入力フォーム -->
+  <div id="request-form">
+    <div style="margin-bottom:10px;">
+      <label style="display:block; margin-bottom:4px; font-size:0.9em; color:#555;">曲名</label>
+      <input 
+        type="text" 
+        id="song-title" 
+        placeholder="例：夜に駆ける"
+        maxlength="50"
+        style="width:100%; padding:8px; border:2px solid #ddd; border-radius:6px; font-size:1em;"
+      >
+    </div>
+    
+    <div style="margin-bottom:15px;">
+      <label style="display:block; margin-bottom:4px; font-size:0.9em; color:#555;">アーティスト名</label>
+      <input 
+        type="text" 
+        id="artist-name" 
+        placeholder="例：YOASOBI"
+        maxlength="50"
+        style="width:100%; padding:8px; border:2px solid #ddd; border-radius:6px; font-size:1em;"
+      >
+    </div>
+    
+    <button 
+      id="send-request-btn"
+      style="width:100%; padding:12px; background:#ff69b4; color:white; border:none; border-radius:6px; font-size:1em; font-weight:bold; cursor:pointer;"
+    >
+      リクエストを送信
+    </button>
+  </div>
+  
+  <!-- リクエスト送信済み表示 -->
+  <div id="request-pending" style="display:none;">
+    <div style="background:#e8f5e9; padding:15px; border-radius:8px; border-left:4px solid #4caf50;">
+      <div style="font-weight:bold; margin-bottom:8px; color:#2e7d32;">
+        ✅ リクエスト送信済み
+      </div>
+      <div style="margin-bottom:4px;">
+        <strong>曲名：</strong><span id="pending-song-title"></span>
+      </div>
+      <div style="margin-bottom:12px;">
+        <strong>アーティスト：</strong><span id="pending-artist-name"></span>
+      </div>
+      <div style="font-size:0.85em; color:#555;">
+        この曲が承認されるまで、次のリクエストはできません。
+      </div>
+    </div>
+  </div>
+  
+  <div id="request-msg" style="margin-top:10px; font-size:0.9em; text-align:center;"></div>
+</div>
+
+
   <script type="module" src="script.js"></script>
 </body>
 </html>

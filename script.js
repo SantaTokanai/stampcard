@@ -225,7 +225,7 @@ signupBtn.addEventListener('click', async () => {
     const password = passInput.value;
 
     if(!nickname){ showMessage('ニックネームを入力してください'); return; }
-    if(password.length < 3){ showMessage('パスワードは3文字以上です'); return; }
+    if(password.length < 4){ showMessage('パスワードは4文字以上です'); return; }
 
     if(signupState === 'start'){
       secretQuestion.style.display = 'block';
@@ -577,7 +577,7 @@ resetSetPassBtn.addEventListener('click', async () => {
   const recaptchaResponse = grecaptcha.getResponse(1); // 2つ目のreCAPTCHA
   
   if(!answer){ showMessage('秘密の質問の答えを入力してください'); return; }
-  if(!newPass || newPass.length < 3){ showMessage('新しいパスワードは3文字以上にしてください'); return; }
+  if(!newPass || newPass.length < 4){ showMessage('新しいパスワードは4文字以上にしてください'); return; }
   if(!recaptchaResponse){ showMessage('reCAPTCHAを完了してください'); return; }
   
   try {

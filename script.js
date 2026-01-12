@@ -225,7 +225,7 @@ signupBtn.addEventListener('click', async () => {
     const password = passInput.value;
 
     if(!nickname){ showMessage('ニックネームを入力してください'); return; }
-    if(password.length < 4){ showMessage('パスワードは4文字以上です'); return; }
+    if(password.length < 3){ showMessage('パスワードは3文字以上です'); return; }
 
     if(signupState === 'start'){
       secretQuestion.style.display = 'block';
@@ -352,24 +352,6 @@ async function loginUser(nickname, password, isSessionRestore){
 }
 
 // ログイン後のUI更新
-async function updateUIAfterLogin(nickname, userData) {
-  pageTitle.textContent = `${nickname}さんのマイページ`;
-  
-  nicknameInput.style.display = 'none';
-  passInput.style.display = 'none';
-  loginBtn.style.display = 'none';
-  signupBtn.style.display = 'none';
-  logoutBtn.style.display = 'inline-block';
-  passwordMsg.style.display = 'none';
-  passwordNote.style.display = 'none';
-  keywordSec.style.display = 'block';
-
-  resetSection.style.display = 'none';
-
-  displayUserInfo(nickname, userData);
-  loadUserGallery(userData);
-  await loadStamps(nickname);
-}
 
 // ユーザー情報表示
 function displayUserInfo(nickname, userData){
@@ -434,33 +416,6 @@ function clearUserGallery(){
 }
 
 // ログアウト
-logoutBtn.addEventListener('click', () => {
-  sessionManager.clearSession();
-  
-  pageTitle.textContent = 'マイページ';
-  
-  nicknameInput.style.display = 'inline-block';
-  passInput.style.display = 'inline-block';
-  loginBtn.style.display = 'inline-block';
-  signupBtn.style.display = 'inline-block';
-  logoutBtn.style.display = 'none';
-  passwordMsg.style.display = 'block';
-  passwordNote.style.display = 'block';
-  keywordSec.style.display = 'none';
-  clearStampsFromUI();
-  clearUserInfo();
-  clearUserGallery();
-  showMessage('');
-  
-  signupState = 'start';
-  secretQuestion.style.display = 'none';
-  secretAnswer.style.display = 'none';
-  recaptchaContainer.style.display = 'none';
-  
-  nicknameInput.value = '';
-  passInput.value = '';
-  keywordInput.value = '';
-});
 
 // スタンプ押下
 stampBtn.addEventListener('click', async () => {
@@ -622,7 +577,7 @@ resetSetPassBtn.addEventListener('click', async () => {
   const recaptchaResponse = grecaptcha.getResponse(1); // 2つ目のreCAPTCHA
   
   if(!answer){ showMessage('秘密の質問の答えを入力してください'); return; }
-  if(!newPass || newPass.length < 4){ showMessage('新しいパスワードは4文字以上にしてください'); return; }
+  if(!newPass || newPass.length < 3){ showMessage('新しいパスワードは3文字以上にしてください'); return; }
   if(!recaptchaResponse){ showMessage('reCAPTCHAを完了してください'); return; }
   
   try {
@@ -705,4 +660,184 @@ window.addEventListener('DOMContentLoaded', async () => {
     sessionManager.clearSession();
     showMessage('セッションの復元に失敗しました。再ログインしてください。');
   }
+});
+
+// ========================================
+// 曲リクエスト機能の追加
+// ========================================
+
+// Cloud Functions呼び出しを追加（ファイル冒頭の他のhttpsCallableの近くに追加）
+const sendSongRequestFunc = httpsCallable(functions, 'sendSongRequest');
+const getCurrentRequestFunc = httpsCallable(functions, 'getCurrentRequest');
+
+// DOM要素（他のDOM要素定義の近くに追加）
+const requestSection = document.getElementById('request-section');
+const requestForm = document.getElementById('request-form');
+const requestPending = document.getElementById('request-pending');
+const songTitleInput = document.getElementById('song-title');
+const artistNameInput = document.getElementById('artist-name');
+const sendRequestBtn = document.getElementById('send-request-btn');
+const requestMsg = document.getElementById('request-msg');
+const pendingSongTitle = document.getElementById('pending-song-title');
+const pendingArtistName = document.getElementById('pending-artist-name');
+
+// リクエストメッセージ表示
+function showRequestMessage(msg, type='error'){
+  requestMsg.textContent = msg;
+  requestMsg.style.color = type === 'error' ? '#d32f2f' : '#2e7d32';
+  console.debug('[Request message]', type, msg);
+}
+
+// 現在のリクエスト状態を確認
+async function checkCurrentRequest() {
+  const session = sessionManager.getSession();
+  if (!session) return;
+  
+  try {
+    const result = await getCurrentRequestFunc({
+      nickname: session.nickname,
+      passwordHash: session.passwordHash
+    });
+    
+    if (result.data.success && result.data.hasRequest) {
+      // 未承認のリクエストがある
+      pendingSongTitle.textContent = result.data.songTitle;
+      pendingArtistName.textContent = result.data.artistName;
+      requestForm.style.display = 'none';
+      requestPending.style.display = 'block';
+      console.debug('Pending request found:', result.data);
+    } else {
+      // リクエストなし、または承認済み
+      requestForm.style.display = 'block';
+      requestPending.style.display = 'none';
+      songTitleInput.value = '';
+      artistNameInput.value = '';
+    }
+  } catch (err) {
+    console.error('checkCurrentRequest error:', err);
+  }
+}
+
+// リクエスト送信
+sendRequestBtn.addEventListener('click', async () => {
+  const session = sessionManager.getSession();
+  if (!session) {
+    showRequestMessage('ログインしてください');
+    return;
+  }
+  
+  const songTitle = songTitleInput.value.trim();
+  const artistName = artistNameInput.value.trim();
+  
+  if (!songTitle) {
+    showRequestMessage('曲名を入力してください');
+    return;
+  }
+  
+  if (!artistName) {
+    showRequestMessage('アーティスト名を入力してください');
+    return;
+  }
+  
+  try {
+    sendRequestBtn.disabled = true;
+    showRequestMessage('送信中...', 'success');
+    
+    const result = await sendSongRequestFunc({
+      nickname: session.nickname,
+      passwordHash: session.passwordHash,
+      songTitle: songTitle,
+      artistName: artistName
+    });
+    
+    if (result.data.success) {
+      showRequestMessage('リクエストを送信しました！', 'success');
+      
+      // 送信済み表示に切り替え
+      pendingSongTitle.textContent = songTitle;
+      pendingArtistName.textContent = artistName;
+      requestForm.style.display = 'none';
+      requestPending.style.display = 'block';
+      
+      console.debug('Song request sent successfully');
+    }
+  } catch (err) {
+    console.error('sendRequest error:', err);
+    if (err.code === 'functions/already-exists') {
+      showRequestMessage('前回のリクエストが未承認です。承認されるまでお待ちください。');
+      // 状態を再確認
+      await checkCurrentRequest();
+    } else if (err.code === 'functions/unauthenticated') {
+      showRequestMessage('認証に失敗しました。再ログインしてください。');
+      sessionManager.clearSession();
+      window.location.reload();
+    } else {
+      showRequestMessage('送信に失敗しました：' + err.message);
+    }
+  } finally {
+    sendRequestBtn.disabled = false;
+  }
+});
+
+// ログイン後のUI更新関数を修正（既存のupdateUIAfterLogin関数を以下のように修正）
+// 元の関数の最後に以下を追加
+async function updateUIAfterLogin(nickname, userData) {
+  pageTitle.textContent = `${nickname}さんのマイページ`;
+  
+  nicknameInput.style.display = 'none';
+  passInput.style.display = 'none';
+  loginBtn.style.display = 'none';
+  signupBtn.style.display = 'none';
+  logoutBtn.style.display = 'inline-block';
+  passwordMsg.style.display = 'none';
+  passwordNote.style.display = 'none';
+  keywordSec.style.display = 'block';
+
+  resetSection.style.display = 'none';
+
+  displayUserInfo(nickname, userData);
+  loadUserGallery(userData);
+  await loadStamps(nickname);
+  
+  // 🆕 リクエストセクションを表示して状態を確認
+  requestSection.style.display = 'block';
+  await checkCurrentRequest();
+}
+
+// ログアウト処理を修正（既存のlogoutBtn.addEventListenerを以下のように修正）
+// 元の処理の最後に以下を追加
+logoutBtn.addEventListener('click', () => {
+  sessionManager.clearSession();
+  
+  pageTitle.textContent = 'マイページ';
+  
+  nicknameInput.style.display = 'inline-block';
+  passInput.style.display = 'inline-block';
+  loginBtn.style.display = 'inline-block';
+  signupBtn.style.display = 'inline-block';
+  logoutBtn.style.display = 'none';
+  passwordMsg.style.display = 'block';
+  passwordNote.style.display = 'block';
+  keywordSec.style.display = 'none';
+  clearStampsFromUI();
+  clearUserInfo();
+  clearUserGallery();
+  showMessage('');
+  
+  signupState = 'start';
+  secretQuestion.style.display = 'none';
+  secretAnswer.style.display = 'none';
+  recaptchaContainer.style.display = 'none';
+  
+  nicknameInput.value = '';
+  passInput.value = '';
+  keywordInput.value = '';
+  
+  // 🆕 リクエストセクションを非表示
+  requestSection.style.display = 'none';
+  songTitleInput.value = '';
+  artistNameInput.value = '';
+  requestForm.style.display = 'block';
+  requestPending.style.display = 'none';
+  showRequestMessage('');
 });

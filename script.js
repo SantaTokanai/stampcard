@@ -651,9 +651,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     const userData = result.data.data;
     
     nicknameInput.value = session.nickname;
+    
+    // 1. まずUIをログイン状態にする（スタンプ表示など）
     await updateUIAfterLogin(session.nickname, userData);
     
-    console.log('前回のセッションを復元しました');
+    // 2. 🆕 リクエストの状態をチェックして、未承認なら「送信済み画面」にする
+    await checkCurrentRequest();
+    
+    console.log('前回のセッションとリクエスト状態を復元しました');
     
   } catch (err) {
     console.error('Session restoration failed:', err);

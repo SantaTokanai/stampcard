@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-functions.js";
 
 // Firebase 設定
@@ -14,7 +14,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const functions = getFunctions(app);
+
+// 【高速化】 第2引数にリージョン 'asia-northeast1' (東京) を指定
+const functions = getFunctions(app, 'asia-northeast1');
 
 // Cloud Functions 呼び出し定義
 const createUserFunc = httpsCallable(functions, 'createUser');
@@ -24,6 +26,15 @@ const resetPasswordFunc = httpsCallable(functions, 'resetPassword');
 const getSecretQuestionFunc = httpsCallable(functions, 'getSecretQuestion');
 const sendSongRequestFunc = httpsCallable(functions, 'sendSongRequest');
 const getCurrentRequestFunc = httpsCallable(functions, 'getCurrentRequest');
+
+// --- ローディング制御 (追加) ---
+const loadingOverlay = document.getElementById('loading-overlay');
+
+function toggleLoading(show) {
+  if (loadingOverlay) {
+    loadingOverlay.style.display = show ? 'flex' : 'none';
+  }
+}
 
 // --- セッション管理 ---
 class SessionManager {
@@ -177,7 +188,7 @@ function calculatePoints(userData){
   return { membershipPoint, stampPoint, colorsingPoint, totalPoint };
 }
 
-// スタンプ描画 (userDataを引数で受け取るように改善)
+// スタンプ描画
 async function loadStamps(userData) {
   clearStampsFromUI();
   const keywordCache = await loadAllKeywords();
@@ -259,7 +270,7 @@ async function checkCurrentRequest() {
   } catch (err) { console.error(err); }
 }
 
-// ログイン後のUI一括更新 (並列実行で高速化)
+// ログイン後のUI一括更新
 async function updateUIAfterLogin(nickname, userData) {
   pageTitle.textContent = `${nickname}さんのマイページ`;
   
@@ -289,6 +300,7 @@ loginBtn.addEventListener('click', async () => {
   if(!nick || !pass) { showMessage('入力が足りません'); return; }
   
   try {
+    toggleLoading(true); // ★処理開始
     const hash = await hashPassword(pass);
     const result = await getUserDataFunc({ nickname: nick, passwordHash: hash });
     
@@ -300,6 +312,8 @@ loginBtn.addEventListener('click', async () => {
   } catch(err){
     if(err.code === 'functions/unauthenticated') showMessage('パスワードが違います');
     else showMessage('ログインエラー: ' + err.message);
+  } finally {
+    toggleLoading(false); // ★処理終了
   }
 });
 
@@ -310,6 +324,7 @@ stampBtn.addEventListener('click', async () => {
   if(!session || !kw) return;
 
   try {
+    toggleLoading(true); // ★処理開始
     const result = await stampKeywordFunc({ nickname: session.nickname, passwordHash: session.passwordHash, keyword: kw });
     if(result.data.success){
       showMessage('スタンプを押しました！', 'success');
@@ -321,7 +336,11 @@ stampBtn.addEventListener('click', async () => {
         await loadStamps(updated.data.data);
       }
     }
-  } catch(err) { showMessage('エラー: ' + err.message); }
+  } catch(err) { 
+    showMessage('エラー: ' + err.message); 
+  } finally {
+    toggleLoading(false); // ★処理終了
+  }
 });
 
 // リクエスト送信
@@ -332,69 +351,95 @@ sendRequestBtn.addEventListener('click', async () => {
   if(!title || !artist) { showRequestMessage('入力してください'); return; }
 
   try {
+    toggleLoading(true); // ★処理開始
     sendRequestBtn.disabled = true;
     const result = await sendSongRequestFunc({ nickname: session.nickname, passwordHash: session.passwordHash, songTitle: title, artistName: artist });
     if(result.data.success) {
       showRequestMessage('送信しました', 'success');
       await checkCurrentRequest();
     }
-  } catch(err) { showRequestMessage('エラー: ' + err.message); }
-  finally { sendRequestBtn.disabled = false; }
+  } catch(err) { 
+    showRequestMessage('エラー: ' + err.message); 
+  } finally { 
+    sendRequestBtn.disabled = false; 
+    toggleLoading(false); // ★処理終了
+  }
 });
 
 // ログアウト
 logoutBtn.addEventListener('click', () => {
   sessionManager.clearSession();
-  location.reload(); // 状態をリセットするためリロードが最も確実
+  location.reload(); 
 });
 
-// 新規登録 (既存ロジック維持)
+// 新規登録
 let signupState = 'start';
 signupBtn.addEventListener('click', async () => {
   const nick = nicknameInput.value.trim();
   const pass = passInput.value;
+  
   if(signupState === 'start'){
     [secretQuestion, secretAnswer, recaptchaContainer].forEach(el => el.style.display = 'block');
     signupState = 'secret';
     showMessage('質問とreCAPTCHAを入力して再度ボタンを押してください', 'success');
     return;
   }
+  
   const q = secretQuestion.value.trim();
   const a = secretAnswer.value.trim();
   const token = grecaptcha.getResponse();
   if(!q || !a || !token) { showMessage('入力が足りません'); return; }
 
   try {
+    toggleLoading(true); // ★処理開始
     const pHash = await hashPassword(pass);
     const aHash = await hashPassword(a);
     const res = await createUserFunc({ nickname: nick, passwordHash: pHash, secretQuestion: q, secretAnswerHash: aHash, recaptchaToken: token });
     if(res.data.success) location.reload();
-  } catch(err) { showMessage(err.message); grecaptcha.reset(); }
+  } catch(err) { 
+    showMessage(err.message); 
+    grecaptcha.reset(); 
+  } finally {
+    toggleLoading(false); // ★処理終了
+  }
 });
 
-// パスワードリセット (既存ロジック維持)
+// パスワードリセット
 forgotBtn.addEventListener('click', () => {
   resetSection.style.display = resetSection.style.display === 'none' ? 'block' : 'none';
 });
+
 resetStep1Btn.addEventListener('click', async () => {
   const nick = resetNickname.value.trim();
   try {
+    toggleLoading(true); // ★処理開始
     const res = await getSecretQuestionFunc({ nickname: nick });
     if(res.data.success){
       resetQuestionDiv.textContent = '質問: ' + res.data.secretQuestion;
       [resetQuestionDiv, resetAnswer, resetNewPass, resetRecaptchaContainer, resetSetPassBtn].forEach(el => el.style.display = 'block');
     }
-  } catch(err) { showMessage('ユーザーが見つかりません'); }
+  } catch(err) { 
+    showMessage('ユーザーが見つかりません'); 
+  } finally {
+    toggleLoading(false); // ★処理終了
+  }
 });
+
 resetSetPassBtn.addEventListener('click', async () => {
   const nick = resetNickname.value.trim();
   const ans = resetAnswer.value.trim();
   const newP = resetNewPass.value;
   const token = grecaptcha.getResponse(1);
   try {
+    toggleLoading(true); // ★処理開始
     const res = await resetPasswordFunc({ nickname: nick, secretAnswer: ans, newPassword: newP, recaptchaToken: token });
     if(res.data.success) location.reload();
-  } catch(err) { showMessage(err.message); grecaptcha.reset(1); }
+  } catch(err) { 
+    showMessage(err.message); 
+    grecaptcha.reset(1); 
+  } finally {
+    toggleLoading(false); // ★処理終了
+  }
 });
 
 // --- 初期化 ---
@@ -405,6 +450,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   const session = sessionManager.getSession();
   if (session) {
     try {
+      toggleLoading(true); // ★セッション復元時の処理中表示
+      
       // 2. セッションがあればデータ取得
       const result = await getUserDataFunc({ nickname: session.nickname, passwordHash: session.passwordHash });
       if(result.data.success){
@@ -415,6 +462,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     } catch (err) {
       sessionManager.clearSession();
+    } finally {
+      toggleLoading(false); // ★完了したら消す
     }
   }
 });

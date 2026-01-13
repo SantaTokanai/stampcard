@@ -278,34 +278,3 @@ body {
 #reset-section input[style*="display:none"] {
   /* inline style の display:none を尊重（何もしない） */
 }
-
-/* --- 処理中（ローディング）の見た目 --- */
-
-/* 画面全体を覆う背景 */
-#loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.7); /* 白っぽく透ける背景 */
-  display: none;                /* 最初は隠しておく */
-  flex-direction: column;       /* 縦に並べる */
-  justify-content: center;      /* 上下中央 */
-  align-items: center;          /* 左右中央 */
-  z-index: 9999;                /* 一番手前に表示 */
-}
-
-/* ぐるぐる回るアニメーション */
-.spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid #ccc;
-  border-top-color: #3498db;    /* ぐるぐるの色（青） */
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}

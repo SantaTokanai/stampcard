@@ -221,7 +221,7 @@ body {
 /* --- 追加の調整（小さい表示のときにすっきり見せる）--- */
 @media (max-width: 480px) {
   :root {
-    --input-font-size: 14px;
+    --input-font-size: 16px;
     --input-radius: 8px;
     --button-height: 36px;
   }
@@ -230,7 +230,7 @@ body {
   #reset-section input,
   #keyword-section input {
     height: 40px;
-    font-size: 14px;
+    font-size: 16px;
     max-width: 320px;
     padding: 8px 10px;
     border-radius: 8px;

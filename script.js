@@ -160,16 +160,28 @@ function formatNumber(num){ return num.toLocaleString('ja-JP'); }
 function calculatePoints(userData){
   let soukiCount = 0;
   let matsuriCount = 0;
-  const ignoreKeys = ['password', 'secretQuestion', 'secretAnswerHash', 'membershipPoint', 'stampPoint', 'colorsingPoint', 'totalPoint', 'images', 'createdAt'];
+  let specialCount = 0;
+  let hasPoke1 = false;
+  let hasPoke3 = false;
+  
+  const ignoreKeys = ['password', 'secretQuestion', 'secretAnswerHash', 
+                      'membershipPoint', 'stampPoint', 'colorsingPoint', 
+                      'totalPoint', 'images', 'createdAt'];
 
   Object.keys(userData).forEach(key => {
     if(!ignoreKeys.includes(key) && userData[key] === true){
-      if(key.toLowerCase().startsWith('souki')) soukiCount++;
-      else if(key.toLowerCase().startsWith('matsuri')) matsuriCount++;
+      const lowerKey = key.toLowerCase();
+      
+      if(lowerKey.startsWith('souki')) soukiCount++;
+      else if(lowerKey.startsWith('matsuri')) matsuriCount++;
+      else if(lowerKey.startsWith('special')) specialCount++;
+      else if(lowerKey.startsWith('poke_1')) hasPoke1 = true;
+      else if(lowerKey.startsWith('poke_3')) hasPoke3 = true;
     }
   });
 
-  const stampPoint = soukiCount * 1000 + matsuriCount * 250;
+  const stampPoint = soukiCount * 1000 + matsuriCount * 250 + specialCount * 500
+                   + (hasPoke1 ? 500 : 0) + (hasPoke3 ? 1000 : 0);
   const membershipPoint = userData.membershipPoint || 0;
   const colorsingPoint = userData.colorsingPoint || 0;
   const totalPoint = membershipPoint + stampPoint + colorsingPoint;

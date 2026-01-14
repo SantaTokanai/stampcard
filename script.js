@@ -315,25 +315,96 @@ loginBtn.addEventListener('click', async () => {
   }
 });
 
-// スタンプ送信
+// スタンプ送信（楽観的UI更新版）
 stampBtn.addEventListener('click', async () => {
   const session = sessionManager.getSession();
   const kw = keywordInput.value.trim();
   if(!session || !kw) return;
 
+  // ボタンを無効化（連打防止）
+  stampBtn.disabled = true;
+  const originalText = stampBtn.textContent;
+  stampBtn.textContent = '処理中...';
+
   try {
-    const result = await stampKeywordFunc({ nickname: session.nickname, passwordHash: session.passwordHash, keyword: kw });
-    if(result.data.success){
+    // 1. まずキーワードの存在確認（キャッシュから高速取得）
+    const keywordCache = await loadAllKeywords();
+    const keywordData = keywordCache[kw];
+    
+    if (!keywordData) {
+      showMessage('その合言葉は存在しません');
+      return;
+    }
+
+    // 2. 楽観的UI更新（先に表示してしまう）
+    const actualFieldName = keywordData.actualFieldName || kw;
+    
+    // 現在のデータを取得
+    const currentDataResult = await getUserDataFunc({ 
+      nickname: session.nickname, 
+      passwordHash: session.passwordHash 
+    });
+    
+    if (currentDataResult.data.success) {
+      const userData = currentDataResult.data.data;
+      
+      // すでにスタンプが押されているか確認
+      if (userData[actualFieldName] === true) {
+        showMessage('このスタンプは既に押されています');
+        return;
+      }
+      
+      // 楽観的更新: データを先に更新
+      userData[actualFieldName] = true;
+      
+      // UIを即座に更新
+      displayUserInfo(session.nickname, userData);
+      await loadStamps(userData);
       showMessage('スタンプを押しました！', 'success');
       keywordInput.value = '';
-      // 最新データを取得して再描画
-      const updated = await getUserDataFunc({ nickname: session.nickname, passwordHash: session.passwordHash });
-      if(updated.data.success) {
-        displayUserInfo(session.nickname, updated.data.data);
-        await loadStamps(updated.data.data);
-      }
     }
-  } catch(err) { showMessage('エラー: ' + err.message); }
+
+    // 3. バックグラウンドで実際の保存処理（非同期）
+    stampKeywordFunc({ 
+      nickname: session.nickname, 
+      passwordHash: session.passwordHash, 
+      keyword: kw 
+    }).then(result => {
+      if (!result.data.success) {
+        // 失敗した場合のみ再読み込み
+        console.error('Stamp save failed, reloading...');
+        getUserDataFunc({ 
+          nickname: session.nickname, 
+          passwordHash: session.passwordHash 
+        }).then(updated => {
+          if (updated.data.success) {
+            displayUserInfo(session.nickname, updated.data.data);
+            loadStamps(updated.data.data);
+          }
+        });
+      }
+    }).catch(err => {
+      // エラー時も再読み込み
+      console.error('Stamp error:', err);
+      showMessage('エラーが発生しました。再読み込みします...');
+      getUserDataFunc({ 
+        nickname: session.nickname, 
+        passwordHash: session.passwordHash 
+      }).then(updated => {
+        if (updated.data.success) {
+          displayUserInfo(session.nickname, updated.data.data);
+          loadStamps(updated.data.data);
+        }
+      });
+    });
+
+  } catch(err) { 
+    showMessage('エラー: ' + err.message); 
+  } finally {
+    // ボタンを再有効化
+    stampBtn.disabled = false;
+    stampBtn.textContent = originalText;
+  }
 });
 
 // リクエスト送信

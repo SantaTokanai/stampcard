@@ -55,6 +55,78 @@ class SessionManager {
 }
 const sessionManager = new SessionManager();
 
+// ローディング表示の管理
+class LoadingManager {
+  constructor() {
+    this.overlay = null;
+    this.createOverlay();
+  }
+  
+  createOverlay() {
+    // ローディングオーバーレイを作成
+    this.overlay = document.createElement('div');
+    this.overlay.id = 'loading-overlay';
+    this.overlay.innerHTML = `
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <div class="loading-text">読み込み中...</div>
+      </div>
+    `;
+    this.overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    `;
+    
+    // スピナーのスタイル
+    const style = document.createElement('style');
+    style.textContent = `
+      .loading-spinner {
+        text-align: center;
+      }
+      .spinner {
+        width: 50px;
+        height: 50px;
+        margin: 0 auto 15px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #6b8cff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .loading-text {
+        font-size: 16px;
+        color: #555;
+        font-weight: 500;
+      }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(this.overlay);
+  }
+  
+  show(text = '読み込み中...') {
+    const textEl = this.overlay.querySelector('.loading-text');
+    if (textEl) textEl.textContent = text;
+    this.overlay.style.display = 'flex';
+  }
+  
+  hide() {
+    this.overlay.style.display = 'none';
+  }
+}
+
+const loadingManager = new LoadingManager();
+
 // --- キャッシュとユーティリティ ---
 let cachedKeywords = null;
 
@@ -294,11 +366,14 @@ async function updateUIAfterLogin(nickname, userData) {
 
 // --- イベントリスナー ---
 
-// ログイン
+// ログイン処理（ローディング表示付き）
 loginBtn.addEventListener('click', async () => {
   const nick = nicknameInput.value.trim();
   const pass = passInput.value;
   if(!nick || !pass) { showMessage('入力が足りません'); return; }
+  
+  // ローディング表示開始
+  loadingManager.show('ログイン中...');
   
   try {
     const hash = await hashPassword(pass);
@@ -306,12 +381,19 @@ loginBtn.addEventListener('click', async () => {
     
     if(result.data.success){
       sessionManager.saveSession(nick, hash);
+      
+      // データ読み込み中
+      loadingManager.show('データを読み込んでいます...');
+      
       await updateUIAfterLogin(nick, result.data.data);
       showMessage('ログインしました', 'success');
     }
   } catch(err){
     if(err.code === 'functions/unauthenticated') showMessage('パスワードが違います');
     else showMessage('ログインエラー: ' + err.message);
+  } finally {
+    // ローディング非表示
+    loadingManager.hide();
   }
 });
 
@@ -480,24 +562,31 @@ resetSetPassBtn.addEventListener('click', async () => {
   } catch(err) { showMessage(err.message); grecaptcha.reset(1); }
 });
 
-// --- 初期化 ---
+// 初期化時のローディング表示
 window.addEventListener('DOMContentLoaded', async () => {
-  // 1. まずキーワードを読み込み始める（キャッシュ）
-  const kwPromise = loadAllKeywords();
-  
+  // セッションがある場合のみローディング表示
   const session = sessionManager.getSession();
   if (session) {
+    loadingManager.show('前回のセッションを復元中...');
+  }
+  
+  // キーワードを読み込み始める
+  const kwPromise = loadAllKeywords();
+  
+  if (session) {
     try {
-      // 2. セッションがあればデータ取得
       const result = await getUserDataFunc({ nickname: session.nickname, passwordHash: session.passwordHash });
       if(result.data.success){
-        await kwPromise; // キーワードの読み込み完了を待つ
+        loadingManager.show('データを読み込んでいます...');
+        await kwPromise;
         await updateUIAfterLogin(session.nickname, result.data.data);
       } else {
         sessionManager.clearSession();
       }
     } catch (err) {
       sessionManager.clearSession();
+    } finally {
+      loadingManager.hide();
     }
   }
 });

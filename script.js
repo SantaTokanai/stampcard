@@ -489,22 +489,53 @@ stampBtn.addEventListener('click', async () => {
   }
 });
 
-// リクエスト送信
+// リクエスト送信（改善版 - ローディング表示付き）
 sendRequestBtn.addEventListener('click', async () => {
   const session = sessionManager.getSession();
   const title = songTitleInput.value.trim();
   const artist = artistNameInput.value.trim();
-  if(!title || !artist) { showRequestMessage('入力してください'); return; }
+  
+  if(!title || !artist) { 
+    showRequestMessage('入力してください'); 
+    return; 
+  }
+
+  // ボタン無効化と処理中表示
+  sendRequestBtn.disabled = true;
+  const originalText = sendRequestBtn.textContent;
+  sendRequestBtn.textContent = '送信中...';
+  
+  // ローディング表示開始
+  loadingManager.show('リクエストを送信中...');
 
   try {
-    sendRequestBtn.disabled = true;
-    const result = await sendSongRequestFunc({ nickname: session.nickname, passwordHash: session.passwordHash, songTitle: title, artistName: artist });
+    const result = await sendSongRequestFunc({ 
+      nickname: session.nickname, 
+      passwordHash: session.passwordHash, 
+      songTitle: title, 
+      artistName: artist 
+    });
+    
     if(result.data.success) {
       showRequestMessage('送信しました', 'success');
+      
+      // 入力欄をクリア
+      songTitleInput.value = '';
+      artistNameInput.value = '';
+      
+      // リクエスト状態を更新
       await checkCurrentRequest();
     }
-  } catch(err) { showRequestMessage('エラー: ' + err.message); }
-  finally { sendRequestBtn.disabled = false; }
+  } catch(err) { 
+    showRequestMessage('エラー: ' + err.message); 
+  } finally { 
+    // ローディング非表示
+    loadingManager.hide();
+    
+    // ボタン再有効化
+    sendRequestBtn.disabled = false;
+    sendRequestBtn.textContent = originalText;
+  }
 });
 
 // ログアウト

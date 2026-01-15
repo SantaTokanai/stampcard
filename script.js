@@ -521,7 +521,7 @@ signupBtn.addEventListener('click', async () => {
   if(signupState === 'start'){
     [secretQuestion, secretAnswer, recaptchaContainer].forEach(el => el.style.display = 'block');
     signupState = 'secret';
-    showMessage('質問とreCAPTCHAを入力して再度ボタンを押してください', 'success');
+    showMessage('質問とreCAPTCHAを入力して再度「新規登録」ボタンを押してください', 'success');
     return;
   }
   const q = secretQuestion.value.trim();

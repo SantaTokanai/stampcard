@@ -513,9 +513,8 @@ logoutBtn.addEventListener('click', () => {
   location.reload(); // 状態をリセットするためリロードが最も確実
 });
 
-// 新規登録 (既存ロジック維持)
-// createUserFunc が成功フラグのみ返す場合
-// （登録後に getUserDataFunc でデータ取得が必要）
+// 新規登録処理（改善版）
+let signupState = 'start';
 
 signupBtn.addEventListener('click', async () => {
   const nick = nicknameInput.value.trim();

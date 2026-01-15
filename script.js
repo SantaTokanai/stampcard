@@ -581,6 +581,7 @@ signupBtn.addEventListener('click', async () => {
         signupState = 'start';
         secretQuestion.value = '';
         secretAnswer.value = '';
+        [secretQuestion, secretAnswer, recaptchaContainer].forEach(el => el.style.display = 'none');
         grecaptcha.reset();
       } else {
         throw new Error('ユーザーデータの取得に失敗しました');

@@ -517,7 +517,7 @@ sendRequestBtn.addEventListener('click', async () => {
     });
     
     if(result.data.success) {
-      showRequestMessage('送信しました', 'success');
+      showRequestMessage('送信完了！聴きにきてね(⁎ᵕᴗᵕ⁎)', 'success');
       
       // 入力欄をクリア
       songTitleInput.value = '';

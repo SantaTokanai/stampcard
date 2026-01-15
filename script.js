@@ -514,27 +514,94 @@ logoutBtn.addEventListener('click', () => {
 });
 
 // 新規登録 (既存ロジック維持)
-let signupState = 'start';
+// createUserFunc が成功フラグのみ返す場合
+// （登録後に getUserDataFunc でデータ取得が必要）
+
 signupBtn.addEventListener('click', async () => {
   const nick = nicknameInput.value.trim();
   const pass = passInput.value;
+  
   if(signupState === 'start'){
     [secretQuestion, secretAnswer, recaptchaContainer].forEach(el => el.style.display = 'block');
     signupState = 'secret';
     showMessage('質問とreCAPTCHAを入力して再度「新規登録」ボタンを押してください', 'success');
     return;
   }
+  
   const q = secretQuestion.value.trim();
   const a = secretAnswer.value.trim();
   const token = grecaptcha.getResponse();
-  if(!q || !a || !token) { showMessage('入力が足りません'); return; }
+  
+  if(!q || !a || !token) { 
+    showMessage('入力が足りません'); 
+    return; 
+  }
 
+  // ボタン無効化と処理中表示
+  signupBtn.disabled = true;
+  const originalText = signupBtn.textContent;
+  signupBtn.textContent = '処理中...';
+  
+  // ローディング表示開始
+  loadingManager.show('登録中...');
+  
   try {
     const pHash = await hashPassword(pass);
     const aHash = await hashPassword(a);
-    const res = await createUserFunc({ nickname: nick, passwordHash: pHash, secretQuestion: q, secretAnswerHash: aHash, recaptchaToken: token });
-    if(res.data.success) location.reload();
-  } catch(err) { showMessage(err.message); grecaptcha.reset(); }
+    
+    // 新規登録実行
+    const res = await createUserFunc({ 
+      nickname: nick, 
+      passwordHash: pHash, 
+      secretQuestion: q, 
+      secretAnswerHash: aHash, 
+      recaptchaToken: token 
+    });
+    
+    if(res.data.success) {
+      // セッション保存
+      sessionManager.saveSession(nick, pHash);
+      
+      // データ読み込み中表示
+      loadingManager.show('データを読み込んでいます...');
+      
+      // ユーザーデータを取得
+      const userDataResult = await getUserDataFunc({ 
+        nickname: nick, 
+        passwordHash: pHash 
+      });
+      
+      if(userDataResult.data.success) {
+        // UI更新
+        await updateUIAfterLogin(nick, userDataResult.data.data);
+        
+        // 成功メッセージを表示
+        showMessage('登録しました(*ᴗˬᴗ)⁾⁾ｱﾘｶﾞﾄ💕', 'success');
+        
+        // 登録フォームの状態をリセット
+        signupState = 'start';
+        secretQuestion.value = '';
+        secretAnswer.value = '';
+        grecaptcha.reset();
+      } else {
+        throw new Error('ユーザーデータの取得に失敗しました');
+      }
+    }
+  } catch(err) { 
+    showMessage(err.message); 
+    grecaptcha.reset();
+    signupBtn.disabled = false;
+    signupBtn.textContent = originalText;
+  } finally {
+    // ローディング非表示
+    loadingManager.hide();
+    
+    // ボタン再有効化（成功時は非表示になっているので問題なし）
+    if(signupBtn.style.display !== 'none') {
+      signupBtn.disabled = false;
+      signupBtn.textContent = originalText;
+    }
+  }
 });
 
 // パスワードリセット (既存ロジック維持)

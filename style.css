@@ -6,7 +6,19 @@
   --input-radius: 10px;
   --button-height: 40px;
   --accent: #6b8cff;
+  --accent-dark: #4f6ff0;
+  --accent-pink: #ff8fc6;
   --muted: #888;
+
+  /* 🆕 フォントを2階層に統一：見出し用（丸みのあるフォント）と本文用 */
+  --font-display: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Roboto, "Yu Gothic", "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif;
+
+  /* 🆕 メッセージカラーを一箇所で管理 */
+  --color-success: #2e7d32;
+  --color-success-bg: #e8f5e9;
+  --color-error: #d32f2f;
+  --color-note: #666;
 }
 
 /* --- レイアウト基礎 --- */
@@ -15,7 +27,7 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Roboto, "Yu Gothic", "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif;
+  font-family: var(--font-body);
   text-align: center;
   background: linear-gradient(180deg,#fbfbff, #ffffff);
   color: #222;
@@ -24,15 +36,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* タイトル少し上品に */
+/* タイトル：見出しフォントで統一 */
 .cute-title {
+  font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: 0.02em;
   margin-bottom: 12px;
   font-size: 1.6rem;
 }
 
-/* --- 🆕 目次ナビ --- */
+/* --- 目次ナビ --- */
 .toc-nav {
   /* display は index.html のインライン style と script.js で切替 */
   gap: 8px;
@@ -57,7 +70,8 @@ body {
   border-radius: 20px;
   background: linear-gradient(180deg, #fff, #f4f6fb);
   border: 1px solid #e6e9f2;
-  color: #4f6ff0;
+  color: var(--accent-dark);
+  font-family: var(--font-display);
   font-size: 0.85em;
   font-weight: 700;
   text-decoration: none;
@@ -71,7 +85,7 @@ body {
   box-shadow: 0 4px 10px rgba(79,111,240,0.15);
 }
 
-/* 🆕 スティッキーな目次ナビに隠れないよう、各セクションにゆとりを持たせる */
+/* スティッキーな目次ナビに隠れないよう、各セクションにゆとりを持たせる */
 #card-container,
 #points-display,
 #gallery-container,
@@ -79,21 +93,50 @@ body {
   scroll-margin-top: 90px;
 }
 
-/* 🆕 セクション見出し共通スタイル */
+/* --- 🆕 セクション見出し・区切り線（統一デザイン）--- */
 .section-heading {
-  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.2em;
   color: #222;
   letter-spacing: 0.05em;
-  margin: 26px auto 10px;
+  margin: 6px auto 14px;
   text-align: center;
+}
+
+/* かわいい区切り線：グラデーションのライン＋中央に小さな水玉 */
+.section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-width: 300px;
+  margin: 34px auto 4px;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #c9d3f5 45%, #c9d3f5 55%, transparent);
+}
+
+.section-divider .divider-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-pink));
+  box-shadow: 0 0 0 4px rgba(107,140,255,0.12);
+  flex-shrink: 0;
 }
 
 /* --- フォーム幅を統一して中央寄せ --- */
 #auth-section,
 #reset-section,
-#keyword-section {
+#keyword-section,
+#request-form {
   max-width: var(--max-form-width);
   margin-left: auto;
   margin-right: auto;
@@ -101,7 +144,7 @@ body {
   padding: 6px;
 }
 
-/* --- 合言葉セクションのグループ化（新規追加） --- */
+/* --- 合言葉セクションのグループ化 --- */
 #keyword-section {
   border: 1px solid #d0d5e0;
   background-color: #f8f9fb;
@@ -110,16 +153,18 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-/* --- 入力欄（すべて統一）--- */
+/* --- 入力欄（すべて統一：認証・合言葉・リクエストフォームを共通ルールに）--- */
 #auth-section input,
 #reset-section input,
-#keyword-section input {
+#keyword-section input,
+#request-form input {
   display: block;
   width: 100%;
   max-width: 380px;
   margin: 8px auto;
   box-sizing: border-box;
   padding: var(--input-padding-vert) var(--input-padding-horz);
+  font-family: var(--font-body);
   font-size: var(--input-font-size);
   height: 44px;
   border-radius: var(--input-radius);
@@ -133,7 +178,8 @@ body {
 /* focus の視認性 */
 #auth-section input:focus,
 #reset-section input:focus,
-#keyword-section input:focus {
+#keyword-section input:focus,
+#request-form input:focus {
   border-color: var(--accent);
   box-shadow: 0 6px 18px rgba(107,140,255,0.08);
   transform: translateY(-1px);
@@ -142,11 +188,22 @@ body {
 /* プレースホルダをやや薄めに */
 #auth-section input::placeholder,
 #reset-section input::placeholder,
-#keyword-section input::placeholder {
+#keyword-section input::placeholder,
+#request-form input::placeholder {
   color: #b8bccf;
 }
 
-/* --- ボタン類 --- */
+/* 入力欄のラベル（曲名・アーティスト名など） */
+.field-label {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-body);
+  font-size: 0.9em;
+  color: #555;
+  text-align: left;
+}
+
+/* --- ボタン類（基本スタイル） --- */
 #auth-section button,
 #reset-section button,
 #keyword-section button {
@@ -155,11 +212,12 @@ body {
   line-height: var(--button-height);
   padding: 0 14px;
   margin: 6px 6px;
+  font-family: var(--font-body);
   font-size: 14px;
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  background: linear-gradient(180deg, var(--accent), #4f6ff0);
+  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
   color: #fff;
   box-shadow: 0 6px 18px rgba(79,111,240,0.12);
   transition: transform .08s ease, box-shadow .12s ease, opacity .12s ease;
@@ -174,22 +232,60 @@ body {
   border: 1px solid #eee;
 }
 
-/* ボタン押下感 */
+/* ボタン押下感（共通） */
 #auth-section button:active,
 #reset-section button:active,
-#keyword-section button:active {
+#keyword-section button:active,
+.btn-cta:active {
   transform: translateY(1px) scale(.998);
   opacity: .96;
 }
 
-/* --- メッセージ --- */
+/* 🆕 CTAボタン（リクエスト送信など）：形は共通ボタンと揃え、色だけピンクのアクセントに */
+.btn-cta {
+  display: block;
+  width: 100%;
+  height: var(--button-height);
+  line-height: var(--button-height);
+  padding: 0 14px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--input-radius);
+  cursor: pointer;
+  background: linear-gradient(180deg, #ff9ecb, var(--accent-pink));
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(255,143,198,0.25);
+  transition: transform .08s ease, box-shadow .12s ease, opacity .12s ease;
+}
+
+/* --- 🆕 注釈テキスト（password-note / keyword-noteなど）統一 --- */
+.note-text {
+  font-family: var(--font-body);
+  font-size: 0.75em;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* --- メッセージ（成功・エラー色を統一） --- */
 #error-msg {
   margin-top: 8px;
   min-height: 20px;
-  color: #a00;
+  font-family: var(--font-body);
+  color: var(--color-error);
   font-size: 14px;
 }
-#error-msg.success { color: #0a0; }
+#error-msg.success { color: var(--color-success); }
+
+.request-msg {
+  margin-top: 10px;
+  font-family: var(--font-body);
+  font-size: 0.9em;
+  text-align: center;
+  color: var(--color-error);
+}
+.request-msg.success { color: var(--color-success); }
 
 /* --- カード領域は既存の見た目を崩さない --- */
 #card-container {
@@ -216,7 +312,7 @@ body {
 
 /* --- ニックネーム表示のスタイル --- */
 #nickname-display {
-  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  font-family: var(--font-display);
   letter-spacing: 0.05em;
 }
 
@@ -228,7 +324,7 @@ body {
 }
 
 .point-item {
-  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.1em;
   color: #444;
   margin: 6px 0;
@@ -242,17 +338,9 @@ body {
   color: #222;
 }
 
-/* --- ギャラリー表示のスタイル --- */
-.gallery-divider {
-  border: none;
-  border-top: 2px solid #e6e9f2;
-  margin: 20px auto;
-  max-width: 400px;
-}
-
-/* アイコン置き場タイトル */
+/* --- ギャラリータイトル --- */
 .gallery-title {
-  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.2em;
   color: #222;
@@ -280,6 +368,50 @@ body {
   -webkit-touch-callout: default; /* iOS Safariで長押しメニューを有効化 */
 }
 
+/* --- 🆕 曲リクエストのタイトル・注釈・完了カードを統一トーンに --- */
+.request-title {
+  font-family: var(--font-display);
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-align: center;
+  color: #222;
+}
+
+.request-note {
+  font-family: var(--font-body);
+  font-size: 0.85em;
+  color: var(--color-note);
+  margin-bottom: 15px;
+  line-height: 1.6;
+  background: #fff9e6;
+  padding: 12px;
+  border-radius: var(--input-radius);
+  border-left: 4px solid #ffd700;
+  text-align: left;
+}
+
+.pending-card {
+  background: var(--color-success-bg);
+  padding: 15px;
+  border-radius: var(--input-radius);
+  border-left: 4px solid var(--color-success);
+  text-align: left;
+  font-family: var(--font-body);
+}
+
+.pending-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--color-success);
+}
+
+.pending-note {
+  font-size: 0.85em;
+  color: #555;
+}
+
 /* --- 追加の調整（小さい表示のときにすっきり見せる）--- */
 @media (max-width: 480px) {
   :root {
@@ -290,7 +422,8 @@ body {
 
   #auth-section input,
   #reset-section input,
-  #keyword-section input {
+  #keyword-section input,
+  #request-form input {
     height: 40px;
     font-size: 16px;
     max-width: 320px;
@@ -307,11 +440,16 @@ body {
     border-radius: 8px;
   }
 
+  .btn-cta {
+    height: var(--button-height);
+    font-size: 14px;
+  }
+
   .cute-title { font-size: 1.3rem; margin-bottom: 8px; }
   body { padding: 14px 10px 36px; }
   #card-container { margin-top: 14px; }
 
-  /* 🆕 目次ナビのレスポンシブ調整 */
+  /* 目次ナビのレスポンシブ調整 */
   .toc-nav {
     gap: 6px;
     padding: 6px;
@@ -322,7 +460,9 @@ body {
   }
   .section-heading {
     font-size: 1.05em;
-    margin: 20px auto 8px;
+  }
+  .section-divider {
+    margin: 26px auto 4px;
   }
   
   /* ポイント表示のレスポンシブ調整 */
@@ -343,14 +483,8 @@ body {
     max-width: 95%;
   }
   
-  /* 合言葉セクションのレスポンシブ調整（新規追加） */
+  /* 合言葉セクションのレスポンシブ調整 */
   #keyword-section {
     padding: 12px;
   }
-}
-
-/* --- 視覚的な微調整（任意）--- */
-#auth-section input[style*="display:none"],
-#reset-section input[style*="display:none"] {
-  /* inline style の display:none を尊重（何もしない） */
 }

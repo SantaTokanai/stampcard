@@ -10,6 +10,10 @@
 }
 
 /* --- レイアウト基礎 --- */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Roboto, "Yu Gothic", "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif;
   text-align: center;
@@ -26,6 +30,64 @@ body {
   letter-spacing: 0.02em;
   margin-bottom: 12px;
   font-size: 1.6rem;
+}
+
+/* --- 🆕 目次ナビ --- */
+.toc-nav {
+  /* display は index.html のインライン style と script.js で切替 */
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 500px;
+  margin: 0 auto 20px;
+  padding: 8px;
+  position: sticky;
+  top: 8px;
+  z-index: 50;
+  background: rgba(255,255,255,0.9);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(27,40,70,0.08);
+}
+
+.toc-link {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fff, #f4f6fb);
+  border: 1px solid #e6e9f2;
+  color: #4f6ff0;
+  font-size: 0.85em;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform .08s ease, box-shadow .12s ease;
+}
+
+.toc-link:hover,
+.toc-link:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(79,111,240,0.15);
+}
+
+/* 🆕 スティッキーな目次ナビに隠れないよう、各セクションにゆとりを持たせる */
+#card-container,
+#points-display,
+#gallery-container,
+#request-section {
+  scroll-margin-top: 90px;
+}
+
+/* 🆕 セクション見出し共通スタイル */
+.section-heading {
+  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  font-weight: 700;
+  font-size: 1.2em;
+  color: #222;
+  letter-spacing: 0.05em;
+  margin: 26px auto 10px;
+  text-align: center;
 }
 
 /* --- フォーム幅を統一して中央寄せ --- */
@@ -248,6 +310,20 @@ body {
   .cute-title { font-size: 1.3rem; margin-bottom: 8px; }
   body { padding: 14px 10px 36px; }
   #card-container { margin-top: 14px; }
+
+  /* 🆕 目次ナビのレスポンシブ調整 */
+  .toc-nav {
+    gap: 6px;
+    padding: 6px;
+  }
+  .toc-link {
+    font-size: 0.78em;
+    padding: 7px 10px;
+  }
+  .section-heading {
+    font-size: 1.05em;
+    margin: 20px auto 8px;
+  }
   
   /* ポイント表示のレスポンシブ調整 */
   .point-item {

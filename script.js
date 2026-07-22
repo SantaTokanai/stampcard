@@ -212,6 +212,7 @@ const sendRequestBtn = document.getElementById('send-request-btn');
 const requestMsg = document.getElementById('request-msg');
 const pendingSongTitle = document.getElementById('pending-song-title');
 const pendingArtistName = document.getElementById('pending-artist-name');
+const tocNav = document.getElementById('toc-nav');
 
 // --- UI 表示制御 ---
 function showMessage(msg, type='error'){
@@ -352,6 +353,7 @@ async function updateUIAfterLogin(nickname, userData) {
   logoutBtn.style.display = 'inline-block';
   keywordSec.style.display = 'block';
   requestSection.style.display = 'block';
+  tocNav.style.display = 'flex';
 
   // 情報表示
   displayUserInfo(nickname, userData);

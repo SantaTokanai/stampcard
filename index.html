@@ -1,176 +1,356 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+:root{
+  --max-form-width: 420px;
+  --input-padding-vert: 10px;
+  --input-padding-horz: 12px;
+  --input-font-size: 16px;
+  --input-radius: 10px;
+  --button-height: 40px;
+  --accent: #6b8cff;
+  --muted: #888;
+}
 
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://www.google.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://firestore.googleapis.com; frame-src https://www.google.com;">
-  
-<title>スタンプカード</title>
-<link rel="stylesheet" href="style.css">
-<!-- Google Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
-<!-- reCAPTCHA -->
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>
-</head>
-<body>
+/* --- レイアウト基礎 --- */
+html {
+  scroll-behavior: smooth;
+}
 
-  <h1 class="cute-title" id="page-title">マイページ</h1>
-  
-  <!-- 認証フォーム -->
-  <div id="auth-section">
-    <input type="text" id="nickname" placeholder="カラシンかポケの名前">
-    <input type="password" id="password" placeholder="パスワード">
-    <div id="password-msg">パスワードは4文字以上です</div>
-    <div id="password-note" style="font-size: 0.7em; color: #555;">
-      パスワードや秘密の質問の答えは、管理者側でも内容を見ることはできません
-    </div>
-    
-    <!-- 秘密の質問（最初は非表示） -->
-    <input type="text" id="secret-question" placeholder="秘密の質問（例:好きな飲み物）" style="display:none; margin-top:8px;">
-    <input type="text" id="secret-answer" placeholder="秘密の質問の答え（例:タコハイ）" style="display:none; margin-top:4px;">
-    
-    <!-- reCAPTCHA（新規登録時のみ表示） -->
-    <div id="recaptcha-container" style="display:none; margin-top:10px; text-align:center;">
-      <div class="g-recaptcha" data-sitekey="6Lc4A0csAAAAABP7IFJGOdlmZhs1msTKOMxfDEJ1" style="display:inline-block;"></div>
-    </div>
-    
-    <div style="margin-top:10px;">
-      <button id="signup">新規登録</button>
-      <button id="login">ログイン</button>
-      <button id="logout" style="display:none;">ログアウト</button>
-      <button id="forgot-password" type="button">パスワードを忘れた？</button>
-    </div>
-    <div id="error-msg"></div>
-  </div>
-  
-  <!-- パスワードリセット用セクション -->
-  <div id="reset-section" style="display:none; margin-top:18px; border:1px dashed #ccc; padding:10px; max-width:500px; margin-left:auto; margin-right:auto;">
-    <h3 style="margin:6px 0;">パスワードをリセット</h3>
-    <input type="text" id="reset-nickname" placeholder="リセットするニックネーム">
-    <button id="reset-step1-btn">質問を表示</button>
-    <div id="reset-question" style="margin-top:10px; display:none;"></div>
-    <input type="text" id="reset-answer" placeholder="質問の答え" style="display:none; margin-top:6px;">
-    <input type="password" id="reset-newpass" placeholder="新しいパスワード（4文字以上）" style="display:none; margin-top:6px;">
-    
-    <!-- リセット用reCAPTCHA -->
-    <div id="reset-recaptcha-container" style="display:none; margin-top:10px; text-align:center;">
-      <div class="g-recaptcha" data-sitekey="6Lc4A0csAAAAABP7IFJGOdlmZhs1msTKOMxfDEJ1" id="reset-recaptcha" style="display:inline-block;"></div>
-    </div>
-    
-    <button id="reset-setpass-btn" style="display:none; margin-top:6px;">パスワードを更新</button>
-    <div style="margin-top:8px;">
-      <button id="reset-cancel">キャンセル</button>
-    </div>
-  </div>
-  
-  <!-- 合言葉フォーム -->
-  <div id="keyword-section" style="display:none; margin-top:20px;">
-    <div id="keyword-note" style="font-size: 0.7em; color: #555; margin-bottom: 8px;">
-      月に一度の "テーマ祭り" の配信時に、背景に書かれた合言葉を入力すると参加証明としてスタンプが押されます
-    </div>
-    <input type="text" id="keyword" placeholder="合言葉を入力">
-    <button id="stampBtn">スタンプを押す</button>
-  </div>
-  
-  <!-- スタンプカード -->
-  <div id="card-container" style="margin-top:30px; position:relative; width:100%; max-width:500px;">
-    <img src="images/card_background.png" class="card-bg" alt="スタンプカード">
-  </div>
-  
-  <!-- ポイント表示エリア -->
-  <div id="points-display" style="display:none; margin-top:15px;">
-    <div id="membership-point-display" class="point-item"></div>
-    <div id="stamp-point-display" class="point-item"></div>
-    <div id="colorsing-point-display" class="point-item"></div>
-    <div id="total-point-display" class="point-item total-point"></div>
-  </div>
-  
-  <!-- ギャラリー画像表示エリア -->
-  <div id="gallery-container" style="display:none; margin-top:20px; max-width:500px; margin-left:auto; margin-right:auto;">
-    <hr class="gallery-divider">
-    <div id="gallery-title" class="gallery-title">アイコン置き場</div>
-    <div id="gallery-images"></div>
-  </div>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Roboto, "Yu Gothic", "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif;
+  text-align: center;
+  background: linear-gradient(180deg,#fbfbff, #ffffff);
+  color: #222;
+  padding: 18px 12px 48px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-<!-- ギャラリーコンテナの閉じタグの後に追加 -->
+/* タイトル少し上品に */
+.cute-title {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 12px;
+  font-size: 1.6rem;
+}
 
-<!-- 曲リクエストセクション -->
-<div id="request-section" style="display:none; margin-top:30px; max-width:500px; margin-left:auto; margin-right:auto;">
-  <hr class="gallery-divider">
-  <div class="request-title" style="font-size:1.2em; font-weight:bold; margin-bottom:10px; text-align:center;">
-    🎵 曲の事前リクエスト予約
-  </div>
-  
-  <div class="request-note" style="font-size:0.85em; color:#555; margin-bottom:15px; line-height:1.6; background:#fff9e6; padding:12px; border-radius:8px; border-left:4px solid #ffd700;">
-    <p style="margin:0 0 8px 0;">
-      リクエストはカラシンに登録してある私のレパートリーから選んでください(♡ᴗ͈ˬᴗ͈)⁾⁾⁾<br>
-      レパートリーにない曲は歌うことができません😭
-    </p>
-    <p style="margin:0; font-size:0.9em; color:#666;">
-      ⚠️ 1曲ずつリクエストできます。前回のリクエストが承認されるまで次のリクエストはできません。
-    </p>
-    <p style="margin:0; font-size:0.9em; color:#666;">
-      ⚠️ 来てくださった時に、どなたからのリクエストかは言わずに歌わせていただきます(*´ ˘ `*)ｴﾍ
-    </p>
-  </div>
-  
-  <!-- リクエスト入力フォーム -->
-  <div id="request-form">
-    <div style="margin-bottom:10px;">
-      <label style="display:block; margin-bottom:4px; font-size:0.9em; color:#555;">曲名</label>
-      <input 
-        type="text" 
-        id="song-title" 
-        placeholder="例：LOVEマシーン"
-        maxlength="50"
-        style="width: 100%; box-sizing: border-box; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;"
-      >
-    </div>
-    
-    <div style="margin-bottom:15px;">
-      <label style="display:block; margin-bottom:4px; font-size:0.9em; color:#555;">アーティスト名</label>
-      <input 
-        type="text" 
-        id="artist-name" 
-        placeholder="例：モーニング娘。"
-        maxlength="50"
-        style="width: 100%; box-sizing: border-box; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;"
-      >
-    </div>
-    
-    <button 
-      id="send-request-btn"
-      style="width:100%; padding:12px; background:#ff69b4; color:white; border:none; border-radius:6px; font-size:1em; font-weight:bold; cursor:pointer;"
-    >
-      リクエストを送信
-    </button>
-  </div>
-  
-  <!-- リクエスト送信済み表示 -->
-  <div id="request-pending" style="display:none;">
-    <div style="background:#e8f5e9; padding:15px; border-radius:8px; border-left:4px solid #4caf50;">
-      <div style="font-weight:bold; margin-bottom:8px; color:#2e7d32;">
-        ✅ リクエスト送信済み
-      </div>
-      <div style="margin-bottom:4px;">
-        <strong>曲名：</strong><span id="pending-song-title"></span>
-      </div>
-      <div style="margin-bottom:12px;">
-        <strong>アーティスト：</strong><span id="pending-artist-name"></span>
-      </div>
-      <div style="font-size:0.85em; color:#555;">
-        この曲が承認されるまで、次のリクエストはできません。
-      </div>
-    </div>
-  </div>
-  
-  <div id="request-msg" style="margin-top:10px; font-size:0.9em; text-align:center;"></div>
-</div>
+/* --- 🆕 目次ナビ --- */
+.toc-nav {
+  /* display は index.html のインライン style と script.js で切替 */
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 500px;
+  margin: 0 auto 20px;
+  padding: 8px;
+  position: sticky;
+  top: 8px;
+  z-index: 50;
+  background: rgba(255,255,255,0.9);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(27,40,70,0.08);
+}
 
+.toc-link {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fff, #f4f6fb);
+  border: 1px solid #e6e9f2;
+  color: #4f6ff0;
+  font-size: 0.85em;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform .08s ease, box-shadow .12s ease;
+}
 
-  <script type="module" src="script.js"></script>
-</body>
-</html>
+.toc-link:hover,
+.toc-link:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(79,111,240,0.15);
+}
+
+/* 🆕 スティッキーな目次ナビに隠れないよう、各セクションにゆとりを持たせる */
+#card-container,
+#points-display,
+#gallery-container,
+#request-section {
+  scroll-margin-top: 90px;
+}
+
+/* 🆕 セクション見出し共通スタイル */
+.section-heading {
+  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  font-weight: 700;
+  font-size: 1.2em;
+  color: #222;
+  letter-spacing: 0.05em;
+  margin: 26px auto 10px;
+  text-align: center;
+}
+
+/* --- フォーム幅を統一して中央寄せ --- */
+#auth-section,
+#reset-section,
+#keyword-section {
+  max-width: var(--max-form-width);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  padding: 6px;
+}
+
+/* --- 合言葉セクションのグループ化（新規追加） --- */
+#keyword-section {
+  border: 1px solid #d0d5e0;
+  background-color: #f8f9fb;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* --- 入力欄（すべて統一）--- */
+#auth-section input,
+#reset-section input,
+#keyword-section input {
+  display: block;
+  width: 100%;
+  max-width: 380px;
+  margin: 8px auto;
+  box-sizing: border-box;
+  padding: var(--input-padding-vert) var(--input-padding-horz);
+  font-size: var(--input-font-size);
+  height: 44px;
+  border-radius: var(--input-radius);
+  border: 1px solid #e6e9f2;
+  background: linear-gradient(180deg,#fff,#fbfdff);
+  outline: none;
+  transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
+  -webkit-appearance: none;
+}
+
+/* focus の視認性 */
+#auth-section input:focus,
+#reset-section input:focus,
+#keyword-section input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 6px 18px rgba(107,140,255,0.08);
+  transform: translateY(-1px);
+}
+
+/* プレースホルダをやや薄めに */
+#auth-section input::placeholder,
+#reset-section input::placeholder,
+#keyword-section input::placeholder {
+  color: #b8bccf;
+}
+
+/* --- ボタン類 --- */
+#auth-section button,
+#reset-section button,
+#keyword-section button {
+  display: inline-block;
+  height: var(--button-height);
+  line-height: var(--button-height);
+  padding: 0 14px;
+  margin: 6px 6px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--accent), #4f6ff0);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(79,111,240,0.12);
+  transition: transform .08s ease, box-shadow .12s ease, opacity .12s ease;
+}
+
+/* 小型のボタン（キャンセル等）は控えめに */
+#reset-section button#reset-cancel,
+#auth-section button#forgot-password {
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  border: 1px solid #eee;
+}
+
+/* ボタン押下感 */
+#auth-section button:active,
+#reset-section button:active,
+#keyword-section button:active {
+  transform: translateY(1px) scale(.998);
+  opacity: .96;
+}
+
+/* --- メッセージ --- */
+#error-msg {
+  margin-top: 8px;
+  min-height: 20px;
+  color: #a00;
+  font-size: 14px;
+}
+#error-msg.success { color: #0a0; }
+
+/* --- カード領域は既存の見た目を崩さない --- */
+#card-container {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 20px auto 0;
+}
+
+.card-bg {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-width: 500px;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(27,40,70,0.06);
+}
+
+.stamp {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+/* --- ニックネーム表示のスタイル --- */
+#nickname-display {
+  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.05em;
+}
+
+/* --- ポイント表示のスタイル --- */
+#points-display {
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.point-item {
+  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  font-size: 1.1em;
+  color: #444;
+  margin: 6px 0;
+  letter-spacing: 0.05em;
+}
+
+/* 総合計ptのみ太字 */
+.point-item.total-point {
+  font-weight: 700;
+  font-size: 1.2em;
+  color: #222;
+}
+
+/* --- ギャラリー表示のスタイル --- */
+.gallery-divider {
+  border: none;
+  border-top: 2px solid #e6e9f2;
+  margin: 20px auto;
+  max-width: 400px;
+}
+
+/* アイコン置き場タイトル */
+.gallery-title {
+  font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+  font-weight: 700;
+  font-size: 1.2em;
+  color: #222;
+  letter-spacing: 0.05em;
+  margin-bottom: 15px;
+}
+
+#gallery-images {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 0;
+}
+
+.gallery-image {
+  width: 100%;
+  max-width: 450px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(27,40,70,0.08);
+  /* 長押しで保存可能にするため、デフォルトの動作を許可 */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: default; /* iOS Safariで長押しメニューを有効化 */
+}
+
+/* --- 追加の調整（小さい表示のときにすっきり見せる）--- */
+@media (max-width: 480px) {
+  :root {
+    --input-font-size: 16px;
+    --input-radius: 8px;
+    --button-height: 36px;
+  }
+
+  #auth-section input,
+  #reset-section input,
+  #keyword-section input {
+    height: 40px;
+    font-size: 16px;
+    max-width: 320px;
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+
+  #auth-section button,
+  #reset-section button,
+  #keyword-section button {
+    height: var(--button-height);
+    font-size: 13px;
+    padding: 0 12px;
+    border-radius: 8px;
+  }
+
+  .cute-title { font-size: 1.3rem; margin-bottom: 8px; }
+  body { padding: 14px 10px 36px; }
+  #card-container { margin-top: 14px; }
+
+  /* 🆕 目次ナビのレスポンシブ調整 */
+  .toc-nav {
+    gap: 6px;
+    padding: 6px;
+  }
+  .toc-link {
+    font-size: 0.78em;
+    padding: 7px 10px;
+  }
+  .section-heading {
+    font-size: 1.05em;
+    margin: 20px auto 8px;
+  }
+  
+  /* ポイント表示のレスポンシブ調整 */
+  .point-item {
+    font-size: 1em;
+  }
+  .point-item.total-point {
+    font-size: 1.1em;
+  }
+  
+  /* ギャラリータイトルのレスポンシブ調整 */
+  .gallery-title {
+    font-size: 1.1em;
+  }
+  
+  /* ギャラリー画像のレスポンシブ調整 */
+  .gallery-image {
+    max-width: 95%;
+  }
+  
+  /* 合言葉セクションのレスポンシブ調整（新規追加） */
+  #keyword-section {
+    padding: 12px;
+  }
+}
+
+/* --- 視覚的な微調整（任意）--- */
+#auth-section input[style*="display:none"],
+#reset-section input[style*="display:none"] {
+  /* inline style の display:none を尊重（何もしない） */
+}

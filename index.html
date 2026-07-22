@@ -19,7 +19,7 @@
 
   <h1 class="cute-title" id="page-title">マイページ</h1>
 
-  <!-- 🆕 目次ナビ（ログイン後のみ表示。script.jsでdisplay切替） -->
+  <!-- 目次ナビ（ログイン後のみ表示。script.jsでdisplay切替） -->
   <nav id="toc-nav" class="toc-nav" style="display:none;">
     <a href="#card-container" class="toc-link">🎫 スタンプ</a>
     <a href="#points-display" class="toc-link">💰 ポイント</a>
@@ -32,7 +32,7 @@
     <input type="text" id="nickname" placeholder="カラシンかポケの名前">
     <input type="password" id="password" placeholder="パスワード">
     <div id="password-msg">パスワードは4文字以上です</div>
-    <div id="password-note" style="font-size: 0.7em; color: #555;">
+    <div id="password-note" class="note-text">
       パスワードや秘密の質問の答えは、管理者側でも内容を見ることはできません
     </div>
     
@@ -76,14 +76,15 @@
   
   <!-- 合言葉フォーム -->
   <div id="keyword-section" style="display:none; margin-top:20px;">
-    <div id="keyword-note" style="font-size: 0.7em; color: #555; margin-bottom: 8px;">
+    <div id="keyword-note" class="note-text">
       月に一度の "テーマ祭り" の配信時に、背景に書かれた合言葉を入力すると参加証明としてスタンプが押されます
     </div>
     <input type="text" id="keyword" placeholder="合言葉を入力">
     <button id="stampBtn">スタンプを押す</button>
   </div>
 
-  <!-- 🆕 スタンプカード見出し -->
+  <!-- スタンプカード見出し -->
+  <div class="section-divider" aria-hidden="true"><span class="divider-dot"></span></div>
   <h2 class="section-heading">🎫 スタンプカード</h2>
 
   <!-- スタンプカード -->
@@ -93,7 +94,7 @@
   
   <!-- ポイント表示エリア -->
   <div id="points-display" style="display:none; margin-top:15px;">
-    <!-- 🆕 ポイント見出し（points-displayの中に入れることで、既存の表示/非表示ロジックをそのまま利用） -->
+    <div class="section-divider" aria-hidden="true"><span class="divider-dot"></span></div>
     <h2 class="section-heading">💰 ポイント</h2>
     <div id="membership-point-display" class="point-item"></div>
     <div id="stamp-point-display" class="point-item"></div>
@@ -103,7 +104,7 @@
   
   <!-- ギャラリー画像表示エリア -->
   <div id="gallery-container" style="display:none; margin-top:20px; max-width:500px; margin-left:auto; margin-right:auto;">
-    <hr class="gallery-divider">
+    <div class="section-divider" aria-hidden="true"><span class="divider-dot"></span></div>
     <div id="gallery-title" class="gallery-title">アイコン置き場</div>
     <div id="gallery-images"></div>
   </div>
@@ -112,12 +113,12 @@
 
 <!-- 曲リクエストセクション -->
 <div id="request-section" style="display:none; margin-top:30px; max-width:500px; margin-left:auto; margin-right:auto;">
-  <hr class="gallery-divider">
-  <div class="request-title" style="font-size:1.2em; font-weight:bold; margin-bottom:10px; text-align:center;">
+  <div class="section-divider" aria-hidden="true"><span class="divider-dot"></span></div>
+  <div class="request-title">
     🎵 曲の事前リクエスト予約
   </div>
   
-  <div class="request-note" style="font-size:0.85em; color:#555; margin-bottom:15px; line-height:1.6; background:#fff9e6; padding:12px; border-radius:8px; border-left:4px solid #ffd700;">
+  <div class="request-note">
     <p style="margin:0 0 8px 0;">
       リクエストはカラシンに登録してある私のレパートリーから選んでください(♡ᴗ͈ˬᴗ͈)⁾⁾⁾<br>
       レパートリーにない曲は歌うことができません😭
@@ -133,39 +134,34 @@
   <!-- リクエスト入力フォーム -->
   <div id="request-form">
     <div style="margin-bottom:10px;">
-      <label style="display:block; margin-bottom:4px; font-size:0.9em; color:#555;">曲名</label>
+      <label class="field-label">曲名</label>
       <input 
         type="text" 
         id="song-title" 
         placeholder="例：LOVEマシーン"
         maxlength="50"
-        style="width: 100%; box-sizing: border-box; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;"
       >
     </div>
     
     <div style="margin-bottom:15px;">
-      <label style="display:block; margin-bottom:4px; font-size:0.9em; color:#555;">アーティスト名</label>
+      <label class="field-label">アーティスト名</label>
       <input 
         type="text" 
         id="artist-name" 
         placeholder="例：モーニング娘。"
         maxlength="50"
-        style="width: 100%; box-sizing: border-box; padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;"
       >
     </div>
     
-    <button 
-      id="send-request-btn"
-      style="width:100%; padding:12px; background:#ff69b4; color:white; border:none; border-radius:6px; font-size:1em; font-weight:bold; cursor:pointer;"
-    >
+    <button id="send-request-btn" class="btn-cta">
       リクエストを送信
     </button>
   </div>
   
   <!-- リクエスト送信済み表示 -->
   <div id="request-pending" style="display:none;">
-    <div style="background:#e8f5e9; padding:15px; border-radius:8px; border-left:4px solid #4caf50;">
-      <div style="font-weight:bold; margin-bottom:8px; color:#2e7d32;">
+    <div class="pending-card">
+      <div class="pending-title">
         ✅ リクエスト送信済み
       </div>
       <div style="margin-bottom:4px;">
@@ -174,13 +170,13 @@
       <div style="margin-bottom:12px;">
         <strong>アーティスト：</strong><span id="pending-artist-name"></span>
       </div>
-      <div style="font-size:0.85em; color:#555;">
+      <div class="pending-note">
         この曲が承認されるまで、次のリクエストはできません。
       </div>
     </div>
   </div>
   
-  <div id="request-msg" style="margin-top:10px; font-size:0.9em; text-align:center;"></div>
+  <div id="request-msg" class="request-msg"></div>
 </div>
 
 

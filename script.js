@@ -25,6 +25,8 @@ const getSecretQuestionFunc = httpsCallable(functions, 'getSecretQuestion');
 const sendSongRequestFunc = httpsCallable(functions, 'sendSongRequest');
 const getCurrentRequestFunc = httpsCallable(functions, 'getCurrentRequest');
 const getActiveExchangeEventFunc = httpsCallable(functions, 'getActiveExchangeEvent');
+const getExchangeHistoryFunc = httpsCallable(functions, 'getExchangeHistory');
+const submitExchangeFunc = httpsCallable(functions, 'submitExchange');
 
 // --- セッション管理 ---
 class SessionManager {
@@ -221,6 +223,8 @@ const exchangeItemsContainer = document.getElementById('exchange-items');
 const exchangeEstimateDisplay = document.getElementById('exchange-estimate');
 const exchangeEmptyMsg = document.getElementById('exchange-empty-msg');
 const exchangeConfirmBtn = document.getElementById('exchange-confirm-btn');
+const exchangeLocked = document.getElementById('exchange-locked');
+const exchangeMsg = document.getElementById('exchange-msg');
 
 // --- UI 表示制御 ---
 function showMessage(msg, type='error'){
@@ -344,6 +348,8 @@ function escapeHtml(str) {
 }
 
 let currentAvailablePoint = 0;
+let currentEventId = null;
+let currentEventCanSubmit = false;
 
 // 選んだ個数から見積もり消費ptを再計算して表示する
 function updateExchangeEstimate() {
@@ -358,6 +364,8 @@ function updateExchangeEstimate() {
   exchangeEstimateDisplay.innerHTML =
     `見積もり消費pt: <strong>${formatNumber(total)}</strong> / 利用可能pt: <strong>${formatNumber(currentAvailablePoint)}</strong>`;
   exchangeEstimateDisplay.classList.toggle('over-budget', over);
+
+  exchangeConfirmBtn.disabled = !currentEventCanSubmit || over || total === 0;
 }
 
 // グッズ一覧を画面に描画する
@@ -379,28 +387,71 @@ function renderExchangeItems(items) {
   updateExchangeEstimate();
 }
 
-// 現在受付中の交換会情報を取得して表示する（決定ボタンは次のステップで有効化）
+// 確定済みの内容をロック表示する
+function renderExchangeLocked(submission) {
+  const itemsHtml = submission.items.map(i => `${escapeHtml(i.name)} × ${i.qty}個`).join('<br>');
+  exchangeLocked.innerHTML = `
+    <div class="pending-card">
+      <div class="pending-title">✅ 申し込み確定済み</div>
+      <div style="margin-bottom:8px;">${itemsHtml}</div>
+      <div><strong>消費pt：</strong>${formatNumber(submission.totalSpent)}pt</div>
+    </div>
+  `;
+  exchangeLocked.style.display = 'block';
+  exchangeItemsContainer.style.display = 'none';
+  exchangeEstimateDisplay.style.display = 'none';
+  exchangeConfirmBtn.style.display = 'none';
+}
+
+// 現在受付中(または下見中)の交換会情報を取得して表示する
 async function loadExchangeSection(userData) {
   if (!exchangeSection) return;
   const pts = calculatePoints(userData);
   currentAvailablePoint = pts.totalPoint;
+  exchangeLocked.style.display = 'none';
+  exchangeMsg.textContent = '';
+  exchangeMsg.classList.remove('success');
 
   try {
     const result = await getActiveExchangeEventFunc();
-    if (result.data.success && result.data.hasActiveEvent) {
-      exchangeEventTitle.textContent = result.data.title;
-      renderExchangeItems(result.data.items);
-      exchangeItemsContainer.style.display = 'block';
-      exchangeEstimateDisplay.style.display = 'block';
-      exchangeConfirmBtn.style.display = 'block';
-      exchangeEmptyMsg.style.display = 'none';
-    } else {
+    if (!(result.data.success && result.data.hasActiveEvent)) {
+      currentEventId = null;
       exchangeEventTitle.textContent = '';
       exchangeItemsContainer.style.display = 'none';
       exchangeEstimateDisplay.style.display = 'none';
       exchangeConfirmBtn.style.display = 'none';
+      exchangeEmptyMsg.textContent = '現在開催中の交換会はありません';
       exchangeEmptyMsg.style.display = 'block';
+      return;
     }
+
+    currentEventId = result.data.eventId;
+    currentEventCanSubmit = result.data.canSubmit;
+    exchangeEventTitle.textContent = result.data.title;
+    exchangeEmptyMsg.style.display = 'none';
+
+    // 既にこの交換会に申し込み済みか確認
+    const session = sessionManager.getSession();
+    const historyResult = await getExchangeHistoryFunc({
+      nickname: session.nickname,
+      passwordHash: session.passwordHash
+    });
+
+    const already = historyResult.data.success
+      ? historyResult.data.history.find(h => h.eventId === currentEventId)
+      : null;
+
+    if (already) {
+      renderExchangeLocked(already);
+      return;
+    }
+
+    renderExchangeItems(result.data.items);
+    exchangeItemsContainer.style.display = 'block';
+    exchangeEstimateDisplay.style.display = 'block';
+    exchangeConfirmBtn.style.display = 'block';
+    exchangeConfirmBtn.textContent = currentEventCanSubmit ? 'このグッズで決定' : 'まだ受付期間ではありません';
+
   } catch (err) {
     console.error('loadExchangeSection error:', err);
     exchangeEmptyMsg.textContent = '交換会情報の取得に失敗しました';
@@ -621,6 +672,58 @@ sendRequestBtn.addEventListener('click', async () => {
     // ボタン再有効化
     sendRequestBtn.disabled = false;
     sendRequestBtn.textContent = originalText;
+  }
+});
+
+// グッズ交換の決定
+exchangeConfirmBtn.addEventListener('click', async () => {
+  const session = sessionManager.getSession();
+  if (!session || !currentEventId) return;
+
+  const rows = exchangeItemsContainer.querySelectorAll('.exchange-item-row');
+  const items = [];
+  rows.forEach(row => {
+    const qty = Number(row.querySelector('.exchange-item-qty').value);
+    if (qty > 0) {
+      items.push({ name: row.dataset.name, qty });
+    }
+  });
+
+  if (items.length === 0) {
+    exchangeMsg.textContent = '個数を選んでください';
+    exchangeMsg.classList.remove('success');
+    return;
+  }
+
+  if (!confirm('この内容で確定します。確定後は変更できません。よろしいですか？')) return;
+
+  exchangeConfirmBtn.disabled = true;
+  exchangeConfirmBtn.textContent = '送信中...';
+
+  try {
+    const result = await submitExchangeFunc({
+      nickname: session.nickname,
+      passwordHash: session.passwordHash,
+      eventId: currentEventId,
+      items
+    });
+
+    if (result.data.success) {
+      exchangeMsg.textContent = '確定しました！';
+      exchangeMsg.classList.add('success');
+
+      const updated = await getUserDataFunc({ nickname: session.nickname, passwordHash: session.passwordHash });
+      if (updated.data.success) {
+        displayUserInfo(session.nickname, updated.data.data);
+        await loadExchangeSection(updated.data.data);
+      }
+    }
+  } catch (err) {
+    console.error('submitExchange error:', err);
+    exchangeMsg.textContent = 'エラー: ' + err.message;
+    exchangeMsg.classList.remove('success');
+    exchangeConfirmBtn.disabled = false;
+    exchangeConfirmBtn.textContent = 'このグッズで決定';
   }
 });
 

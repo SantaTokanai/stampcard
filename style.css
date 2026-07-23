@@ -438,6 +438,15 @@ body {
   border-radius: var(--input-radius);
 }
 
+.exchange-item-image {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: #f4f6fb;
+}
+
 .exchange-item-name {
   font-family: var(--font-body);
   font-weight: 700;

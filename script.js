@@ -24,6 +24,7 @@ const resetPasswordFunc = httpsCallable(functions, 'resetPassword');
 const getSecretQuestionFunc = httpsCallable(functions, 'getSecretQuestion');
 const sendSongRequestFunc = httpsCallable(functions, 'sendSongRequest');
 const getCurrentRequestFunc = httpsCallable(functions, 'getCurrentRequest');
+const getActiveExchangeEventFunc = httpsCallable(functions, 'getActiveExchangeEvent');
 
 // --- セッション管理 ---
 class SessionManager {
@@ -214,6 +215,12 @@ const requestMsg = document.getElementById('request-msg');
 const pendingSongTitle = document.getElementById('pending-song-title');
 const pendingArtistName = document.getElementById('pending-artist-name');
 const tocNav = document.getElementById('toc-nav');
+const exchangeSection = document.getElementById('exchange-section');
+const exchangeEventTitle = document.getElementById('exchange-event-title');
+const exchangeItemsContainer = document.getElementById('exchange-items');
+const exchangeEstimateDisplay = document.getElementById('exchange-estimate');
+const exchangeEmptyMsg = document.getElementById('exchange-empty-msg');
+const exchangeConfirmBtn = document.getElementById('exchange-confirm-btn');
 
 // --- UI 表示制御 ---
 function showMessage(msg, type='error'){
@@ -329,6 +336,80 @@ function loadUserGallery(userData){
   galleryContainer.style.display = 'block';
 }
 
+// グッズ交換：入力値をそのままHTMLに入れないよう無害化する
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+let currentAvailablePoint = 0;
+
+// 選んだ個数から見積もり消費ptを再計算して表示する
+function updateExchangeEstimate() {
+  const rows = exchangeItemsContainer.querySelectorAll('.exchange-item-row');
+  let total = 0;
+  rows.forEach(row => {
+    const cost = Number(row.dataset.cost);
+    const qty = Number(row.querySelector('.exchange-item-qty').value);
+    total += cost * qty;
+  });
+  const over = total > currentAvailablePoint;
+  exchangeEstimateDisplay.innerHTML =
+    `見積もり消費pt: <strong>${formatNumber(total)}</strong> / 利用可能pt: <strong>${formatNumber(currentAvailablePoint)}</strong>`;
+  exchangeEstimateDisplay.classList.toggle('over-budget', over);
+}
+
+// グッズ一覧を画面に描画する
+function renderExchangeItems(items) {
+  exchangeItemsContainer.innerHTML = items.map(item => `
+    <div class="exchange-item-row" data-cost="${item.cost}" data-name="${escapeHtml(item.name)}">
+      <span class="exchange-item-name">${escapeHtml(item.name)}</span>
+      <span class="exchange-item-cost">${formatNumber(item.cost)}pt</span>
+      <select class="exchange-item-qty">
+        ${Array.from({ length: 11 }, (_, n) => `<option value="${n}">${n}個</option>`).join('')}
+      </select>
+    </div>
+  `).join('');
+
+  exchangeItemsContainer.querySelectorAll('.exchange-item-qty').forEach(sel => {
+    sel.addEventListener('change', updateExchangeEstimate);
+  });
+
+  updateExchangeEstimate();
+}
+
+// 現在受付中の交換会情報を取得して表示する（決定ボタンは次のステップで有効化）
+async function loadExchangeSection(userData) {
+  if (!exchangeSection) return;
+  const pts = calculatePoints(userData);
+  currentAvailablePoint = pts.totalPoint;
+
+  try {
+    const result = await getActiveExchangeEventFunc();
+    if (result.data.success && result.data.hasActiveEvent) {
+      exchangeEventTitle.textContent = result.data.title;
+      renderExchangeItems(result.data.items);
+      exchangeItemsContainer.style.display = 'block';
+      exchangeEstimateDisplay.style.display = 'block';
+      exchangeConfirmBtn.style.display = 'block';
+      exchangeEmptyMsg.style.display = 'none';
+    } else {
+      exchangeEventTitle.textContent = '';
+      exchangeItemsContainer.style.display = 'none';
+      exchangeEstimateDisplay.style.display = 'none';
+      exchangeConfirmBtn.style.display = 'none';
+      exchangeEmptyMsg.style.display = 'block';
+    }
+  } catch (err) {
+    console.error('loadExchangeSection error:', err);
+    exchangeEmptyMsg.textContent = '交換会情報の取得に失敗しました';
+    exchangeEmptyMsg.style.display = 'block';
+  }
+}
+
+</parameter>
+
 // リクエスト状態確認
 async function checkCurrentRequest() {
   const session = sessionManager.getSession();
@@ -357,6 +438,7 @@ async function updateUIAfterLogin(nickname, userData) {
   keywordSec.style.display = 'block';
   requestSection.style.display = 'block';
   tocNav.style.display = 'flex';
+  exchangeSection.style.display = 'block';
 
   // 情報表示
   displayUserInfo(nickname, userData);
@@ -365,7 +447,8 @@ async function updateUIAfterLogin(nickname, userData) {
   // 時間がかかる処理を並列で実行
   await Promise.all([
     loadStamps(userData),
-    checkCurrentRequest()
+    checkCurrentRequest(),
+    loadExchangeSection(userData)
   ]);
 }
 

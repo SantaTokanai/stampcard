@@ -372,6 +372,7 @@ function updateExchangeEstimate() {
 function renderExchangeItems(items) {
   exchangeItemsContainer.innerHTML = items.map(item => `
     <div class="exchange-item-row" data-cost="${item.cost}" data-name="${escapeHtml(item.name)}">
+      ${item.img ? `<img class="exchange-item-image" src="${escapeHtml(item.img)}" alt="${escapeHtml(item.name)}">` : ''}
       <span class="exchange-item-name">${escapeHtml(item.name)}</span>
       <span class="exchange-item-cost">${formatNumber(item.cost)}pt</span>
       <select class="exchange-item-qty">

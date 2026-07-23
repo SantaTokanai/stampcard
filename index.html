@@ -25,6 +25,7 @@
     <a href="#points-display" class="toc-link">💰 ポイント</a>
     <a href="#gallery-container" class="toc-link">🖼️ アイコン</a>
     <a href="#request-section" class="toc-link">🎵 リクエスト</a>
+    <a href="#exchange-section" class="toc-link">🎁 グッズ</a>
   </nav>
   
   <!-- 認証フォーム -->
@@ -178,6 +179,27 @@
   </div>
   
   <div id="request-msg" class="request-msg"></div>
+</div>
+
+<!-- 🆕 グッズ交換セクション（今回は表示・見積もりのみ。決定ボタンは次のステップで有効化） -->
+<div id="exchange-section" style="display:none; margin-top:30px; max-width:500px; margin-left:auto; margin-right:auto;">
+  <div class="section-divider" aria-hidden="true"><span class="divider-dot"></span></div>
+  <div class="request-title">
+    🎁 グッズ交換会
+  </div>
+  <h3 id="exchange-event-title" class="exchange-event-title"></h3>
+
+  <div id="exchange-empty-msg" class="note-text" style="display:none; text-align:center; margin:10px 0;">
+    現在開催中の交換会はありません
+  </div>
+
+  <div id="exchange-items" style="display:none;"></div>
+
+  <div id="exchange-estimate" class="exchange-estimate" style="display:none;"></div>
+
+  <button id="exchange-confirm-btn" class="btn-cta" style="display:none; margin-top:12px;" disabled>
+    このグッズで決定（準備中）
+  </button>
 </div>
 
 

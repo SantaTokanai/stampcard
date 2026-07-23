@@ -227,6 +227,9 @@ const exchangeLocked = document.getElementById('exchange-locked');
 const exchangeMsg = document.getElementById('exchange-msg');
 const imageLightbox = document.getElementById('image-lightbox');
 const lightboxImg = document.getElementById('lightbox-img');
+const exchangeHistoryToggleBtn = document.getElementById('exchange-history-toggle-btn');
+const exchangeHistoryList = document.getElementById('exchange-history-list');
+let exchangeHistoryLoaded = false;
 
 // --- UI 表示制御 ---
 function showMessage(msg, type='error'){
@@ -414,6 +417,24 @@ function renderExchangeLocked(submission) {
   exchangeConfirmBtn.style.display = 'none';
 }
 
+// 過去の交換履歴を画面に描画する
+function renderExchangeHistoryList(history) {
+  if (!history || history.length === 0) {
+    exchangeHistoryList.innerHTML = `<div class="history-empty">まだ交換履歴はありません</div>`;
+    return;
+  }
+  exchangeHistoryList.innerHTML = history.map(h => {
+    const itemsText = h.items.map(i => `${escapeHtml(i.name)}×${i.qty}`).join('、');
+    return `
+      <div class="history-item">
+        <div class="history-item-title">${escapeHtml(h.eventTitle)}</div>
+        <div class="history-item-detail">${itemsText}</div>
+        <div class="history-item-spent">消費 ${formatNumber(h.totalSpent)}pt</div>
+      </div>
+    `;
+  }).join('');
+}
+
 // 現在受付中(または下見中)の交換会情報を取得して表示する
 async function loadExchangeSection(userData) {
   if (!exchangeSection) return;
@@ -422,6 +443,9 @@ async function loadExchangeSection(userData) {
   exchangeLocked.style.display = 'none';
   exchangeMsg.textContent = '';
   exchangeMsg.classList.remove('success');
+  exchangeHistoryLoaded = false;
+  exchangeHistoryList.style.display = 'none';
+  exchangeHistoryToggleBtn.textContent = '📜 過去の履歴を見る';
 
   try {
     const result = await getActiveExchangeEventFunc();
@@ -750,6 +774,34 @@ exchangeItemsContainer.addEventListener('click', (e) => {
 imageLightbox.addEventListener('click', () => {
   imageLightbox.style.display = 'none';
   lightboxImg.src = '';
+});
+
+// 過去の交換履歴を開閉する
+exchangeHistoryToggleBtn.addEventListener('click', async () => {
+  const isHidden = exchangeHistoryList.style.display === 'none';
+
+  if (isHidden) {
+    if (!exchangeHistoryLoaded) {
+      exchangeHistoryToggleBtn.textContent = '読み込み中...';
+      const session = sessionManager.getSession();
+      try {
+        const result = await getExchangeHistoryFunc({
+          nickname: session.nickname,
+          passwordHash: session.passwordHash
+        });
+        renderExchangeHistoryList(result.data.success ? result.data.history : []);
+        exchangeHistoryLoaded = true;
+      } catch (err) {
+        console.error('history load error:', err);
+        exchangeHistoryList.innerHTML = `<div class="history-empty">履歴の取得に失敗しました</div>`;
+      }
+    }
+    exchangeHistoryList.style.display = 'block';
+    exchangeHistoryToggleBtn.textContent = '📜 履歴を閉じる';
+  } else {
+    exchangeHistoryList.style.display = 'none';
+    exchangeHistoryToggleBtn.textContent = '📜 過去の履歴を見る';
+  }
 });
 
 // ログアウト

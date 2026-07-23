@@ -201,6 +201,7 @@ const membershipPointDisplay = document.getElementById('membership-point-display
 const stampPointDisplay = document.getElementById('stamp-point-display');
 const colorsingPointDisplay = document.getElementById('colorsing-point-display');
 const totalPointDisplay = document.getElementById('total-point-display');
+const spentPointDisplay = document.getElementById('spent-point-display');
 const galleryContainer = document.getElementById('gallery-container');
 const galleryImages = document.getElementById('gallery-images');
 const requestSection = document.getElementById('request-section');
@@ -257,9 +258,10 @@ function calculatePoints(userData){
                    + (hasPoke1 ? 500 : 0) + (hasPoke3 ? 1000 : 0);
   const membershipPoint = userData.membershipPoint || 0;
   const colorsingPoint = userData.colorsingPoint || 0;
-  const totalPoint = membershipPoint + stampPoint + colorsingPoint;
+  const spentPoint = userData.spentPoint || 0;
+  const totalPoint = membershipPoint + stampPoint + colorsingPoint - spentPoint;
 
-  return { membershipPoint, stampPoint, colorsingPoint, totalPoint };
+  return { membershipPoint, stampPoint, colorsingPoint, spentPoint, totalPoint };
 }
 
 // スタンプ描画 (userDataを引数で受け取るように改善)
@@ -304,6 +306,7 @@ function displayUserInfo(nickname, userData){
   membershipPointDisplay.textContent = `メンバーシップpt: ${formatNumber(pts.membershipPoint)}`;
   stampPointDisplay.textContent = `スタンプpt: ${formatNumber(pts.stampPoint)}`;
   colorsingPointDisplay.textContent = `カラシン推しpt: ${formatNumber(pts.colorsingPoint)}`;
+  spentPointDisplay.textContent = `消費したpt: ${formatNumber(pts.spentPoint)}`;
   totalPointDisplay.textContent = `総合計pt: ${formatNumber(pts.totalPoint)}`;
   pointsDisplay.style.display = 'block';
 }

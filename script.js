@@ -225,6 +225,8 @@ const exchangeEmptyMsg = document.getElementById('exchange-empty-msg');
 const exchangeConfirmBtn = document.getElementById('exchange-confirm-btn');
 const exchangeLocked = document.getElementById('exchange-locked');
 const exchangeMsg = document.getElementById('exchange-msg');
+const imageLightbox = document.getElementById('image-lightbox');
+const lightboxImg = document.getElementById('lightbox-img');
 
 // --- UI 表示制御 ---
 function showMessage(msg, type='error'){
@@ -734,6 +736,20 @@ exchangeConfirmBtn.addEventListener('click', async () => {
     exchangeConfirmBtn.disabled = false;
     exchangeConfirmBtn.textContent = 'このグッズで決定';
   }
+});
+
+// グッズ画像タップで拡大表示
+exchangeItemsContainer.addEventListener('click', (e) => {
+  if (e.target.classList.contains('exchange-item-image')) {
+    lightboxImg.src = e.target.src;
+    lightboxImg.alt = e.target.alt;
+    imageLightbox.style.display = 'flex';
+  }
+});
+
+imageLightbox.addEventListener('click', () => {
+  imageLightbox.style.display = 'none';
+  lightboxImg.src = '';
 });
 
 // ログアウト

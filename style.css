@@ -630,3 +630,56 @@ body {
 .exchange-item-image {
   cursor: zoom-in;
 }
+
+/* 過去の交換履歴 */
+.history-toggle-btn {
+  display: block;
+  margin: 16px auto 0;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #e6e9f2;
+  border-radius: 20px;
+  color: var(--accent-dark);
+  font-family: var(--font-body);
+  font-size: 0.85em;
+  cursor: pointer;
+}
+
+.history-item {
+  background: linear-gradient(180deg,#fff,#fbfdff);
+  border: 1px solid #e6e9f2;
+  border-radius: var(--input-radius);
+  padding: 12px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.history-item-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95em;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.history-item-detail {
+  font-family: var(--font-body);
+  font-size: 0.85em;
+  color: #555;
+  line-height: 1.6;
+}
+
+.history-item-spent {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--accent-dark);
+  margin-top: 6px;
+}
+
+.history-empty {
+  font-family: var(--font-body);
+  font-size: 0.85em;
+  color: #888;
+  text-align: center;
+  padding: 10px;
+}

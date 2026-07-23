@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net;">
+
+<title>管理者ページ</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <h1 class="cute-title">管理者ページ</h1>
+  <div class="note-text" style="text-align:center; margin-bottom:20px;">
+    グッズ交換の申し込み状況を確認できます
+  </div>
+
+  <!-- 管理者ログイン -->
+  <div id="admin-login-section" class="admin-panel">
+    <input type="password" id="admin-password" placeholder="管理者パスワード">
+    <button id="admin-login-btn" class="btn-cta" style="margin-top:10px;">ログイン</button>
+    <div id="admin-login-msg" class="request-msg"></div>
+  </div>
+
+  <!-- 管理者ダッシュボード（ログイン後に表示） -->
+  <div id="admin-dashboard" style="display:none;">
+
+    <div class="admin-panel">
+      <label class="field-label">表示する交換会</label>
+      <select id="admin-event-select"></select>
+    </div>
+
+    <div id="admin-summary" class="admin-summary"></div>
+
+    <div id="admin-submissions-list"></div>
+
+  </div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

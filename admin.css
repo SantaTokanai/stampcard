@@ -1,0 +1,101 @@
+/* admin.html専用のスタイル。既存のstyle.cssにある変数・共通クラスをそのまま利用します */
+
+.admin-panel {
+  max-width: var(--max-form-width);
+  margin: 0 auto 20px;
+  padding: 16px;
+  background: #f8f9fb;
+  border: 1px solid #d0d5e0;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+#admin-password {
+  display: block;
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: var(--input-padding-vert) var(--input-padding-horz);
+  font-family: var(--font-body);
+  font-size: var(--input-font-size);
+  height: 44px;
+  border-radius: var(--input-radius);
+  border: 1px solid #e6e9f2;
+}
+
+#admin-event-select {
+  display: block;
+  width: 100%;
+  max-width: 380px;
+  margin: 6px auto 0;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: var(--input-font-size);
+  height: 44px;
+  border-radius: var(--input-radius);
+  border: 1px solid #e6e9f2;
+  background: #fff;
+}
+
+.admin-summary {
+  max-width: 500px;
+  margin: 0 auto 16px;
+  padding: 12px 16px;
+  background: #eef1fa;
+  border-radius: var(--input-radius);
+  font-family: var(--font-display);
+  font-size: 0.95em;
+  color: #333;
+  text-align: center;
+}
+
+#admin-submissions-list {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.admin-submission-row {
+  background: linear-gradient(180deg,#fff,#fbfdff);
+  border: 1px solid #e6e9f2;
+  border-radius: var(--input-radius);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.admin-submission-nickname {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95em;
+  color: var(--accent-dark);
+  margin-bottom: 4px;
+}
+
+.admin-submission-items {
+  font-family: var(--font-body);
+  font-size: 0.85em;
+  color: #444;
+  line-height: 1.6;
+}
+
+.admin-submission-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-family: var(--font-body);
+  font-size: 0.8em;
+  color: #888;
+}
+
+.admin-submission-spent {
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+@media (max-width: 480px) {
+  .admin-panel {
+    padding: 12px;
+  }
+}

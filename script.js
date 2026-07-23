@@ -408,8 +408,6 @@ async function loadExchangeSection(userData) {
   }
 }
 
-</parameter>
-
 // リクエスト状態確認
 async function checkCurrentRequest() {
   const session = sessionManager.getSession();

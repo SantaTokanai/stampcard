@@ -10,11 +10,11 @@
   --accent-pink: #ff8fc6;
   --muted: #888;
 
-  /* 🆕 フォントを2階層に統一：見出し用（丸みのあるフォント）と本文用 */
+  /* フォントを2階層に統一：見出し用（丸みのあるフォント）と本文用 */
   --font-display: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
   --font-body: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Roboto, "Yu Gothic", "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif;
 
-  /* 🆕 メッセージカラーを一箇所で管理 */
+  /* メッセージカラーを一箇所で管理 */
   --color-success: #2e7d32;
   --color-success-bg: #e8f5e9;
   --color-error: #d32f2f;
@@ -47,7 +47,6 @@ body {
 
 /* --- 目次ナビ --- */
 .toc-nav {
-  /* display は index.html のインライン style と script.js で切替 */
   gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
@@ -89,11 +88,12 @@ body {
 #card-container,
 #points-display,
 #gallery-container,
-#request-section {
+#request-section,
+#exchange-section {
   scroll-margin-top: 90px;
 }
 
-/* --- 🆕 セクション見出し・区切り線（統一デザイン）--- */
+/* --- セクション見出し・区切り線（統一デザイン）--- */
 .section-heading {
   font-family: var(--font-display);
   font-weight: 700;
@@ -241,7 +241,7 @@ body {
   opacity: .96;
 }
 
-/* 🆕 CTAボタン（リクエスト送信など）：形は共通ボタンと揃え、色だけピンクのアクセントに */
+/* CTAボタン（リクエスト送信・グッズ確定など）：形は共通ボタンと揃え、色だけピンクのアクセントに */
 .btn-cta {
   display: block;
   width: 100%;
@@ -260,7 +260,13 @@ body {
   transition: transform .08s ease, box-shadow .12s ease, opacity .12s ease;
 }
 
-/* --- 🆕 注釈テキスト（password-note / keyword-noteなど）統一 --- */
+.btn-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* --- 注釈テキスト（password-note / keyword-noteなど）統一 --- */
 .note-text {
   font-family: var(--font-body);
   font-size: 0.75em;
@@ -362,13 +368,12 @@ body {
   height: auto;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(27,40,70,0.08);
-  /* 長押しで保存可能にするため、デフォルトの動作を許可 */
   -webkit-user-select: none;
   user-select: none;
-  -webkit-touch-callout: default; /* iOS Safariで長押しメニューを有効化 */
+  -webkit-touch-callout: default;
 }
 
-/* --- 🆕 曲リクエストのタイトル・注釈・完了カードを統一トーンに --- */
+/* --- 曲リクエストのタイトル・注釈・完了カードを統一トーンに --- */
 .request-title {
   font-family: var(--font-display);
   font-size: 1.2em;
@@ -412,6 +417,68 @@ body {
   color: #555;
 }
 
+/* --- 🆕 グッズ交換セクション --- */
+.exchange-event-title {
+  font-family: var(--font-display);
+  font-size: 1em;
+  color: var(--accent-dark);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.exchange-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: linear-gradient(180deg,#fff,#fbfdff);
+  border: 1px solid #e6e9f2;
+  border-radius: var(--input-radius);
+}
+
+.exchange-item-name {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.95em;
+  color: #333;
+  flex: 1;
+  text-align: left;
+}
+
+.exchange-item-cost {
+  font-family: var(--font-body);
+  font-size: 0.85em;
+  color: var(--accent-dark);
+  white-space: nowrap;
+}
+
+.exchange-item-qty {
+  border-radius: 8px;
+  border: 1px solid #e6e9f2;
+  padding: 6px 8px;
+  font-size: 0.9em;
+  font-family: var(--font-body);
+  background: #fff;
+}
+
+.exchange-estimate {
+  font-family: var(--font-display);
+  font-size: 0.95em;
+  color: #333;
+  text-align: center;
+  margin: 14px 0;
+  padding: 10px;
+  background: #f4f6fb;
+  border-radius: var(--input-radius);
+}
+
+.exchange-estimate.over-budget {
+  color: var(--color-error);
+  background: #fdeaea;
+}
+
 /* --- 追加の調整（小さい表示のときにすっきり見せる）--- */
 @media (max-width: 480px) {
   :root {
@@ -449,7 +516,6 @@ body {
   body { padding: 14px 10px 36px; }
   #card-container { margin-top: 14px; }
 
-  /* 目次ナビのレスポンシブ調整 */
   .toc-nav {
     gap: 6px;
     padding: 6px;
@@ -465,7 +531,6 @@ body {
     margin: 26px auto 4px;
   }
   
-  /* ポイント表示のレスポンシブ調整 */
   .point-item {
     font-size: 1em;
   }
@@ -473,18 +538,22 @@ body {
     font-size: 1.1em;
   }
   
-  /* ギャラリータイトルのレスポンシブ調整 */
   .gallery-title {
     font-size: 1.1em;
   }
   
-  /* ギャラリー画像のレスポンシブ調整 */
   .gallery-image {
     max-width: 95%;
   }
   
-  /* 合言葉セクションのレスポンシブ調整 */
   #keyword-section {
     padding: 12px;
+  }
+
+  .exchange-item-row {
+    flex-wrap: wrap;
+  }
+  .exchange-item-name {
+    flex-basis: 100%;
   }
 }

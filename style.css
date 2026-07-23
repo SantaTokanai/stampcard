@@ -417,7 +417,7 @@ body {
   color: #555;
 }
 
-/* --- 🆕 グッズ交換セクション --- */
+/* --- グッズ交換セクション --- */
 .exchange-event-title {
   font-family: var(--font-display);
   font-size: 1em;
@@ -426,25 +426,49 @@ body {
   text-align: center;
 }
 
+/* グッズカード（世界的なECアプリのカードUIを参考にしたレイアウト） */
 .exchange-item-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
   background: linear-gradient(180deg,#fff,#fbfdff);
   border: 1px solid #e6e9f2;
   border-radius: var(--input-radius);
+  text-align: left;
+}
+
+.exchange-item-media {
+  flex-shrink: 0;
 }
 
 .exchange-item-image {
-  width: 48px;
-  height: 48px;
+  display: block;
+  width: 88px;
+  height: 88px;
   object-fit: cover;
-  border-radius: 8px;
-  flex-shrink: 0;
+  border-radius: 12px;
   background: #f4f6fb;
+}
+
+.exchange-item-placeholder {
+  width: 88px;
+  height: 88px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f4f6fb, #eef1fa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+}
+
+.exchange-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .exchange-item-name {
@@ -452,13 +476,25 @@ body {
   font-weight: 700;
   font-size: 0.95em;
   color: #333;
-  flex: 1;
-  text-align: left;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.exchange-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .exchange-item-cost {
-  font-family: var(--font-body);
-  font-size: 0.85em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1em;
   color: var(--accent-dark);
   white-space: nowrap;
 }
@@ -470,6 +506,7 @@ body {
   font-size: 0.9em;
   font-family: var(--font-body);
   background: #fff;
+  flex-shrink: 0;
 }
 
 .exchange-estimate {
@@ -559,10 +596,9 @@ body {
     padding: 12px;
   }
 
-  .exchange-item-row {
-    flex-wrap: wrap;
-  }
-  .exchange-item-name {
-    flex-basis: 100%;
+  .exchange-item-image,
+  .exchange-item-placeholder {
+    width: 72px;
+    height: 72px;
   }
 }

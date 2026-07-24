@@ -227,6 +227,10 @@ const exchangeLocked = document.getElementById('exchange-locked');
 const exchangeMsg = document.getElementById('exchange-msg');
 const imageLightbox = document.getElementById('image-lightbox');
 const lightboxImg = document.getElementById('lightbox-img');
+const confirmModal = document.getElementById('confirm-modal');
+const confirmModalMessage = document.getElementById('confirm-modal-message');
+const confirmModalOk = document.getElementById('confirm-modal-ok');
+const confirmModalCancel = document.getElementById('confirm-modal-cancel');
 const exchangeHistoryToggleBtn = document.getElementById('exchange-history-toggle-btn');
 const exchangeHistoryList = document.getElementById('exchange-history-list');
 let exchangeHistoryLoaded = false;
@@ -738,7 +742,8 @@ exchangeConfirmBtn.addEventListener('click', async () => {
     return;
   }
 
-  if (!confirm('この内容で確定します。確定後は変更できません。よろしいですか？')) return;
+  const confirmed = await showConfirmModal('この内容で確定します。確定後は変更できません。よろしいですか？');
+  if (!confirmed) return;
 
   exchangeConfirmBtn.disabled = true;
   exchangeConfirmBtn.textContent = '送信中...';
@@ -769,6 +774,26 @@ exchangeConfirmBtn.addEventListener('click', async () => {
     exchangeConfirmBtn.textContent = 'このグッズで決定';
   }
 });
+
+// 独自の確認ダイアログを表示し、「確定する」が押されたらtrue、「キャンセル」ならfalseを返す
+function showConfirmModal(message) {
+  return new Promise((resolve) => {
+    confirmModalMessage.textContent = message;
+    confirmModal.style.display = 'flex';
+
+    function cleanup(result) {
+      confirmModal.style.display = 'none';
+      confirmModalOk.removeEventListener('click', onOk);
+      confirmModalCancel.removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+
+    confirmModalOk.addEventListener('click', onOk);
+    confirmModalCancel.addEventListener('click', onCancel);
+  });
+}
 
 // グッズ画像タップで拡大表示
 exchangeItemsContainer.addEventListener('click', (e) => {

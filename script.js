@@ -352,6 +352,12 @@ function escapeHtml(str) {
   }[c]));
 }
 
+// 配送用URLをボタンとして表示する（http/httpsで始まるものだけ有効にする安全対策つき）
+function renderShippingLink(url) {
+  if (!url || !/^https?:\/\//i.test(url)) return '';
+  return `<div class="shipping-link"><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">📦 配送用URLはこちら</a></div>`;
+}
+
 let currentAvailablePoint = 0;
 let currentEventId = null;
 let currentEventCanSubmit = false;
@@ -409,6 +415,7 @@ function renderExchangeLocked(submission) {
       <div class="pending-title">✅ 申し込み確定済み</div>
       <div style="margin-bottom:8px;">${itemsHtml}</div>
       <div><strong>消費pt：</strong>${formatNumber(submission.totalSpent)}pt</div>
+      ${renderShippingLink(submission.shippingUrl)}
     </div>
   `;
   exchangeLocked.style.display = 'block';
@@ -430,6 +437,7 @@ function renderExchangeHistoryList(history) {
         <div class="history-item-title">${escapeHtml(h.eventTitle)}</div>
         <div class="history-item-detail">${itemsText}</div>
         <div class="history-item-spent">消費 ${formatNumber(h.totalSpent)}pt</div>
+        ${renderShippingLink(h.shippingUrl)}
       </div>
     `;
   }).join('');

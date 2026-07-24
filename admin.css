@@ -94,6 +94,42 @@
   color: var(--accent-dark);
 }
 
+.admin-shipping-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.admin-shipping-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #e6e9f2;
+  font-family: var(--font-body);
+  font-size: 0.85em;
+  box-sizing: border-box;
+}
+
+.admin-shipping-save-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.85em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-shipping-status {
+  margin-top: 4px;
+  font-size: 0.8em;
+  font-family: var(--font-body);
+  min-height: 1.2em;
+}
+
 @media (max-width: 480px) {
   .admin-panel {
     padding: 12px;

@@ -683,3 +683,19 @@ body {
   text-align: center;
   padding: 10px;
 }
+
+/* 配送用URLボタン */
+.shipping-link {
+  margin-top: 8px;
+}
+.shipping-link a {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.85em;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+  padding: 6px 14px;
+  border-radius: 20px;
+  text-decoration: none;
+}

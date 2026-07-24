@@ -211,11 +211,22 @@
   <div id="exchange-history-list" style="display:none; margin-top:12px;"></div>
 </div>
 
-  <!-- 画像拡大表示用のオーバーレイ -->
+<!-- 画像拡大表示用のオーバーレイ -->
   <div id="image-lightbox" class="lightbox" style="display:none;">
     <img id="lightbox-img" src="" alt="">
   </div>
 
+<!-- 確認ダイアログ（ブラウザ標準のconfirm()を使わないための独自表示） -->
+  <div id="confirm-modal" class="confirm-modal" style="display:none;">
+    <div class="confirm-modal-box">
+      <div id="confirm-modal-message" class="confirm-modal-message"></div>
+      <div class="confirm-modal-buttons">
+        <button id="confirm-modal-cancel" class="confirm-modal-btn-cancel">キャンセル</button>
+        <button id="confirm-modal-ok" class="confirm-modal-btn-ok">確定する</button>
+      </div>
+    </div>
+  </div>  
+  
   <script type="module" src="script.js"></script>
 </body>
 </html>

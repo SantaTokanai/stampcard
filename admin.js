@@ -14,6 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const functions = getFunctions(app);
 const adminGetSubmissionsFunc = httpsCallable(functions, 'adminGetSubmissions');
+const adminSetShippingUrlFunc = httpsCallable(functions, 'adminSetShippingUrl');
 
 // --- DOM要素 ---
 const adminLoginSection = document.getElementById('admin-login-section');
@@ -28,6 +29,7 @@ const adminSubmissionsList = document.getElementById('admin-submissions-list');
 // --- 取得したデータの保持 ---
 let allEvents = [];
 let allSubmissions = [];
+let currentAdminPassword = '';
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({
@@ -75,17 +77,59 @@ function renderForSelectedEvent() {
   adminSubmissionsList.innerHTML = list.map(s => {
     const itemsText = s.items.map(i => `${escapeHtml(i.name)} × ${i.qty}個`).join('<br>');
     return `
-      <div class="admin-submission-row">
+      <div class="admin-submission-row" data-id="${escapeHtml(s.id)}">
         <div class="admin-submission-nickname">${escapeHtml(s.nickname)}</div>
         <div class="admin-submission-items">${itemsText}</div>
         <div class="admin-submission-footer">
           <span>${formatDate(s.confirmedAt)}</span>
           <span class="admin-submission-spent">${formatNumber(s.totalSpent)}pt</span>
         </div>
+        <div class="admin-shipping-row">
+          <input type="text" class="admin-shipping-input" placeholder="配送用URLを貼り付け" value="${escapeHtml(s.shippingUrl || '')}">
+          <button class="admin-shipping-save-btn">保存</button>
+        </div>
+        <div class="admin-shipping-status"></div>
       </div>
     `;
   }).join('');
 }
+
+// 配送用URLの保存（一覧はイベント委譲で1つのリスナーだけ設置）
+adminSubmissionsList.addEventListener('click', async (e) => {
+  if (!e.target.classList.contains('admin-shipping-save-btn')) return;
+
+  const row = e.target.closest('.admin-submission-row');
+  const submissionId = row.dataset.id;
+  const input = row.querySelector('.admin-shipping-input');
+  const statusEl = row.querySelector('.admin-shipping-status');
+  const url = input.value.trim();
+
+  e.target.disabled = true;
+  e.target.textContent = '保存中...';
+  statusEl.textContent = '';
+
+  try {
+    await adminSetShippingUrlFunc({
+      adminPassword: currentAdminPassword,
+      submissionId,
+      shippingUrl: url
+    });
+    statusEl.textContent = '✅ 保存しました';
+    statusEl.style.color = '#2e7d32';
+
+    // メモリ上のデータも更新（交換会を切り替えても保存内容が保たれるように）
+    const target = allSubmissions.find(s => s.id === submissionId);
+    if (target) target.shippingUrl = url;
+
+  } catch (err) {
+    console.error('shipping url save error:', err);
+    statusEl.textContent = '❌ 保存に失敗しました';
+    statusEl.style.color = '#d32f2f';
+  } finally {
+    e.target.disabled = false;
+    e.target.textContent = '保存';
+  }
+});
 
 adminEventSelect.addEventListener('change', renderForSelectedEvent);
 
@@ -106,6 +150,7 @@ adminLoginBtn.addEventListener('click', async () => {
     if (result.data.success) {
       allEvents = result.data.events;
       allSubmissions = result.data.submissions;
+      currentAdminPassword = pwd;
 
       adminLoginSection.style.display = 'none';
       adminDashboard.style.display = 'block';

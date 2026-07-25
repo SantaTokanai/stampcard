@@ -130,6 +130,132 @@
   min-height: 1.2em;
 }
 
+/* タブ切替 */
+.admin-tab-nav {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  max-width: 500px;
+  margin: 0 auto 20px;
+}
+
+.admin-tab-btn {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 20px;
+  border: 1px solid #e6e9f2;
+  background: #fff;
+  color: var(--accent-dark);
+  font-family: var(--font-display);
+  font-size: 0.9em;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-tab-btn-active {
+  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  border-color: transparent;
+}
+
+.admin-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 0.9em;
+  color: #444;
+  cursor: pointer;
+}
+
+/* 曲リクエスト一覧 */
+#admin-requests-list {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.admin-request-row {
+  background: linear-gradient(180deg,#fff,#fbfdff);
+  border: 1px solid #e6e9f2;
+  border-radius: var(--input-radius);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.admin-request-row.is-done {
+  opacity: 0.6;
+}
+
+.admin-request-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.admin-request-song {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95em;
+  color: #333;
+}
+
+.admin-request-artist {
+  font-family: var(--font-body);
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 2px;
+}
+
+.admin-request-badge {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 0.75em;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.admin-request-badge.pending {
+  background: #fff3cd;
+  color: #8a6300;
+}
+
+.admin-request-badge.done {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.admin-request-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  font-family: var(--font-body);
+  font-size: 0.8em;
+  color: #888;
+}
+
+.admin-request-from {
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+.admin-request-done-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.8em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 @media (max-width: 480px) {
   .admin-panel {
     padding: 12px;

@@ -18,7 +18,7 @@
 
   <h1 class="cute-title">管理者ページ</h1>
   <div class="note-text" style="text-align:center; margin-bottom:20px;">
-    グッズ交換の申し込み状況を確認できます
+    グッズ交換・曲リクエストの状況を確認できます
   </div>
 
   <!-- 管理者ログイン -->
@@ -31,14 +31,37 @@
   <!-- 管理者ダッシュボード（ログイン後に表示） -->
   <div id="admin-dashboard" style="display:none;">
 
-    <div class="admin-panel">
-      <label class="field-label">表示する交換会</label>
-      <select id="admin-event-select"></select>
+    <!-- タブ切替 -->
+    <nav class="admin-tab-nav">
+      <button id="admin-tab-btn-goods" class="admin-tab-btn admin-tab-btn-active">🎁 グッズ交換</button>
+      <button id="admin-tab-btn-requests" class="admin-tab-btn">🎵 曲リクエスト</button>
+    </nav>
+
+    <!-- グッズ交換タブ -->
+    <div id="admin-panel-goods">
+      <div class="admin-panel">
+        <label class="field-label">表示する交換会</label>
+        <select id="admin-event-select"></select>
+      </div>
+
+      <div id="admin-summary" class="admin-summary"></div>
+
+      <div id="admin-submissions-list"></div>
     </div>
 
-    <div id="admin-summary" class="admin-summary"></div>
+    <!-- 曲リクエストタブ -->
+    <div id="admin-panel-requests" style="display:none;">
+      <div class="admin-panel">
+        <label class="admin-checkbox-label">
+          <input type="checkbox" id="admin-request-pending-only" checked>
+          未対応のみ表示
+        </label>
+      </div>
 
-    <div id="admin-submissions-list"></div>
+      <div id="admin-request-summary" class="admin-summary"></div>
+
+      <div id="admin-requests-list"></div>
+    </div>
 
   </div>
 

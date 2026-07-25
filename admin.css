@@ -256,6 +256,60 @@
   white-space: nowrap;
 }
 
+/* ユーザー一覧 */
+#admin-user-sort {
+  display: block;
+  width: 100%;
+  max-width: 380px;
+  margin: 6px auto 0;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: var(--input-font-size);
+  height: 44px;
+  border-radius: var(--input-radius);
+  border: 1px solid #e6e9f2;
+  background: #fff;
+}
+
+#admin-users-list {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.admin-user-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(180deg,#fff,#fbfdff);
+  border: 1px solid #e6e9f2;
+  border-radius: var(--input-radius);
+  padding: 10px 14px;
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+.admin-user-nickname {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95em;
+  color: #333;
+}
+
+.admin-user-created {
+  font-family: var(--font-body);
+  font-size: 0.8em;
+  color: #888;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.admin-user-created.unknown {
+  font-style: italic;
+  color: #bbb;
+}
+
 @media (max-width: 480px) {
   .admin-panel {
     padding: 12px;

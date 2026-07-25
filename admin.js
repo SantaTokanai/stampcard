@@ -15,6 +15,8 @@ const app = initializeApp(firebaseConfig);
 const functions = getFunctions(app);
 const adminGetSubmissionsFunc = httpsCallable(functions, 'adminGetSubmissions');
 const adminSetShippingUrlFunc = httpsCallable(functions, 'adminSetShippingUrl');
+const adminGetRequestsFunc = httpsCallable(functions, 'adminGetRequests');
+const adminMarkRequestDoneFunc = httpsCallable(functions, 'adminMarkRequestDone');
 
 // --- DOM要素 ---
 const adminLoginSection = document.getElementById('admin-login-section');
@@ -26,9 +28,20 @@ const adminEventSelect = document.getElementById('admin-event-select');
 const adminSummary = document.getElementById('admin-summary');
 const adminSubmissionsList = document.getElementById('admin-submissions-list');
 
+// タブ・曲リクエスト用のDOM要素
+const adminTabBtnGoods = document.getElementById('admin-tab-btn-goods');
+const adminTabBtnRequests = document.getElementById('admin-tab-btn-requests');
+const adminPanelGoods = document.getElementById('admin-panel-goods');
+const adminPanelRequests = document.getElementById('admin-panel-requests');
+const adminRequestPendingOnly = document.getElementById('admin-request-pending-only');
+const adminRequestSummary = document.getElementById('admin-request-summary');
+const adminRequestsList = document.getElementById('admin-requests-list');
+
 // --- 取得したデータの保持 ---
 let allEvents = [];
 let allSubmissions = [];
+let allRequests = [];
+let requestsLoaded = false;
 let currentAdminPassword = '';
 
 function escapeHtml(str) {
@@ -132,6 +145,91 @@ adminSubmissionsList.addEventListener('click', async (e) => {
 });
 
 adminEventSelect.addEventListener('change', renderForSelectedEvent);
+
+// --- タブ切替 ---
+adminTabBtnGoods.addEventListener('click', () => {
+  adminTabBtnGoods.classList.add('admin-tab-btn-active');
+  adminTabBtnRequests.classList.remove('admin-tab-btn-active');
+  adminPanelGoods.style.display = 'block';
+  adminPanelRequests.style.display = 'none';
+});
+
+adminTabBtnRequests.addEventListener('click', async () => {
+  adminTabBtnRequests.classList.add('admin-tab-btn-active');
+  adminTabBtnGoods.classList.remove('admin-tab-btn-active');
+  adminPanelGoods.style.display = 'none';
+  adminPanelRequests.style.display = 'block';
+
+  if (!requestsLoaded) {
+    adminRequestsList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込み中...</div>`;
+    try {
+      const result = await adminGetRequestsFunc({ adminPassword: currentAdminPassword });
+      if (result.data.success) {
+        allRequests = result.data.requests;
+        requestsLoaded = true;
+      }
+    } catch (err) {
+      console.error('adminGetRequests error:', err);
+      adminRequestsList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込みに失敗しました</div>`;
+      return;
+    }
+  }
+  renderRequestsList();
+});
+
+// 曲リクエスト一覧・集計を描画
+function renderRequestsList() {
+  const pendingOnly = adminRequestPendingOnly.checked;
+  const list = pendingOnly ? allRequests.filter(r => !r.approved) : allRequests;
+
+  const pendingCount = allRequests.filter(r => !r.approved).length;
+  adminRequestSummary.textContent = `未対応: ${pendingCount}件 ／ 全体: ${allRequests.length}件`;
+
+  if (list.length === 0) {
+    adminRequestsList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">該当するリクエストはありません</div>`;
+    return;
+  }
+
+  adminRequestsList.innerHTML = list.map(r => `
+    <div class="admin-request-row ${r.approved ? 'is-done' : ''}" data-id="${escapeHtml(r.id)}">
+      <div class="admin-request-header">
+        <div>
+          <div class="admin-request-song">${escapeHtml(r.songTitle)}</div>
+          <div class="admin-request-artist">${escapeHtml(r.artistName)}</div>
+        </div>
+        <span class="admin-request-badge ${r.approved ? 'done' : 'pending'}">${r.approved ? '対応済み' : '未対応'}</span>
+      </div>
+      <div class="admin-request-footer">
+        <span>リクエスト者: <span class="admin-request-from">${escapeHtml(r.from)}</span> ／ ${formatDate(r.timestamp)}</span>
+        ${r.approved ? '' : '<button class="admin-request-done-btn">歌い終わったら済みにする</button>'}
+      </div>
+    </div>
+  `).join('');
+}
+
+adminRequestPendingOnly.addEventListener('change', renderRequestsList);
+
+// 「済みにする」ボタン（イベント委譲）
+adminRequestsList.addEventListener('click', async (e) => {
+  if (!e.target.classList.contains('admin-request-done-btn')) return;
+
+  const row = e.target.closest('.admin-request-row');
+  const requestId = row.dataset.id;
+
+  e.target.disabled = true;
+  e.target.textContent = '処理中...';
+
+  try {
+    await adminMarkRequestDoneFunc({ adminPassword: currentAdminPassword, requestId });
+    const target = allRequests.find(r => r.id === requestId);
+    if (target) target.approved = true;
+    renderRequestsList();
+  } catch (err) {
+    console.error('adminMarkRequestDone error:', err);
+    e.target.disabled = false;
+    e.target.textContent = '歌い終わったら済みにする';
+  }
+});
 
 // ログイン処理
 adminLoginBtn.addEventListener('click', async () => {

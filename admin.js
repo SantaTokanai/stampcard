@@ -146,6 +146,64 @@ adminSubmissionsList.addEventListener('click', async (e) => {
 
 adminEventSelect.addEventListener('change', renderForSelectedEvent);
 
+// --- ログイン状態の一時保存（タブを閉じるまで有効） ---
+const ADMIN_SESSION_KEY = 'admin_password';
+const adminLogoutBtn = document.getElementById('admin-logout-btn');
+
+// 実際のログイン処理をまとめた関数（ボタン押下時・自動ログイン時の両方から呼ぶ）
+async function loginWithPassword(pwd, { isAuto = false } = {}) {
+  if (!isAuto) {
+    adminLoginBtn.disabled = true;
+    adminLoginBtn.textContent = '確認中...';
+    adminLoginMsg.textContent = '';
+  }
+
+  try {
+    const result = await adminGetSubmissionsFunc({ adminPassword: pwd });
+    if (result.data.success) {
+      allEvents = result.data.events;
+      allSubmissions = result.data.submissions;
+      currentAdminPassword = pwd;
+      sessionStorage.setItem(ADMIN_SESSION_KEY, pwd);
+
+      adminLoginSection.style.display = 'none';
+      adminDashboard.style.display = 'block';
+
+      renderEventSelect();
+      renderForSelectedEvent();
+    }
+    return true;
+  } catch (err) {
+    console.error('admin login error:', err);
+    if (isAuto) {
+      // 保存されていたパスワードが無効になっていた場合は、記憶を消してログイン画面に戻す
+      sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    } else {
+      adminLoginMsg.textContent = 'パスワードが正しくないか、通信に失敗しました';
+    }
+    return false;
+  } finally {
+    if (!isAuto) {
+      adminLoginBtn.disabled = false;
+      adminLoginBtn.textContent = 'ログイン';
+    }
+  }
+}
+
+// ログアウト
+adminLogoutBtn.addEventListener('click', () => {
+  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  location.reload();
+});
+
+// ページを開いたときに、保存済みパスワードがあれば自動ログインを試みる
+(async function tryAutoLogin() {
+  const saved = sessionStorage.getItem(ADMIN_SESSION_KEY);
+  if (saved) {
+    await loginWithPassword(saved, { isAuto: true });
+  }
+})();
+
 // --- タブ切替 ---
 adminTabBtnGoods.addEventListener('click', () => {
   adminTabBtnGoods.classList.add('admin-tab-btn-active');
@@ -238,31 +296,7 @@ adminLoginBtn.addEventListener('click', async () => {
     adminLoginMsg.textContent = 'パスワードを入力してください';
     return;
   }
-
-  adminLoginBtn.disabled = true;
-  adminLoginBtn.textContent = '確認中...';
-  adminLoginMsg.textContent = '';
-
-  try {
-    const result = await adminGetSubmissionsFunc({ adminPassword: pwd });
-    if (result.data.success) {
-      allEvents = result.data.events;
-      allSubmissions = result.data.submissions;
-      currentAdminPassword = pwd;
-
-      adminLoginSection.style.display = 'none';
-      adminDashboard.style.display = 'block';
-
-      renderEventSelect();
-      renderForSelectedEvent();
-    }
-  } catch (err) {
-    console.error('admin login error:', err);
-    adminLoginMsg.textContent = 'パスワードが正しくないか、通信に失敗しました';
-  } finally {
-    adminLoginBtn.disabled = false;
-    adminLoginBtn.textContent = 'ログイン';
-  }
+  await loginWithPassword(pwd);
 });
 
 // Enterキーでもログインできるように

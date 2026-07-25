@@ -17,6 +17,7 @@ const adminGetSubmissionsFunc = httpsCallable(functions, 'adminGetSubmissions');
 const adminSetShippingUrlFunc = httpsCallable(functions, 'adminSetShippingUrl');
 const adminGetRequestsFunc = httpsCallable(functions, 'adminGetRequests');
 const adminMarkRequestDoneFunc = httpsCallable(functions, 'adminMarkRequestDone');
+const adminGetUsersListFunc = httpsCallable(functions, 'adminGetUsersList');
 
 // --- DOM要素 ---
 const adminLoginSection = document.getElementById('admin-login-section');
@@ -37,11 +38,20 @@ const adminRequestPendingOnly = document.getElementById('admin-request-pending-o
 const adminRequestSummary = document.getElementById('admin-request-summary');
 const adminRequestsList = document.getElementById('admin-requests-list');
 
+// ユーザー一覧用のDOM要素
+const adminTabBtnUsers = document.getElementById('admin-tab-btn-users');
+const adminPanelUsers = document.getElementById('admin-panel-users');
+const adminUserSort = document.getElementById('admin-user-sort');
+const adminUsersSummary = document.getElementById('admin-users-summary');
+const adminUsersList = document.getElementById('admin-users-list');
+
 // --- 取得したデータの保持 ---
 let allEvents = [];
 let allSubmissions = [];
 let allRequests = [];
 let requestsLoaded = false;
+let allUsers = [];
+let usersLoaded = false;
 let currentAdminPassword = '';
 
 function escapeHtml(str) {
@@ -205,18 +215,21 @@ adminLogoutBtn.addEventListener('click', () => {
 })();
 
 // --- タブ切替 ---
+function setActiveTab(tab) {
+  adminTabBtnGoods.classList.toggle('admin-tab-btn-active', tab === 'goods');
+  adminTabBtnRequests.classList.toggle('admin-tab-btn-active', tab === 'requests');
+  adminTabBtnUsers.classList.toggle('admin-tab-btn-active', tab === 'users');
+  adminPanelGoods.style.display = tab === 'goods' ? 'block' : 'none';
+  adminPanelRequests.style.display = tab === 'requests' ? 'block' : 'none';
+  adminPanelUsers.style.display = tab === 'users' ? 'block' : 'none';
+}
+
 adminTabBtnGoods.addEventListener('click', () => {
-  adminTabBtnGoods.classList.add('admin-tab-btn-active');
-  adminTabBtnRequests.classList.remove('admin-tab-btn-active');
-  adminPanelGoods.style.display = 'block';
-  adminPanelRequests.style.display = 'none';
+  setActiveTab('goods');
 });
 
 adminTabBtnRequests.addEventListener('click', async () => {
-  adminTabBtnRequests.classList.add('admin-tab-btn-active');
-  adminTabBtnGoods.classList.remove('admin-tab-btn-active');
-  adminPanelGoods.style.display = 'none';
-  adminPanelRequests.style.display = 'block';
+  setActiveTab('requests');
 
   if (!requestsLoaded) {
     adminRequestsList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込み中...</div>`;
@@ -234,6 +247,58 @@ adminTabBtnRequests.addEventListener('click', async () => {
   }
   renderRequestsList();
 });
+
+adminTabBtnUsers.addEventListener('click', async () => {
+  setActiveTab('users');
+
+  if (!usersLoaded) {
+    adminUsersList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込み中...</div>`;
+    try {
+      const result = await adminGetUsersListFunc({ adminPassword: currentAdminPassword });
+      if (result.data.success) {
+        allUsers = result.data.users;
+        usersLoaded = true;
+      }
+    } catch (err) {
+      console.error('adminGetUsersList error:', err);
+      adminUsersList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込みに失敗しました</div>`;
+      return;
+    }
+  }
+  renderUsersList();
+});
+
+// ユーザー一覧の並び替え・描画
+function formatDateOrUnknown(millis) {
+  return millis ? formatDate(millis) : '登録日不明';
+}
+
+function renderUsersList() {
+  const sortKey = adminUserSort.value;
+  const list = [...allUsers];
+
+  if (sortKey === 'nickname-asc') {
+    list.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ja'));
+  } else if (sortKey === 'nickname-desc') {
+    list.sort((a, b) => b.nickname.localeCompare(a.nickname, 'ja'));
+  } else if (sortKey === 'createdAt-asc') {
+    // 登録日不明のユーザーは常に一番下にまとめる
+    list.sort((a, b) => (a.createdAt ?? Infinity) - (b.createdAt ?? Infinity));
+  } else {
+    list.sort((a, b) => (b.createdAt ?? -Infinity) - (a.createdAt ?? -Infinity));
+  }
+
+  adminUsersSummary.textContent = `登録ユーザー数: ${list.length}人`;
+
+  adminUsersList.innerHTML = list.map(u => `
+    <div class="admin-user-row">
+      <span class="admin-user-nickname">${escapeHtml(u.nickname)}</span>
+      <span class="admin-user-created ${u.createdAt ? '' : 'unknown'}">${escapeHtml(formatDateOrUnknown(u.createdAt))}</span>
+    </div>
+  `).join('');
+}
+
+adminUserSort.addEventListener('change', renderUsersList);
 
 // 曲リクエスト一覧・集計を描画
 function renderRequestsList() {

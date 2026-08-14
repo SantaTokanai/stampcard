@@ -13,34 +13,41 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const functions = getFunctions(app);
+
 const adminGetSubmissionsFunc = httpsCallable(functions, 'adminGetSubmissions');
 const adminSetShippingUrlFunc = httpsCallable(functions, 'adminSetShippingUrl');
 const adminGetRequestsFunc = httpsCallable(functions, 'adminGetRequests');
 const adminMarkRequestDoneFunc = httpsCallable(functions, 'adminMarkRequestDone');
 const adminGetUsersListFunc = httpsCallable(functions, 'adminGetUsersList');
+const adminGetUserDetailFunc = httpsCallable(functions, 'adminGetUserDetail');
 
-// --- DOM要素 ---
+// --- DOM要素：ログイン・共通 ---
 const adminLoginSection = document.getElementById('admin-login-section');
 const adminPasswordInput = document.getElementById('admin-password');
 const adminLoginBtn = document.getElementById('admin-login-btn');
 const adminLoginMsg = document.getElementById('admin-login-msg');
 const adminDashboard = document.getElementById('admin-dashboard');
+const adminLogoutBtn = document.getElementById('admin-logout-btn');
+
+// --- DOM要素：タブ ---
+const adminTabBtnGoods = document.getElementById('admin-tab-btn-goods');
+const adminTabBtnRequests = document.getElementById('admin-tab-btn-requests');
+const adminTabBtnUsers = document.getElementById('admin-tab-btn-users');
+const adminPanelGoods = document.getElementById('admin-panel-goods');
+const adminPanelRequests = document.getElementById('admin-panel-requests');
+const adminPanelUsers = document.getElementById('admin-panel-users');
+
+// --- DOM要素：グッズ交換 ---
 const adminEventSelect = document.getElementById('admin-event-select');
 const adminSummary = document.getElementById('admin-summary');
 const adminSubmissionsList = document.getElementById('admin-submissions-list');
 
-// タブ・曲リクエスト用のDOM要素
-const adminTabBtnGoods = document.getElementById('admin-tab-btn-goods');
-const adminTabBtnRequests = document.getElementById('admin-tab-btn-requests');
-const adminPanelGoods = document.getElementById('admin-panel-goods');
-const adminPanelRequests = document.getElementById('admin-panel-requests');
+// --- DOM要素：曲リクエスト ---
 const adminRequestPendingOnly = document.getElementById('admin-request-pending-only');
 const adminRequestSummary = document.getElementById('admin-request-summary');
 const adminRequestsList = document.getElementById('admin-requests-list');
 
-// ユーザー一覧用のDOM要素
-const adminTabBtnUsers = document.getElementById('admin-tab-btn-users');
-const adminPanelUsers = document.getElementById('admin-panel-users');
+// --- DOM要素：ユーザー一覧 ---
 const adminUserSort = document.getElementById('admin-user-sort');
 const adminUsersSummary = document.getElementById('admin-users-summary');
 const adminUsersList = document.getElementById('admin-users-list');
@@ -52,6 +59,7 @@ let allRequests = [];
 let requestsLoaded = false;
 let allUsers = [];
 let usersLoaded = false;
+let userDetailCache = {}; // nickname -> trueFields配列 のキャッシュ（再タップ時に再通信しない）
 let currentAdminPassword = '';
 
 function escapeHtml(str) {
@@ -76,7 +84,10 @@ const statusLabel = {
   closed: '終了'
 };
 
-// 交換会プルダウンを作る
+/* ==========================================================
+   グッズ交換タブ
+   ========================================================== */
+
 function renderEventSelect() {
   adminEventSelect.innerHTML = allEvents.map(ev => {
     const label = `${ev.title}（${statusLabel[ev.status] || ev.status}）`;
@@ -84,7 +95,6 @@ function renderEventSelect() {
   }).join('');
 }
 
-// 選択中の交換会に対する申し込み一覧・集計を描画
 function renderForSelectedEvent() {
   const eventId = adminEventSelect.value;
   const list = allSubmissions.filter(s => s.eventId === eventId);
@@ -117,7 +127,8 @@ function renderForSelectedEvent() {
   }).join('');
 }
 
-// 配送用URLの保存（一覧はイベント委譲で1つのリスナーだけ設置）
+adminEventSelect.addEventListener('change', renderForSelectedEvent);
+
 adminSubmissionsList.addEventListener('click', async (e) => {
   if (!e.target.classList.contains('admin-shipping-save-btn')) return;
 
@@ -140,7 +151,6 @@ adminSubmissionsList.addEventListener('click', async (e) => {
     statusEl.textContent = '✅ 保存しました';
     statusEl.style.color = '#2e7d32';
 
-    // メモリ上のデータも更新（交換会を切り替えても保存内容が保たれるように）
     const target = allSubmissions.find(s => s.id === submissionId);
     if (target) target.shippingUrl = url;
 
@@ -154,153 +164,10 @@ adminSubmissionsList.addEventListener('click', async (e) => {
   }
 });
 
-adminEventSelect.addEventListener('change', renderForSelectedEvent);
+/* ==========================================================
+   曲リクエストタブ
+   ========================================================== */
 
-// --- ログイン状態の一時保存（タブを閉じるまで有効） ---
-const ADMIN_SESSION_KEY = 'admin_password';
-const adminLogoutBtn = document.getElementById('admin-logout-btn');
-
-// 実際のログイン処理をまとめた関数（ボタン押下時・自動ログイン時の両方から呼ぶ）
-async function loginWithPassword(pwd, { isAuto = false } = {}) {
-  if (!isAuto) {
-    adminLoginBtn.disabled = true;
-    adminLoginBtn.textContent = '確認中...';
-    adminLoginMsg.textContent = '';
-  }
-
-  try {
-    const result = await adminGetSubmissionsFunc({ adminPassword: pwd });
-    if (result.data.success) {
-      allEvents = result.data.events;
-      allSubmissions = result.data.submissions;
-      currentAdminPassword = pwd;
-      sessionStorage.setItem(ADMIN_SESSION_KEY, pwd);
-
-      adminLoginSection.style.display = 'none';
-      adminDashboard.style.display = 'block';
-
-      renderEventSelect();
-      renderForSelectedEvent();
-    }
-    return true;
-  } catch (err) {
-    console.error('admin login error:', err);
-    if (isAuto) {
-      // 保存されていたパスワードが無効になっていた場合は、記憶を消してログイン画面に戻す
-      sessionStorage.removeItem(ADMIN_SESSION_KEY);
-    } else {
-      adminLoginMsg.textContent = 'パスワードが正しくないか、通信に失敗しました';
-    }
-    return false;
-  } finally {
-    if (!isAuto) {
-      adminLoginBtn.disabled = false;
-      adminLoginBtn.textContent = 'ログイン';
-    }
-  }
-}
-
-// ログアウト
-adminLogoutBtn.addEventListener('click', () => {
-  sessionStorage.removeItem(ADMIN_SESSION_KEY);
-  location.reload();
-});
-
-// ページを開いたときに、保存済みパスワードがあれば自動ログインを試みる
-(async function tryAutoLogin() {
-  const saved = sessionStorage.getItem(ADMIN_SESSION_KEY);
-  if (saved) {
-    await loginWithPassword(saved, { isAuto: true });
-  }
-})();
-
-// --- タブ切替 ---
-function setActiveTab(tab) {
-  adminTabBtnGoods.classList.toggle('admin-tab-btn-active', tab === 'goods');
-  adminTabBtnRequests.classList.toggle('admin-tab-btn-active', tab === 'requests');
-  adminTabBtnUsers.classList.toggle('admin-tab-btn-active', tab === 'users');
-  adminPanelGoods.style.display = tab === 'goods' ? 'block' : 'none';
-  adminPanelRequests.style.display = tab === 'requests' ? 'block' : 'none';
-  adminPanelUsers.style.display = tab === 'users' ? 'block' : 'none';
-}
-
-adminTabBtnGoods.addEventListener('click', () => {
-  setActiveTab('goods');
-});
-
-adminTabBtnRequests.addEventListener('click', async () => {
-  setActiveTab('requests');
-
-  if (!requestsLoaded) {
-    adminRequestsList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込み中...</div>`;
-    try {
-      const result = await adminGetRequestsFunc({ adminPassword: currentAdminPassword });
-      if (result.data.success) {
-        allRequests = result.data.requests;
-        requestsLoaded = true;
-      }
-    } catch (err) {
-      console.error('adminGetRequests error:', err);
-      adminRequestsList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込みに失敗しました</div>`;
-      return;
-    }
-  }
-  renderRequestsList();
-});
-
-adminTabBtnUsers.addEventListener('click', async () => {
-  setActiveTab('users');
-
-  if (!usersLoaded) {
-    adminUsersList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込み中...</div>`;
-    try {
-      const result = await adminGetUsersListFunc({ adminPassword: currentAdminPassword });
-      if (result.data.success) {
-        allUsers = result.data.users;
-        usersLoaded = true;
-      }
-    } catch (err) {
-      console.error('adminGetUsersList error:', err);
-      adminUsersList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込みに失敗しました</div>`;
-      return;
-    }
-  }
-  renderUsersList();
-});
-
-// ユーザー一覧の並び替え・描画
-function formatDateOrUnknown(millis) {
-  return millis ? formatDate(millis) : '登録日不明';
-}
-
-function renderUsersList() {
-  const sortKey = adminUserSort.value;
-  const list = [...allUsers];
-
-  if (sortKey === 'nickname-asc') {
-    list.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ja'));
-  } else if (sortKey === 'nickname-desc') {
-    list.sort((a, b) => b.nickname.localeCompare(a.nickname, 'ja'));
-  } else if (sortKey === 'createdAt-asc') {
-    // 登録日不明のユーザーは常に一番下にまとめる
-    list.sort((a, b) => (a.createdAt ?? Infinity) - (b.createdAt ?? Infinity));
-  } else {
-    list.sort((a, b) => (b.createdAt ?? -Infinity) - (a.createdAt ?? -Infinity));
-  }
-
-  adminUsersSummary.textContent = `登録ユーザー数: ${list.length}人`;
-
-  adminUsersList.innerHTML = list.map(u => `
-    <div class="admin-user-row">
-      <span class="admin-user-nickname">${escapeHtml(u.nickname)}</span>
-      <span class="admin-user-created ${u.createdAt ? '' : 'unknown'}">${escapeHtml(formatDateOrUnknown(u.createdAt))}</span>
-    </div>
-  `).join('');
-}
-
-adminUserSort.addEventListener('change', renderUsersList);
-
-// 曲リクエスト一覧・集計を描画
 function renderRequestsList() {
   const pendingOnly = adminRequestPendingOnly.checked;
   const list = pendingOnly ? allRequests.filter(r => !r.approved) : allRequests;
@@ -332,7 +199,6 @@ function renderRequestsList() {
 
 adminRequestPendingOnly.addEventListener('change', renderRequestsList);
 
-// 「済みにする」ボタン（イベント委譲）
 adminRequestsList.addEventListener('click', async (e) => {
   if (!e.target.classList.contains('admin-request-done-btn')) return;
 
@@ -354,7 +220,211 @@ adminRequestsList.addEventListener('click', async (e) => {
   }
 });
 
-// ログイン処理
+/* ==========================================================
+   ユーザー一覧タブ
+   ========================================================== */
+
+function sortUsers(users, sortKey) {
+  const arr = [...users];
+  switch (sortKey) {
+    case 'nickname-asc':
+      arr.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ja'));
+      break;
+    case 'nickname-desc':
+      arr.sort((a, b) => b.nickname.localeCompare(a.nickname, 'ja'));
+      break;
+    case 'createdAt-asc':
+      // 登録日不明のユーザーは、どちらの並びでも常に最後にまとめる
+      arr.sort((a, b) => (a.createdAt ?? Infinity) - (b.createdAt ?? Infinity));
+      break;
+    case 'createdAt-desc':
+    default:
+      arr.sort((a, b) => {
+        if (a.createdAt == null) return 1;
+        if (b.createdAt == null) return -1;
+        return b.createdAt - a.createdAt;
+      });
+      break;
+  }
+  return arr;
+}
+
+function renderUsersList() {
+  const sortKey = adminUserSort.value;
+  const list = sortUsers(allUsers, sortKey);
+
+  adminUsersSummary.textContent = `登録ユーザー数: ${list.length}人`;
+
+  if (list.length === 0) {
+    adminUsersList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">ユーザーがいません</div>`;
+    return;
+  }
+
+  adminUsersList.innerHTML = list.map(u => {
+    const createdLabel = u.createdAt ? formatDate(u.createdAt) : '登録日不明';
+    const createdClass = u.createdAt ? '' : 'unknown';
+    return `
+      <div class="admin-user-row" data-nickname="${escapeHtml(u.nickname)}">
+        <div class="admin-user-row-header">
+          <span class="admin-user-nickname">${escapeHtml(u.nickname)}</span>
+          <span class="admin-user-created ${createdClass}">${createdLabel}</span>
+          <span class="admin-user-toggle-icon">▼</span>
+        </div>
+        <div class="admin-user-detail"></div>
+      </div>
+    `;
+  }).join('');
+}
+
+adminUserSort.addEventListener('change', renderUsersList);
+
+// ユーザー行タップで詳細（trueになっているフィールド）を開閉する
+adminUsersList.addEventListener('click', async (e) => {
+  // 配送URL欄などクリック可能な要素が将来増えても誤爆しないよう、行全体のクリックのみ拾う
+  const row = e.target.closest('.admin-user-row');
+  if (!row) return;
+
+  const nickname = row.dataset.nickname;
+  const detailEl = row.querySelector('.admin-user-detail');
+  const isOpen = row.classList.contains('is-open');
+
+  if (isOpen) {
+    row.classList.remove('is-open');
+    return;
+  }
+
+  row.classList.add('is-open');
+
+  if (userDetailCache[nickname]) {
+    renderUserDetail(detailEl, userDetailCache[nickname]);
+    return;
+  }
+
+  detailEl.innerHTML = `<div class="admin-user-detail-loading">読み込み中...</div>`;
+
+  try {
+    const result = await adminGetUserDetailFunc({ adminPassword: currentAdminPassword, nickname });
+    if (result.data.success) {
+      userDetailCache[nickname] = result.data.trueFields;
+      renderUserDetail(detailEl, result.data.trueFields);
+    }
+  } catch (err) {
+    console.error('adminGetUserDetail error:', err);
+    detailEl.innerHTML = `<div class="admin-user-detail-loading">取得に失敗しました</div>`;
+  }
+});
+
+function renderUserDetail(detailEl, trueFields) {
+  if (!trueFields || trueFields.length === 0) {
+    detailEl.innerHTML = `<div class="admin-field-tag-empty">trueのフィールドはありません</div>`;
+    return;
+  }
+  detailEl.innerHTML = `
+    <div class="admin-field-tag-list">
+      ${trueFields.map(f => `<span class="admin-field-tag">${escapeHtml(f)}</span>`).join('')}
+    </div>
+  `;
+}
+
+/* ==========================================================
+   タブ切替
+   ========================================================== */
+
+function switchTab(target) {
+  adminTabBtnGoods.classList.toggle('admin-tab-btn-active', target === 'goods');
+  adminTabBtnRequests.classList.toggle('admin-tab-btn-active', target === 'requests');
+  adminTabBtnUsers.classList.toggle('admin-tab-btn-active', target === 'users');
+
+  adminPanelGoods.style.display = target === 'goods' ? 'block' : 'none';
+  adminPanelRequests.style.display = target === 'requests' ? 'block' : 'none';
+  adminPanelUsers.style.display = target === 'users' ? 'block' : 'none';
+}
+
+adminTabBtnGoods.addEventListener('click', () => switchTab('goods'));
+
+adminTabBtnRequests.addEventListener('click', async () => {
+  switchTab('requests');
+  if (!requestsLoaded) {
+    adminRequestsList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込み中...</div>`;
+    try {
+      const result = await adminGetRequestsFunc({ adminPassword: currentAdminPassword });
+      if (result.data.success) {
+        allRequests = result.data.requests;
+        requestsLoaded = true;
+      }
+    } catch (err) {
+      console.error('adminGetRequests error:', err);
+      adminRequestsList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込みに失敗しました</div>`;
+      return;
+    }
+  }
+  renderRequestsList();
+});
+
+adminTabBtnUsers.addEventListener('click', async () => {
+  switchTab('users');
+  if (!usersLoaded) {
+    adminUsersList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込み中...</div>`;
+    try {
+      const result = await adminGetUsersListFunc({ adminPassword: currentAdminPassword });
+      if (result.data.success) {
+        allUsers = result.data.users;
+        usersLoaded = true;
+      }
+    } catch (err) {
+      console.error('adminGetUsersList error:', err);
+      adminUsersList.innerHTML = `<div class="note-text" style="text-align:center; padding:16px;">読み込みに失敗しました</div>`;
+      return;
+    }
+  }
+  renderUsersList();
+});
+
+/* ==========================================================
+   ログイン・ログアウト・自動ログイン
+   ========================================================== */
+
+const ADMIN_SESSION_KEY = 'admin_password';
+
+async function loginWithPassword(pwd, { isAuto = false } = {}) {
+  if (!isAuto) {
+    adminLoginBtn.disabled = true;
+    adminLoginBtn.textContent = '確認中...';
+    adminLoginMsg.textContent = '';
+  }
+
+  try {
+    const result = await adminGetSubmissionsFunc({ adminPassword: pwd });
+    if (result.data.success) {
+      allEvents = result.data.events;
+      allSubmissions = result.data.submissions;
+      currentAdminPassword = pwd;
+      sessionStorage.setItem(ADMIN_SESSION_KEY, pwd);
+
+      adminLoginSection.style.display = 'none';
+      adminDashboard.style.display = 'block';
+
+      renderEventSelect();
+      renderForSelectedEvent();
+      switchTab('goods');
+    }
+    return true;
+  } catch (err) {
+    console.error('admin login error:', err);
+    if (isAuto) {
+      sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    } else {
+      adminLoginMsg.textContent = 'パスワードが正しくないか、通信に失敗しました';
+    }
+    return false;
+  } finally {
+    if (!isAuto) {
+      adminLoginBtn.disabled = false;
+      adminLoginBtn.textContent = 'ログイン';
+    }
+  }
+}
+
 adminLoginBtn.addEventListener('click', async () => {
   const pwd = adminPasswordInput.value;
   if (!pwd) {
@@ -364,7 +434,18 @@ adminLoginBtn.addEventListener('click', async () => {
   await loginWithPassword(pwd);
 });
 
-// Enterキーでもログインできるように
 adminPasswordInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') adminLoginBtn.click();
 });
+
+adminLogoutBtn.addEventListener('click', () => {
+  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  location.reload();
+});
+
+(async function tryAutoLogin() {
+  const saved = sessionStorage.getItem(ADMIN_SESSION_KEY);
+  if (saved) {
+    await loginWithPassword(saved, { isAuto: true });
+  }
+})();

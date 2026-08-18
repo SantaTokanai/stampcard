@@ -87,6 +87,17 @@
 
   </div>
 
+  <!-- 確認ダイアログ（ブラウザ標準のconfirm()を使わないための独自表示。style.cssのスタイルを流用） -->
+  <div id="confirm-modal" class="confirm-modal" style="display:none;">
+    <div class="confirm-modal-box">
+      <div id="confirm-modal-message" class="confirm-modal-message"></div>
+      <div class="confirm-modal-buttons">
+        <button id="confirm-modal-cancel" class="confirm-modal-btn-cancel">キャンセル</button>
+        <button id="confirm-modal-ok" class="confirm-modal-btn-ok">実行する</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="admin.js"></script>
 </body>
 </html>

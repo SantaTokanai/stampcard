@@ -365,12 +365,8 @@ adminUsersList.addEventListener('click', async (e) => {
 });
 
 function renderUserDetail(detailEl, nickname, trueFields) {
-  const tagsHtml = (!trueFields || trueFields.length === 0)
-    ? `<div class="admin-field-tag-empty">trueのフィールドはありません</div>`
-    : `<div class="admin-field-tag-list">${trueFields.map(f => `<span class="admin-field-tag">${escapeHtml(f)}</span>`).join('')}</div>`;
-
   detailEl.innerHTML = `
-    ${tagsHtml}
+    <div class="admin-field-tag-container"></div>
     <div class="admin-field-add-row">
       <input type="text" class="admin-field-add-input" placeholder="フィールド名を入力（例: souki_07）">
       <button type="button" class="admin-field-add-btn">true にする</button>
@@ -378,6 +374,14 @@ function renderUserDetail(detailEl, nickname, trueFields) {
     <div class="admin-field-add-warning"></div>
     <div class="admin-field-add-status"></div>
   `;
+  renderTagContainer(detailEl.querySelector('.admin-field-tag-container'), trueFields);
+}
+
+// タグ一覧の部分だけを更新する（入力欄・メッセージ表示エリアには触れない）
+function renderTagContainer(containerEl, trueFields) {
+  containerEl.innerHTML = (!trueFields || trueFields.length === 0)
+    ? `<div class="admin-field-tag-empty">trueのフィールドはありません</div>`
+    : `<div class="admin-field-tag-list">${trueFields.map(f => `<span class="admin-field-tag">${escapeHtml(f)}</span>`).join('')}</div>`;
 }
 
 // フィールド名の入力中に、正規名一覧と照合して警告を出す（ブロックはしない）
@@ -441,14 +445,21 @@ adminUsersList.addEventListener('click', async (e) => {
     input.value = '';
     row.querySelector('.admin-field-add-warning').textContent = '';
 
-    // キャッシュとタグ表示を更新
+    // キャッシュを更新し、タグ一覧の部分だけ更新する（メッセージ表示エリアには触れない）
     if (!userDetailCache[nickname]) userDetailCache[nickname] = [];
     if (!userDetailCache[nickname].includes(fieldName)) {
       userDetailCache[nickname].push(fieldName);
       userDetailCache[nickname].sort((a, b) => a.localeCompare(b));
     }
-    const detailEl = row.querySelector('.admin-user-detail');
-    renderUserDetail(detailEl, nickname, userDetailCache[nickname]);
+    const tagContainer = row.querySelector('.admin-field-tag-container');
+    renderTagContainer(tagContainer, userDetailCache[nickname]);
+
+    // 3秒後に成功メッセージを自動で消す
+    setTimeout(() => {
+      if (statusEl.innerHTML.includes('admin-field-success-banner')) {
+        statusEl.innerHTML = '';
+      }
+    }, 3000);
 
   } catch (err) {
     console.error('adminSetUserField error:', err);

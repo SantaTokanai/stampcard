@@ -20,6 +20,8 @@ const adminGetRequestsFunc = httpsCallable(functions, 'adminGetRequests');
 const adminMarkRequestDoneFunc = httpsCallable(functions, 'adminMarkRequestDone');
 const adminGetUsersListFunc = httpsCallable(functions, 'adminGetUsersList');
 const adminGetUserDetailFunc = httpsCallable(functions, 'adminGetUserDetail');
+const adminGetKnownFieldNamesFunc = httpsCallable(functions, 'adminGetKnownFieldNames');
+const adminSetUserFieldFunc = httpsCallable(functions, 'adminSetUserField');
 
 // --- DOM要素：ログイン・共通 ---
 const adminLoginSection = document.getElementById('admin-login-section');
@@ -60,6 +62,26 @@ let requestsLoaded = false;
 let allUsers = [];
 let usersLoaded = false;
 let userDetailCache = {}; // nickname -> trueFields配列 のキャッシュ（再タップ時に再通信しない）
+let knownFieldNames = null; // keywordsの正規フィールド名一覧（初回だけ取得してキャッシュ）
+
+// サーバー側と同じ禁止リスト（誤操作時に即座に気づけるよう、送信前にも確認する）
+const PROTECTED_USER_FIELDS_CLIENT = [
+  'password', 'secretQuestion', 'secretAnswerHash',
+  'membershipPoint', 'stampPoint', 'colorsingPoint', 'totalPoint', 'spentPoint',
+  'images', 'createdAt'
+];
+
+async function ensureKnownFieldNames() {
+  if (knownFieldNames) return knownFieldNames;
+  try {
+    const result = await adminGetKnownFieldNamesFunc({ adminPassword: currentAdminPassword });
+    knownFieldNames = result.data.success ? result.data.fieldNames : [];
+  } catch (err) {
+    console.error('adminGetKnownFieldNames error:', err);
+    knownFieldNames = [];
+  }
+  return knownFieldNames;
+}
 let currentAdminPassword = '';
 
 function escapeHtml(str) {
@@ -280,7 +302,9 @@ adminUserSort.addEventListener('change', renderUsersList);
 
 // ユーザー行タップで詳細（trueになっているフィールド）を開閉する
 adminUsersList.addEventListener('click', async (e) => {
-  // 配送URL欄などクリック可能な要素が将来増えても誤爆しないよう、行全体のクリックのみ拾う
+  // フィールド追加欄（入力・ボタン）のクリックは、行の開閉とは別に処理するのでここでは無視する
+  if (e.target.closest('.admin-field-add-row')) return;
+
   const row = e.target.closest('.admin-user-row');
   if (!row) return;
 
@@ -296,7 +320,7 @@ adminUsersList.addEventListener('click', async (e) => {
   row.classList.add('is-open');
 
   if (userDetailCache[nickname]) {
-    renderUserDetail(detailEl, userDetailCache[nickname]);
+    renderUserDetail(detailEl, nickname, userDetailCache[nickname]);
     return;
   }
 
@@ -306,7 +330,7 @@ adminUsersList.addEventListener('click', async (e) => {
     const result = await adminGetUserDetailFunc({ adminPassword: currentAdminPassword, nickname });
     if (result.data.success) {
       userDetailCache[nickname] = result.data.trueFields;
-      renderUserDetail(detailEl, result.data.trueFields);
+      renderUserDetail(detailEl, nickname, result.data.trueFields);
     }
   } catch (err) {
     console.error('adminGetUserDetail error:', err);
@@ -314,17 +338,105 @@ adminUsersList.addEventListener('click', async (e) => {
   }
 });
 
-function renderUserDetail(detailEl, trueFields) {
-  if (!trueFields || trueFields.length === 0) {
-    detailEl.innerHTML = `<div class="admin-field-tag-empty">trueのフィールドはありません</div>`;
-    return;
-  }
+function renderUserDetail(detailEl, nickname, trueFields) {
+  const tagsHtml = (!trueFields || trueFields.length === 0)
+    ? `<div class="admin-field-tag-empty">trueのフィールドはありません</div>`
+    : `<div class="admin-field-tag-list">${trueFields.map(f => `<span class="admin-field-tag">${escapeHtml(f)}</span>`).join('')}</div>`;
+
   detailEl.innerHTML = `
-    <div class="admin-field-tag-list">
-      ${trueFields.map(f => `<span class="admin-field-tag">${escapeHtml(f)}</span>`).join('')}
+    ${tagsHtml}
+    <div class="admin-field-add-row">
+      <input type="text" class="admin-field-add-input" placeholder="フィールド名を入力（例: souki_07）">
+      <button type="button" class="admin-field-add-btn">true にする</button>
     </div>
+    <div class="admin-field-add-warning"></div>
+    <div class="admin-field-add-status"></div>
   `;
 }
+
+// フィールド名の入力中に、正規名一覧と照合して警告を出す（ブロックはしない）
+adminUsersList.addEventListener('input', async (e) => {
+  if (!e.target.classList.contains('admin-field-add-input')) return;
+
+  const row = e.target.closest('.admin-user-row');
+  const warningEl = row.querySelector('.admin-field-add-warning');
+  const value = e.target.value.trim();
+
+  if (!value) {
+    warningEl.textContent = '';
+    return;
+  }
+
+  const known = await ensureKnownFieldNames();
+  if (known.length > 0 && !known.includes(value)) {
+    warningEl.textContent = '⚠️ keywordsに登録されていない名前です（新規に追加する場合は問題ありません）';
+  } else {
+    warningEl.textContent = '';
+  }
+});
+
+// 「true にする」ボタン：確認ダイアログを経て保存する
+adminUsersList.addEventListener('click', async (e) => {
+  if (!e.target.classList.contains('admin-field-add-btn')) return;
+
+  const row = e.target.closest('.admin-user-row');
+  const nickname = row.dataset.nickname;
+  const input = row.querySelector('.admin-field-add-input');
+  const statusEl = row.querySelector('.admin-field-add-status');
+  const fieldName = input.value.trim();
+
+  if (!fieldName) {
+    statusEl.textContent = 'フィールド名を入力してください';
+    statusEl.style.color = '#d32f2f';
+    return;
+  }
+  if (!/^[a-zA-Z0-9_]+$/.test(fieldName)) {
+    statusEl.textContent = '半角英数字とアンダースコアのみ使用できます';
+    statusEl.style.color = '#d32f2f';
+    return;
+  }
+  if (PROTECTED_USER_FIELDS_CLIENT.includes(fieldName)) {
+    statusEl.textContent = `"${fieldName}" は重要な項目のため変更できません`;
+    statusEl.style.color = '#d32f2f';
+    return;
+  }
+
+  const confirmed = window.confirm(`「${nickname}」の「${fieldName}」を true にします。\nよろしいですか？`);
+  if (!confirmed) return;
+
+  e.target.disabled = true;
+  e.target.textContent = '処理中...';
+  statusEl.textContent = '';
+
+  try {
+    await adminSetUserFieldFunc({ adminPassword: currentAdminPassword, nickname, fieldName });
+
+    statusEl.textContent = `✅ "${fieldName}" を true にしました`;
+    statusEl.style.color = '#2e7d32';
+    input.value = '';
+    row.querySelector('.admin-field-add-warning').textContent = '';
+
+    // キャッシュとタグ表示を更新
+    if (!userDetailCache[nickname]) userDetailCache[nickname] = [];
+    if (!userDetailCache[nickname].includes(fieldName)) {
+      userDetailCache[nickname].push(fieldName);
+      userDetailCache[nickname].sort((a, b) => a.localeCompare(b));
+    }
+    const detailEl = row.querySelector('.admin-user-detail');
+    renderUserDetail(detailEl, nickname, userDetailCache[nickname]);
+
+  } catch (err) {
+    console.error('adminSetUserField error:', err);
+    statusEl.textContent = '❌ ' + (err.message || '保存に失敗しました');
+    statusEl.style.color = '#d32f2f';
+  } finally {
+    const btn = row.querySelector('.admin-field-add-btn');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'true にする';
+    }
+  }
+});
 
 /* ==========================================================
    タブ切替

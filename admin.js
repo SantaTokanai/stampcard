@@ -31,6 +31,32 @@ const adminLoginMsg = document.getElementById('admin-login-msg');
 const adminDashboard = document.getElementById('admin-dashboard');
 const adminLogoutBtn = document.getElementById('admin-logout-btn');
 
+// 独自の確認ダイアログ用のDOM要素
+const confirmModal = document.getElementById('confirm-modal');
+const confirmModalMessage = document.getElementById('confirm-modal-message');
+const confirmModalOk = document.getElementById('confirm-modal-ok');
+const confirmModalCancel = document.getElementById('confirm-modal-cancel');
+
+// 独自の確認ダイアログを表示し、「実行する」が押されたらtrue、「キャンセル」ならfalseを返す
+function showConfirmModal(message) {
+  return new Promise((resolve) => {
+    confirmModalMessage.textContent = message;
+    confirmModal.style.display = 'flex';
+
+    function cleanup(result) {
+      confirmModal.style.display = 'none';
+      confirmModalOk.removeEventListener('click', onOk);
+      confirmModalCancel.removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+
+    confirmModalOk.addEventListener('click', onOk);
+    confirmModalCancel.addEventListener('click', onCancel);
+  });
+}
+
 // --- DOM要素：タブ ---
 const adminTabBtnGoods = document.getElementById('admin-tab-btn-goods');
 const adminTabBtnRequests = document.getElementById('admin-tab-btn-requests');
@@ -401,7 +427,7 @@ adminUsersList.addEventListener('click', async (e) => {
     return;
   }
 
-  const confirmed = window.confirm(`「${nickname}」の「${fieldName}」を true にします。\nよろしいですか？`);
+  const confirmed = await showConfirmModal(`「${nickname}」の「${fieldName}」を true にします。よろしいですか？`);
   if (!confirmed) return;
 
   e.target.disabled = true;
@@ -411,8 +437,7 @@ adminUsersList.addEventListener('click', async (e) => {
   try {
     await adminSetUserFieldFunc({ adminPassword: currentAdminPassword, nickname, fieldName });
 
-    statusEl.textContent = `✅ "${fieldName}" を true にしました`;
-    statusEl.style.color = '#2e7d32';
+    statusEl.innerHTML = `<div class="admin-field-success-banner">✅ 「${escapeHtml(fieldName)}」を true にしました</div>`;
     input.value = '';
     row.querySelector('.admin-field-add-warning').textContent = '';
 

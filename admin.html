@@ -10,6 +10,7 @@
 <title>管理者ページ</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin-icons.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
@@ -40,6 +41,7 @@
       <button id="admin-tab-btn-goods" class="admin-tab-btn admin-tab-btn-active">🎁 グッズ交換</button>
       <button id="admin-tab-btn-requests" class="admin-tab-btn">🎵 曲リクエスト</button>
       <button id="admin-tab-btn-users" class="admin-tab-btn">👤 ユーザー一覧</button>
+      <button id="admin-tab-btn-icons" class="admin-tab-btn">🖼 アイコン</button>
     </nav>
 
     <!-- グッズ交換タブ -->
@@ -84,6 +86,9 @@
 
       <div id="admin-users-list"></div>
     </div>
+
+    <!-- アイコンタブ（中身は admin-icons.js が作ります） -->
+    <div id="admin-panel-icons" style="display:none;"></div>
 
   </div>
 

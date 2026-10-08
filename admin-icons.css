@@ -1,0 +1,33 @@
+/* 管理者ページ「アイコン」タブ用の追加スタイル（admin.css は変更しません） */
+.ic-subnav { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+.ic-box { margin-bottom: 12px; }
+.ic-title { font-weight: 700; margin-bottom: 8px; }
+.ic-muted { color: #888; font-size: 0.8em; font-weight: 400; }
+.ic-status { margin-top: 8px; font-size: 0.9em; white-space: pre-wrap; word-break: break-all; }
+.ic-btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+/* 画像一覧 */
+.ic-folder { margin-top: 14px; }
+.ic-folder-name { font-weight: 700; margin-bottom: 6px; }
+.ic-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.ic-tile { border: 1px solid #ddd; border-radius: 8px; padding: 6px; text-align: center; background: #fff; }
+.ic-tile img { width: 100%; aspect-ratio: 1 / 1; object-fit: contain; background: #f4f4f4; border-radius: 4px; display: block; }
+.ic-tile-name { font-size: 0.75em; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ic-del-img, .ic-user-remove { margin-top: 4px; font-size: 0.75em; padding: 2px 8px; cursor: pointer; }
+
+/* スタンプ設定一覧 */
+.ic-kw-row { display: flex; align-items: center; gap: 10px; border: 1px solid #ddd; border-radius: 8px; padding: 8px; margin-bottom: 8px; background: #fff; }
+.ic-kw-thumb { width: 48px; height: 48px; object-fit: contain; background: #f4f4f4; border-radius: 4px; flex: none; }
+.ic-kw-info { flex: 1; min-width: 0; }
+.ic-kw-id { font-weight: 700; }
+.ic-kw-info .ic-muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 配置プレビュー（index側のスタンプ描画と同じ計算：中心基準・台紙の横幅に対する比率） */
+.ic-preview { position: relative; width: 100%; max-width: 500px; margin: 10px auto; touch-action: none; cursor: crosshair; user-select: none; -webkit-user-select: none; border: 1px dashed #bbb; background: #fafafa; min-height: 60px; }
+.ic-preview .ic-card-bg { width: 100%; display: block; pointer-events: none; }
+.ic-preview .ic-stamp { position: absolute; transform: translate(-50%, -50%); pointer-events: none; height: auto; }
+.ic-xy { display: flex; gap: 12px; flex-wrap: wrap; }
+.ic-xy input { width: 90px; }
+
+/* 確認ダイアログ内の改行を表示する */
+.confirm-modal-message { white-space: pre-wrap; }

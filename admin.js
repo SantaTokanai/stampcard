@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-functions.js";
+import { initIconsTab } from "./admin-icons.js";
 
 // Firebase 設定（index.htmlと同じプロジェクト）
 const firebaseConfig = {
@@ -61,9 +62,11 @@ function showConfirmModal(message) {
 const adminTabBtnGoods = document.getElementById('admin-tab-btn-goods');
 const adminTabBtnRequests = document.getElementById('admin-tab-btn-requests');
 const adminTabBtnUsers = document.getElementById('admin-tab-btn-users');
+const adminTabBtnIcons = document.getElementById('admin-tab-btn-icons');
 const adminPanelGoods = document.getElementById('admin-panel-goods');
 const adminPanelRequests = document.getElementById('admin-panel-requests');
 const adminPanelUsers = document.getElementById('admin-panel-users');
+const adminPanelIcons = document.getElementById('admin-panel-icons');
 
 // --- DOM要素：グッズ交換 ---
 const adminEventSelect = document.getElementById('admin-event-select');
@@ -109,6 +112,15 @@ async function ensureKnownFieldNames() {
   return knownFieldNames;
 }
 let currentAdminPassword = '';
+
+// 🆕 アイコンタブ（画像アップロード・スタンプ配置・ユーザーへのアイコン付与）
+const iconsTab = initIconsTab({
+  functions,
+  httpsCallable,
+  getPassword: () => currentAdminPassword,
+  escapeHtml,
+  showConfirmModal
+});
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({
@@ -482,13 +494,20 @@ function switchTab(target) {
   adminTabBtnGoods.classList.toggle('admin-tab-btn-active', target === 'goods');
   adminTabBtnRequests.classList.toggle('admin-tab-btn-active', target === 'requests');
   adminTabBtnUsers.classList.toggle('admin-tab-btn-active', target === 'users');
+  adminTabBtnIcons.classList.toggle('admin-tab-btn-active', target === 'icons');
 
   adminPanelGoods.style.display = target === 'goods' ? 'block' : 'none';
   adminPanelRequests.style.display = target === 'requests' ? 'block' : 'none';
   adminPanelUsers.style.display = target === 'users' ? 'block' : 'none';
+  adminPanelIcons.style.display = target === 'icons' ? 'block' : 'none';
 }
 
 adminTabBtnGoods.addEventListener('click', () => switchTab('goods'));
+
+adminTabBtnIcons.addEventListener('click', () => {
+  switchTab('icons');
+  iconsTab.activate();
+});
 
 adminTabBtnRequests.addEventListener('click', async () => {
   switchTab('requests');

@@ -40,3 +40,6 @@
 .ad-help .ad-help-body { padding: 0 14px 12px; line-height: 1.8; font-size: 0.95em; }
 .ad-help .ad-help-body p { margin: 6px 0; }
 .ad-help .ad-help-body ol, .ad-help .ad-help-body ul { margin: 6px 0; padding-left: 1.4em; }
+
+/* iPhoneで入力欄をタップしたときの自動拡大を防ぐ（文字サイズが16px未満だと拡大される） */
+input[type="text"], input[type="password"], input[type="number"], input[type="search"], input:not([type]), select, textarea { font-size: 16px !important; }

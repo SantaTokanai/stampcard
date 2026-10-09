@@ -63,10 +63,13 @@ const adminTabBtnGoods = document.getElementById('admin-tab-btn-goods');
 const adminTabBtnRequests = document.getElementById('admin-tab-btn-requests');
 const adminTabBtnUsers = document.getElementById('admin-tab-btn-users');
 const adminTabBtnIcons = document.getElementById('admin-tab-btn-icons');
+const adminTabBtnHelp = document.getElementById('admin-tab-btn-help');
+const adminTabDesc = document.getElementById('admin-tab-desc');
 const adminPanelGoods = document.getElementById('admin-panel-goods');
 const adminPanelRequests = document.getElementById('admin-panel-requests');
 const adminPanelUsers = document.getElementById('admin-panel-users');
 const adminPanelIcons = document.getElementById('admin-panel-icons');
+const adminPanelHelp = document.getElementById('admin-panel-help');
 
 // --- DOM要素：グッズ交換 ---
 const adminEventSelect = document.getElementById('admin-event-select');
@@ -490,7 +493,20 @@ adminUsersList.addEventListener('click', async (e) => {
    タブ切替
    ========================================================== */
 
+// 各タブの冒頭に表示する「このタブでできること」
+const TAB_DESCRIPTIONS = {
+  goods: 'グッズ交換会の申し込み内容を確認し、ユーザーごとに配送用URLを登録します。',
+  requests: 'ユーザーからの曲リクエストを確認し、歌い終わったら「済み」にします。',
+  users: 'ユーザーの一覧です。名前をタップすると、押したスタンプなどの状況を確認できます。スタンプを手動で押したことにする（true にする）こともできます。',
+  icons: '画像のアップロード、スタンプの位置決め、ユーザーへのアイコンのプレゼントを行います。迷ったら「❓ 使い方」を見てください。',
+  help: ''
+};
+
 function switchTab(target) {
+  adminTabDesc.textContent = TAB_DESCRIPTIONS[target] || '';
+  adminTabDesc.style.display = TAB_DESCRIPTIONS[target] ? 'block' : 'none';
+  adminTabBtnHelp.classList.toggle('admin-tab-btn-active', target === 'help');
+  adminPanelHelp.style.display = target === 'help' ? 'block' : 'none';
   adminTabBtnGoods.classList.toggle('admin-tab-btn-active', target === 'goods');
   adminTabBtnRequests.classList.toggle('admin-tab-btn-active', target === 'requests');
   adminTabBtnUsers.classList.toggle('admin-tab-btn-active', target === 'users');
@@ -503,6 +519,8 @@ function switchTab(target) {
 }
 
 adminTabBtnGoods.addEventListener('click', () => switchTab('goods'));
+
+adminTabBtnHelp.addEventListener('click', () => switchTab('help'));
 
 adminTabBtnIcons.addEventListener('click', () => {
   switchTab('icons');

@@ -40,9 +40,13 @@
     <nav class="admin-tab-nav">
       <button id="admin-tab-btn-goods" class="admin-tab-btn admin-tab-btn-active">🎁 グッズ交換</button>
       <button id="admin-tab-btn-requests" class="admin-tab-btn">🎵 曲リクエスト</button>
-      <button id="admin-tab-btn-users" class="admin-tab-btn">👤 ユーザー一覧</button>
-      <button id="admin-tab-btn-icons" class="admin-tab-btn">🖼 アイコン</button>
+      <button id="admin-tab-btn-users" class="admin-tab-btn">👤 ユーザー</button>
+      <button id="admin-tab-btn-icons" class="admin-tab-btn">🖼 画像・スタンプ</button>
+      <button id="admin-tab-btn-help" class="admin-tab-btn">❓ 使い方</button>
     </nav>
+
+    <!-- 今開いているタブで「できること」の説明（admin.js が書き換えます） -->
+    <div id="admin-tab-desc" class="ic-desc"></div>
 
     <!-- グッズ交換タブ -->
     <div id="admin-panel-goods">
@@ -89,6 +93,119 @@
 
     <!-- アイコンタブ（中身は admin-icons.js が作ります） -->
     <div id="admin-panel-icons" style="display:none;"></div>
+
+    <!-- 使い方タブ -->
+    <div id="admin-panel-help" style="display:none;" class="ad-help">
+      <div class="ic-desc">やりたいことの見出しをタップすると、手順が開きます。</div>
+
+      <details open>
+        <summary>🔰 まず知っておく言葉</summary>
+        <div class="ad-help-body">
+          <p><strong>画像</strong>：アップロードした絵のファイルです。アップしただけでは、サイトのどこにも表示されません。</p>
+          <p><strong>スタンプ</strong>：スタンプカード（台紙）の上に押される絵です。「どの合言葉で、台紙のどこに、どの大きさで出すか」を決めたものを<strong>スタンプ設定</strong>と呼びます。</p>
+          <p><strong>合言葉</strong>：ユーザーが入力するとスタンプが押されるキーワードです。スタンプ設定の「ID」がそのまま合言葉になります。</p>
+          <p><strong>アイコン</strong>：ユーザーのページの「アイコン置き場」に並ぶ、プレゼント用の画像です。スタンプとは別のものです。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>🆕 新しいスタンプ（合言葉）を追加したい</summary>
+        <div class="ad-help-body">
+          <ol>
+            <li>「🖼 画像・スタンプ」タブ →「画像」で、スタンプの画像をアップロード</li>
+            <li>「📍 スタンプ配置」→「＋ 新しいスタンプ設定を作る」</li>
+            <li>「合言葉（ID）」を入力（例：souki_07）</li>
+            <li>「画像」欄に、アップした画像を入力して選ぶ</li>
+            <li>台紙をタップして位置を決め、スライダーで大きさを決める</li>
+            <li>「保存」</li>
+          </ol>
+          <p>→ ユーザーがその合言葉を入力すると、台紙にスタンプが押されます。</p>
+          <p>ユーザーの名前や項目名が、合言葉と違う場合は、「実際に保存する項目名」に入力します（通常は空欄でOK）。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>📍 スタンプの位置や大きさを直したい</summary>
+        <div class="ad-help-body">
+          <ol>
+            <li>「🖼 画像・スタンプ」→「📍 スタンプ配置」</li>
+            <li>一覧から直したいスタンプの「編集」</li>
+            <li>台紙をタップ（またはドラッグ）して位置を変える。大きさはスライダー</li>
+            <li>「保存」</li>
+          </ol>
+          <p>保存すると、ユーザーの画面に反映されます（ユーザーがページを開き直すと変わります）。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>🎁 ユーザーにアイコンをプレゼントしたい</summary>
+        <div class="ad-help-body">
+          <ol>
+            <li>「🖼 画像・スタンプ」→「🖼 画像」で、アイコン画像をアップロード（保存先フォルダは、そのユーザー用のフォルダ名。例：akkii）</li>
+            <li>「🎁 ユーザーのアイコン」を開く</li>
+            <li>ユーザー名を入力（または候補から選ぶ）→「表示する」</li>
+            <li>「アイコンを追加」欄に、アップした画像を入力して選ぶ →「追加する」</li>
+          </ol>
+          <p>→ そのユーザーの「アイコン置き場」に表示されます。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>↩️ プレゼントしたアイコンを外したい</summary>
+        <div class="ad-help-body">
+          <p>「🎁 ユーザーのアイコン」でユーザーを表示し、外したい画像の「外す」を押します。画像そのものは消えません（他のユーザーにも使えます）。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>🗑 間違えてアップした画像を消したい</summary>
+        <div class="ad-help-body">
+          <p>「🖼 画像」の一覧で、その画像の「削除」を押します。<strong>元に戻せません。</strong>ユーザーに贈っている画像は、先に「外す」を行ってください。スタンプ設定で使っている画像を消そうとすると、確認が出ます。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>✋ ユーザーにスタンプを手動で押したことにしたい</summary>
+        <div class="ad-help-body">
+          <ol>
+            <li>「👤 ユーザー」タブで、そのユーザーの名前をタップ</li>
+            <li>下の入力欄に、スタンプの項目名（スタンプ設定の「合言葉（ID）」）を入力</li>
+            <li>「true にする」を押す</li>
+          </ol>
+          <p>項目名がわからないときは、「📍 スタンプ配置」の一覧で確認できます。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>📦 グッズ交換：申し込み内容の確認と配送URLの登録</summary>
+        <div class="ad-help-body">
+          <ol>
+            <li>「🎁 グッズ交換」タブで、交換会を選ぶ</li>
+            <li>申し込み一覧に、ユーザーごとの内容と消費ptが出ます</li>
+            <li>配送URLを貼り付けて「保存」すると、ユーザー側に「配送用URLはこちら」が表示されます</li>
+          </ol>
+        </div>
+      </details>
+
+      <details>
+        <summary>🎵 曲リクエストを「済み」にしたい</summary>
+        <div class="ad-help-body">
+          <p>「🎵 曲リクエスト」タブで、歌い終わった曲の「歌い終わったら済みにする」を押します。済みにすると、そのユーザーは次のリクエストができるようになります。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>⚠️ 注意</summary>
+        <div class="ad-help-body">
+          <ul>
+            <li>画像のファイル名・フォルダ名は、半角英数字と「_」「-」のみ。1枚5MBまで。</li>
+            <li>同じ名前の画像をアップすると、通常は「既にあります」と止まります。入れ替えたいときは「同じ名前の画像があれば上書きする」にチェックします（ユーザー側は、ページを開き直すと変わります）。</li>
+            <li>スタンプ設定を削除しても、ユーザーが「押した」記録は消えません（台紙に出なくなるだけです）。</li>
+            <li>困ったときは、画面の文言をそのまま控えて相談してください。</li>
+          </ul>
+        </div>
+      </details>
+    </div>
 
   </div>
 

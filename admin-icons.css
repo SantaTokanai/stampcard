@@ -31,3 +31,12 @@
 
 /* 確認ダイアログ内の改行を表示する */
 .confirm-modal-message { white-space: pre-wrap; }
+
+/* ---- 使い方・説明表示 ---- */
+.admin-tab-nav { flex-wrap: wrap; }
+.ic-desc { background: #f4f8ff; border: 1px solid #cfe0ff; border-radius: 8px; padding: 8px 12px; margin: 0 0 12px; font-size: 0.9em; line-height: 1.7; color: #333; }
+.ad-help details { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 8px; background: #fff; }
+.ad-help summary { cursor: pointer; padding: 10px 12px; font-weight: 700; }
+.ad-help .ad-help-body { padding: 0 14px 12px; line-height: 1.8; font-size: 0.95em; }
+.ad-help .ad-help-body p { margin: 6px 0; }
+.ad-help .ad-help-body ol, .ad-help .ad-help-body ul { margin: 6px 0; padding-left: 1.4em; }

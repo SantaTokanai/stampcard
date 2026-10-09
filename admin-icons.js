@@ -62,9 +62,14 @@ export function initIconsTab({ functions, httpsCallable, getPassword, escapeHtml
 
     <!-- 画像 -->
     <section id="ic-sub-images">
+      <div class="ic-desc">
+        <strong>画像の倉庫です。</strong>ここで画像をアップロード／削除します。<br>
+        アップしただけではサイトに表示されません。次に「📍 スタンプ配置」（台紙に押すスタンプにする）か、
+        「🎁 ユーザーのアイコン」（ユーザーにプレゼントする）で使います。
+      </div>
       <div class="admin-panel ic-box">
         <div class="ic-title">画像をアップロード</div>
-        <label class="field-label">保存先フォルダ（空欄なら images 直下。例: akkii）</label>
+        <label class="field-label">保存先フォルダ（ユーザーに贈る画像なら、そのユーザー用のフォルダ名。例: akkii ／ 空欄なら images 直下）</label>
         <input type="text" id="ic-up-folder" list="ic-folder-list" placeholder="フォルダ名（半角英数字・_・-）" autocomplete="off">
         <label class="field-label" style="margin-top:8px;">画像ファイル（複数選択OK／1枚5MBまで／png・jpg・gif・webp）</label>
         <input type="file" id="ic-up-files" accept="image/png,image/jpeg,image/gif,image/webp" multiple>
@@ -84,6 +89,10 @@ export function initIconsTab({ functions, httpsCallable, getPassword, escapeHtml
 
     <!-- スタンプ配置 -->
     <section id="ic-sub-stamps" style="display:none;">
+      <div class="ic-desc">
+        <strong>台紙に押されるスタンプの設定です。</strong>「どの合言葉で、台紙のどこに、どの大きさで出すか」を決めます。
+        一覧から「編集」で直す／「＋ 新しいスタンプ設定」で追加します。
+      </div>
       <div id="ic-stamp-list-view">
         <div class="admin-panel ic-box">
           <button type="button" id="ic-stamp-new" class="btn-cta">＋ 新しいスタンプ設定を作る</button>
@@ -131,6 +140,10 @@ export function initIconsTab({ functions, httpsCallable, getPassword, escapeHtml
 
     <!-- ユーザーのアイコン -->
     <section id="ic-sub-users" style="display:none;">
+      <div class="ic-desc">
+        <strong>ユーザーに贈るアイコンの管理です。</strong>ユーザーを選ぶと、そのユーザーの「アイコン置き場」に入っている画像が出ます。
+        追加（プレゼント）と、外すことができます。
+      </div>
       <div class="admin-panel ic-box">
         <label class="field-label">ユーザーを選ぶ</label>
         <input type="text" id="ic-user-input" list="ic-user-datalist" autocomplete="off" placeholder="ニックネームを入力 または 候補から選択">

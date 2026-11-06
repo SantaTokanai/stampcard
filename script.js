@@ -14,6 +14,28 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// --- 画像の表示元（Firebase Storage） ---
+// データベースには従来どおり "images/akkii/souki_01.png" のような相対パスが入っている。
+// 表示するときだけ Storage のURLに変換する。Storageに無い／読み込めない場合は、
+// 従来どおり GitHub 上の同じパスを自動で試す（移行中の安全策）。
+function resolveImg(path) {
+  if (!path) return path;
+  if (/^(https?:|data:)/i.test(path)) return path;
+  const clean = String(path).replace(/^\.?\//, '');
+  return `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(clean)}?alt=media`;
+}
+
+function setImgSrcWithFallback(imgEl, path) {
+  if (path && !/^(https?:|data:)/i.test(path)) {
+    imgEl.addEventListener('error', () => {
+      if (imgEl.dataset.fallback === '1') return;
+      imgEl.dataset.fallback = '1';
+      imgEl.src = path; // GitHub上の元の画像
+    });
+  }
+  imgEl.src = resolveImg(path);
+}
 const functions = getFunctions(app);
 
 // Cloud Functions 呼び出し定義
@@ -311,8 +333,8 @@ async function loadStamps(userData) {
     img.style.left = (Number(norm.x) * w) + 'px';
     img.style.top = (Number(norm.y) * h) + 'px';
     img.style.width = (Number(norm.widthPercent) * w) + 'px';
-    img.src = src;
     img.onload = () => cardContainer.appendChild(img);
+    setImgSrcWithFallback(img, src);
   });
 }
 
@@ -341,7 +363,7 @@ function loadUserGallery(userData){
   }
   images.forEach((url, i) => {
     const img = document.createElement('img');
-    img.src = url;
+    setImgSrcWithFallback(img, url);
     img.className = 'gallery-image';
     img.alt = `ギャラリー ${i+1}`;
     galleryImages.appendChild(img);
@@ -389,7 +411,7 @@ function renderExchangeItems(items) {
     <div class="exchange-item-row" data-cost="${item.cost}" data-name="${escapeHtml(item.name)}">
       <div class="exchange-item-media">
         ${item.img
-          ? `<img class="exchange-item-image" src="${escapeHtml(item.img)}" alt="${escapeHtml(item.name)}">`
+          ? `<img class="exchange-item-image" src="${escapeHtml(resolveImg(item.img))}" data-orig="${escapeHtml(item.img)}" alt="${escapeHtml(item.name)}">`
           : `<div class="exchange-item-placeholder">🎁</div>`}
       </div>
       <div class="exchange-item-info">
@@ -406,6 +428,16 @@ function renderExchangeItems(items) {
 
   exchangeItemsContainer.querySelectorAll('.exchange-item-qty').forEach(sel => {
     sel.addEventListener('change', updateExchangeEstimate);
+  });
+
+  // グッズ画像がStorageから読めなかった場合は、GitHub上の元の画像を試す
+  exchangeItemsContainer.querySelectorAll('.exchange-item-image').forEach(im => {
+    im.addEventListener('error', () => {
+      const orig = im.dataset.orig;
+      if (im.dataset.fallback === '1' || !orig || /^(https?:|data:)/i.test(orig)) return;
+      im.dataset.fallback = '1';
+      im.src = orig;
+    });
   });
 
   updateExchangeEstimate();
